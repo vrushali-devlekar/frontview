@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search, Bell, Mail, HelpCircle, PlusSquare } from 'lucide-react';
 
-const TopNav =() => {
+const TopNav =()=> {
   return (
     <header className="h-[88px] flex items-center justify-between px-4 md:px-8 border-b border-[#d1c8b4] shrink-0">
       

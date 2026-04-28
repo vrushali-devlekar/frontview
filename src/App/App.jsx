@@ -4,7 +4,7 @@ import TopNav from '../components/dashboard/TopNav';
 import DashboardContent from '../components/dashboard/DashboardContent';
 
 const App = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed,setIsSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
