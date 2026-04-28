@@ -11,7 +11,7 @@ const TopNav = () => {
         
         {/* Overview Link */}
         <NavLink 
-          to="/" 
+          to="/overview" 
           className={({ isActive }) => `
             relative text-[10px] cursor-pointer transition-colors duration-200
             ${isActive ? 'text-[var(--color-velora-text)]' : 'text-[var(--color-velora-text-muted)] hover:text-[var(--color-velora-text)]'}
@@ -26,6 +26,7 @@ const TopNav = () => {
         </NavLink>
 
         <div className="text-[10px] text-[var(--color-velora-text-muted)] hover:text-[var(--color-velora-text)] cursor-pointer transition-colors duration-200">
+          {/*Deploy link */}
           <NavLink 
           to="/deploy" 
           className={({ isActive }) => `
@@ -42,7 +43,7 @@ const TopNav = () => {
         </NavLink>
         </div>
 
-        {/* Pipeline Link - Yahan change kiya hai */}
+        {/* Pipeline Link  */}
         <NavLink 
           to="/pipelines" 
           className={({ isActive }) => `

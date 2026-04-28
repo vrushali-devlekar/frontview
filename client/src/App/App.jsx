@@ -6,6 +6,7 @@ import DashboardContent from "../components/dashboard/DashboardContent";
 
 import Pipelines from "../components/ActiveLinks/Pipelines";
 import DeploymentsPage from "../components/ActiveLinks/DeploymentsPage";
+import Overview from "../components/ActiveLinks/Overview";
 
 const App = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -37,6 +38,7 @@ const App = () => {
 
               {/* Pipeline Page */}
               <Route path="/pipelines" element={<Pipelines />} />
+              <Route path="/overview" element={<Overview />} />
               <Route path="/deploy" element={<DeploymentsPage />} />
 
               {/* Add more routes here as you build them */}
