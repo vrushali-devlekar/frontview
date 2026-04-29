@@ -55,7 +55,7 @@ exports.authSuccess = (req, res) => {
         res.status(401);
         throw new Error('Authentication Failed');
     }
-
+    res.cookie('token',generateToken(req.user._id))
     // Passport ne user ko verify kar diya hai, ab hum apna JWT token bhejenge
     res.status(200).json({
         success: true,

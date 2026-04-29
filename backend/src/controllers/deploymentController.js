@@ -71,3 +71,29 @@ exports.stopActiveDeployment = asyncHandler(async (req, res) => {
         message: 'Deployment stopped successfully'
     });
 });
+
+// @desc    Analyze deployment logs with AI
+// @route   POST /api/deployments/:id/analyze-logs
+exports.analyzeLogs = asyncHandler(async (req, res) => {
+    const deployment = await Deployment.findOne({ _id: req.params.id, userId: req.user.id });
+
+    if (!deployment) {
+        res.status(404);
+        throw new Error('Deployment not found');
+    }
+
+    if (!deployment.logs || deployment.logs.length === 0) {
+        res.status(400);
+        throw new Error('No logs found for this deployment');
+    }
+
+    const provider = req.body.provider || 'gemini';
+    const { analyzeLogsWithAI } = require('../services/logAnalysisService');
+
+    const analysisResult = await analyzeLogsWithAI(deployment.logs, provider);
+
+    res.status(200).json({
+        success: true,
+        data: analysisResult
+    });
+});
