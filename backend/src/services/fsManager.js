@@ -1,12 +1,15 @@
 // services/fsManager.js
-const fs = require('fs').promises;
-const path = require('path');
-const { spawn } = require('child_process');
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { spawn } from 'child_process';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Base directory jahan hum saare projects clone karenge (Backend folder ke andar ek 'deployments' folder)
 const BASE_DIR = path.join(__dirname, '../../deployments_temp'); 
-fs.mkdir(BASE_DIR, { recursive: true }).catch(() => {});
+await fs.mkdir(BASE_DIR, { recursive: true }).catch(() => {});
 
 
 // 1. Repo Clone karne ka function
@@ -50,4 +53,4 @@ const createEnvFile = async (targetPath, envVars = []) => {
     console.log(`🔐 .env file created at ${envPath}`);
 };
 
-module.exports = { cloneRepo, createEnvFile };
+export { cloneRepo, createEnvFile };

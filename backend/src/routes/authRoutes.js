@@ -1,13 +1,13 @@
 // routes/authRoutes.js
-const express = require('express');
-const passport = require('passport');
-const { registerUser, authSuccess, logout } = require('../controllers/authController');
+import express from 'express';
+import passport from 'passport';
+import { registerUser, authSuccess, logout } from '../controllers/authController.js';
 
 const router = express.Router();
 
 /// ==========================================
 // 1. LOCAL ROUTES (Email & Password)
-// ==========================================
+// ==========================================   
 router.post('/register', registerUser);
 
 // Sahi tareeka: Ek hi baar route define karna hai
@@ -54,4 +54,4 @@ router.get('/login-failed', (req, res) => {
     res.status(401).json({ success: false, message: 'OAuth Authentication Failed' });
 });
 
-module.exports = router;
+export default router;

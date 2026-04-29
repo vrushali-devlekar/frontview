@@ -1,10 +1,10 @@
 // middlewares/authMiddleware.js
-const jwt = require('jsonwebtoken');
-const asyncHandler = require('./asyncHandler');
-const User = require('../models/User');
+import jwt from 'jsonwebtoken';
+import asyncHandler from './asyncHandler.js';
+import User from '../models/User.js';
 
 // Ye humara "Bouncer" function hai
-const protect = asyncHandler(async (req, res, next) => {
+export const protect = asyncHandler(async (req, res, next) => {
     let token;
 
     // 1. Check karo ki Header mein Authorization hai aur wo 'Bearer' se start ho raha hai
@@ -35,5 +35,4 @@ const protect = asyncHandler(async (req, res, next) => {
         throw new Error('Not authorized, no token provided');
     }
 });
-
-module.exports = { protect };
+

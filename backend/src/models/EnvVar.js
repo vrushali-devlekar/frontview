@@ -1,5 +1,5 @@
 // models/EnvVar.js
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const envVarSchema = new mongoose.Schema({
     projectId: {
@@ -39,4 +39,4 @@ envVarSchema.methods.toJSON = function() {
 };
 
 const EnvVar = mongoose.model('EnvVar', envVarSchema);
-module.exports = EnvVar;
+export default EnvVar;

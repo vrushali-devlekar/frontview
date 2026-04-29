@@ -1,13 +1,13 @@
 // app.js
-const express = require('express');
-const cors = require('cors');
-const session = require('express-session'); 
-const passport = require('passport');
-require('./config/passportSetup');
-const authRoutes = require('./routes/authRoutes');
-const projectRoutes = require('./routes/projectRoutes');
-const { protect } = require('./middlewares/authMiddleware');
-const deploymentRoutes = require('./routes/deploymentRoutes');
+import express from 'express';
+import cors from 'cors';
+import session from 'express-session'; 
+import passport from 'passport';
+import './config/passportSetup.js';
+import authRoutes from './routes/authRoutes.js';
+import projectRoutes from './routes/projectRoutes.js';
+import { protect } from './middlewares/authMiddleware.js';
+import deploymentRoutes from './routes/deploymentRoutes.js';
 
 // Express app initialize karna
 const app = express();
@@ -46,4 +46,4 @@ app.get('/', (req, res) => {
     res.send('DeployPilot API is running perfectly!');
 });
 
-module.exports = app;
+export default app;

@@ -1,10 +1,11 @@
 // config/passportSetup.js
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const GitHubStrategy = require('passport-github2').Strategy;
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const User = require('../models/User');
-require('dotenv').config();
+import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+import { Strategy as GitHubStrategy } from 'passport-github2';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import User from '../models/User.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // User ki ID ko session mein pack karna
 passport.serializeUser((user, done) => {

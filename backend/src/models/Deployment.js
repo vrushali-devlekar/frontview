@@ -1,5 +1,5 @@
 // models/Deployment.js
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const deploymentSchema = new mongoose.Schema({
     projectId: {
@@ -73,4 +73,4 @@ deploymentSchema.pre('save', async function(next) {
 });
 
 const Deployment = mongoose.model('Deployment', deploymentSchema);
-module.exports = Deployment;
+export default Deployment;

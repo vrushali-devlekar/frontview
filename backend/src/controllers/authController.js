@@ -1,7 +1,7 @@
 // controllers/authController.js
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-const asyncHandler = require('../middlewares/asyncHandler');
+import User from '../models/User.js';
+import jwt from 'jsonwebtoken';
+import asyncHandler from '../middlewares/asyncHandler.js';
 
 // Helper Function: JWT Token Generate karna
 const generateToken = (id) => {
@@ -13,7 +13,7 @@ const generateToken = (id) => {
 // ==========================================
 // 1. LOCAL REGISTER (Naya Account Banana)
 // ==========================================
-exports.registerUser = asyncHandler(async (req, res) => {
+export const registerUser = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
@@ -50,7 +50,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
 // 2. OAUTH & LOCAL SUCCESS CALLBACK
 // ==========================================
 // Ye function Google, GitHub aur Local Login teeno ke success hone par chalega
-exports.authSuccess = (req, res) => {
+export const authSuccess = (req, res) => {
     if (!req.user) {
         res.status(401);
         throw new Error('Authentication Failed');
@@ -73,7 +73,7 @@ exports.authSuccess = (req, res) => {
 // ==========================================
 // 3. LOGOUT
 // ==========================================
-exports.logout = (req, res) => {
+export const logout = (req, res) => {
     req.logout((err) => {
         if (err) {
             res.status(500);

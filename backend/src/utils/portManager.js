@@ -26,4 +26,4 @@ const releasePort = (port) => {
     }
 };
 
-module.exports = { getAvailablePort, releasePort };
+export { getAvailablePort, releasePort };

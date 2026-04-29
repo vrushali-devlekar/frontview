@@ -1,14 +1,14 @@
 // routes/projectRoutes.js
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { 
+import { 
     getUserRepos, 
     createProject, 
     getUserProjects, 
     getProjectById, 
     deleteProject 
-} = require('../controllers/projectController');
-const { protect } = require('../middlewares/authMiddleware');
+} from '../controllers/projectController.js';
+import { protect } from '../middlewares/authMiddleware.js';
 
 // Sabhi routes protected hain (JWT Token zaroori hai)
 router.use(protect);
@@ -25,4 +25,4 @@ router.route('/:id')
     .get(getProjectById)
     .delete(deleteProject);
 
-module.exports = router;
+export default router;

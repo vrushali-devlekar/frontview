@@ -1,9 +1,9 @@
 // services/deploymentService.js
-const { spawn } = require('child_process');
-const Project = require('../models/Project');
-const Deployment = require('../models/Deployment');
-const { cloneRepo } = require('./fsManager');
-const { getAvailablePort, releasePort } = require('../utils/portManager');
+import { spawn } from 'child_process';
+import Project from '../models/Project.js';
+import Deployment from '../models/Deployment.js';
+import { cloneRepo } from './fsManager.js';
+import { getAvailablePort, releasePort } from '../utils/portManager.js';
 
 // Ye Map track karega ki kaunsa deployment kis process me chal raha hai (Stop karne ke kaam aayega)
 const activeProcesses = new Map();
@@ -109,4 +109,4 @@ const stopDeployment = async (deploymentId) => {
     }
 };
 
-module.exports = { executeDeployment, stopDeployment };
+export { executeDeployment, stopDeployment };

@@ -1,7 +1,7 @@
 // services/repoService.js
 
 // Ye function GitHub API se baat karke repos layega
-const fetchUserRepos = async (accessToken) => {
+export const fetchUserRepos = async (accessToken) => {
     try {
         // GitHub API call kar rahe hain (sort=updated se sabse naye upar aayenge)
         const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100', {
@@ -39,7 +39,4 @@ const fetchUserRepos = async (accessToken) => {
         throw error; // Is error ko controller handle karega
     }
 };
-
-module.exports = {
-    fetchUserRepos
-};
+

@@ -1,8 +1,8 @@
 // routes/deploymentRoutes.js
-const express = require('express');
+import express from 'express'
 const router = express.Router();
-const { triggerDeployment, getDeploymentStatus, stopActiveDeployment } = require('../controllers/deploymentController');
-const { protect } = require('../middlewares/authMiddleware');
+import { triggerDeployment, getDeploymentStatus, stopActiveDeployment } from '../controllers/deploymentController.js';
+import { protect } from '../middlewares/authMiddleware.js';
 
 // Sabhi deployment actions protected hone chahiye
 router.use(protect);
@@ -11,4 +11,4 @@ router.post('/', triggerDeployment);
 router.get('/:id', getDeploymentStatus);
 router.post('/:id/stop', stopActiveDeployment);
 
-module.exports = router;
+export default router;

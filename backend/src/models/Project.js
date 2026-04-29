@@ -1,5 +1,5 @@
 // models/Project.js
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const projectSchema = new mongoose.Schema({
     name: {
@@ -49,4 +49,4 @@ projectSchema.index({ owner: 1, isDeleted: 1 });
 projectSchema.index({ repoUrl: 1, owner: 1 }, { unique: true });
 
 const Project = mongoose.model('Project', projectSchema);
-module.exports = Project;
+export default Project;

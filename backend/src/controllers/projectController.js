@@ -1,14 +1,14 @@
 // and ye phase 3 hai - imlementing the project management features and soft deletion of projects. if user se galti se delete ho gaya ho project so ham use database se pura nahi uda denge sirf value tru kr denge taki if use wapas chahiye ye tho wapas se recover kr pay ..
 // controllers/projectController.js
-const Project = require('../models/Project');
-const asyncHandler = require('../middlewares/asyncHandler');
-const User = require('../models/User');
-const { fetchUserRepos } = require('../services/repoService'); // Nayi service import ki
+import asyncHandler from '../middlewares/asyncHandler.js';
+import User from '../models/User.js';
+import Project from '../models/Project.js';
+import { fetchUserRepos } from '../services/repoService.js';
 
 // @desc    Get user's GitHub repositories
 // @route   GET /api/projects/repos
 // @access  Private
-exports.getUserRepos = asyncHandler(async (req, res) => {
+export const getUserRepos = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const searchQuery = req.query.search ? req.query.search.toLowerCase() : '';
 
@@ -28,7 +28,7 @@ exports.getUserRepos = asyncHandler(async (req, res) => {
 
 // @desc    Naya Project create karna (Save to DB)
 // @route   POST /api/projects
-exports.createProject = asyncHandler(async (req, res) => {
+export const createProject = asyncHandler(async (req, res) => {
     const { name, repoUrl, repoName, branch } = req.body;
 
     // 1. Validation
@@ -63,7 +63,7 @@ exports.createProject = asyncHandler(async (req, res) => {
 
 // @desc    User ke saare active projects lana
 // @route   GET /api/projects
-exports.getUserProjects = asyncHandler(async (req, res) => {
+export const getUserProjects = asyncHandler(async (req, res) => {
     // Sirf wahi projects laao jo is user ke hain aur delete nahi hue hain
     const projects = await Project.find({ 
         owner: req.user.id, 
@@ -75,7 +75,7 @@ exports.getUserProjects = asyncHandler(async (req, res) => {
 
 // @desc    Single project detail lana
 // @route   GET /api/projects/:id
-exports.getProjectById = asyncHandler(async (req, res) => {
+export const getProjectById = asyncHandler(async (req, res) => {
     const project = await Project.findOne({ 
         _id: req.params.id, 
         owner: req.user.id, 
@@ -92,7 +92,7 @@ exports.getProjectById = asyncHandler(async (req, res) => {
 
 // @desc    Project delete karna (Soft Delete)
 // @route   DELETE /api/projects/:id
-exports.deleteProject = asyncHandler(async (req, res) => {
+export const deleteProject = asyncHandler(async (req, res) => {
     const project = await Project.findOne({ 
         _id: req.params.id, 
         owner: req.user.id 

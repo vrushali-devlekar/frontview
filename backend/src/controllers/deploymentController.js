@@ -1,12 +1,13 @@
 // controllers/deploymentController.js
-const asyncHandler = require('../middlewares/asyncHandler');
-const Project = require('../models/Project');
-const Deployment = require('../models/Deployment');
-const { executeDeployment, stopDeployment } = require('../services/deploymentService');
+import asyncHandler from '../middlewares/asyncHandler.js';
+import User from '../models/User.js';
+import Project from '../models/Project.js';
+import Deployment from '../models/Deployment.js';
+import { executeDeployment, stopDeployment } from '../services/deploymentService.js';
 
 // @desc    Trigger a new deployment
 // @route   POST /api/deployments
-exports.triggerDeployment = asyncHandler(async (req, res) => {
+export const triggerDeployment = asyncHandler(async (req, res) => {
     const { projectId } = req.body;
 
     if (!projectId) {
@@ -33,7 +34,7 @@ exports.triggerDeployment = asyncHandler(async (req, res) => {
 
 // @desc    Get deployment status
 // @route   GET /api/deployments/:id
-exports.getDeploymentStatus = asyncHandler(async (req, res) => {
+export const getDeploymentStatus = asyncHandler(async (req, res) => {
     const deployment = await Deployment.findOne({ _id: req.params.id, userId: req.user.id });
 
     if (!deployment) {
@@ -49,7 +50,7 @@ exports.getDeploymentStatus = asyncHandler(async (req, res) => {
 
 // @desc    Stop a running deployment
 // @route   POST /api/deployments/:id/stop
-exports.stopActiveDeployment = asyncHandler(async (req, res) => {
+export const stopActiveDeployment = asyncHandler(async (req, res) => {
     const deploymentId = req.params.id;
 
     // Service function call karo jo process ko kill karega aur DB update karega
