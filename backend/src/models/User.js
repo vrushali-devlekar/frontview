@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema({
     },
     googleId: { type: String },
     githubId: { type: String },
+    githubAccessToken: { type: String, select: false },
 }, {
     timestamps: true
 });
