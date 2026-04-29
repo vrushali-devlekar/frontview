@@ -1,6 +1,5 @@
 import React from "react";
-import val from "../assets/val.png";
-
+import val from "../../../../public/val.png";
 
 // Mock data based on applications.jpg
 const applications = [
@@ -55,21 +54,13 @@ export default function Landing() {
             <span className="text-lg font-bold tracking-tighter">VELORA</span>
           </div>
           <div className="hidden lg:flex gap-8 text-[10px] uppercase tracking-widest text-gray-500">
-            <a href="#" className="hover:text-white transition-colors">
-              Solutions
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Templates
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Docs
-            </a>
+            <a href="#" className="hover:text-white transition-colors">Solutions</a>
+            <a href="#" className="hover:text-white transition-colors">Templates</a>
+            <a href="#" className="hover:text-white transition-colors">Docs</a>
           </div>
         </div>
         <div className="flex gap-4 items-center">
-          <button className="text-[10px] text-gray-400 uppercase hover:text-white">
-            Log In
-          </button>
+          <button className="text-[10px] text-gray-400 uppercase hover:text-white">Log In</button>
           <button className="bg-white text-black px-4 py-2 text-[10px] font-bold border-b-4 border-gray-400 active:border-b-0 active:translate-y-1 transition-all">
             SIGN UP
           </button>
@@ -78,7 +69,6 @@ export default function Landing() {
 
       {/* --- HERO SECTION --- */}
       <section className="relative pt-28 pb-20 px-6 border-b border-white/5">
-        {/* Background Image Overlay from veloraimg.jpg */}
         <div
           className="absolute inset-0 opacity-20 grayscale"
           style={{
@@ -89,8 +79,8 @@ export default function Landing() {
         />
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          <div className="inline-block border border-yellow-500/50 bg-yellow-500/10 px-4 py-1 mb-8">
-            <span className="text-yellow-500 text-[10px] tracking-[0.2em] uppercase font-bold">
+          <div className="inline-block border rounded-full border-yellow-500/50 bg-yellow-500/10 px-4 py-1 mb-8">
+            <span className="text-yellow-500 text-[10px] tracking-[0.1em] uppercase font-medium">
               v3.0.0 is now live 🚀
             </span>
           </div>
@@ -101,9 +91,7 @@ export default function Landing() {
             </span>
           </h1>
           <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light">
-            DeployPilot provides the infrastructure to build a faster,
-            pixel-perfect web. Craft your microservices with the precision of a
-            master builder.
+            Velora provides the infrastructure to build a
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-6">
             <button className="bg-white text-black px-12 py-5 text-sm font-bold shadow-[4px_4px_0px_#888] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
@@ -116,7 +104,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* --- DASHBOARD PREVIEW (Inspired by applications.jpg) --- */}
+      {/* --- DASHBOARD PREVIEW --- */}
       <main className="max-w-[1200px] mx-auto px-6 py-12">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
@@ -160,22 +148,14 @@ export default function Landing() {
 
                 <div className="flex items-center gap-8">
                   <div className="text-right hidden sm:block">
-                    <div
-                      className={`text-[9px] uppercase font-bold flex items-center justify-end gap-2 ${app.color}`}
-                    >
-                      <div
-                        className={`w-1.5 h-1.5 rounded-full ${app.color.replace("text-", "bg-")} shadow-[0_0_5px_currentColor]`}
-                      />
+                    <div className={`text-[9px] uppercase font-bold flex items-center justify-end gap-2 ${app.color}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${app.color.replace("text-", "bg-")} shadow-[0_0_5px_currentColor]`} />
                       {app.status}
                     </div>
-                    <div className="text-[9px] text-gray-600 mt-0.5">
-                      {app.time}
-                    </div>
+                    <div className="text-[9px] text-gray-600 mt-0.5">{app.time}</div>
                   </div>
                   <div className="text-right min-w-[60px] hidden md:block">
-                    <div className="text-[9px] text-gray-400 font-mono">
-                      {app.version}
-                    </div>
+                    <div className="text-[9px] text-gray-400 font-mono">{app.version}</div>
                     <div className="text-[9px] text-gray-600">3m 24s</div>
                   </div>
                   <button className="text-gray-600 hover:text-white">⋮</button>
@@ -184,26 +164,22 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Right Sidebar - Vercel content style */}
+          {/* Right Sidebar */}
           <aside className="space-y-4">
             <div className="bg-[#161b22] border border-white/10 p-4">
               <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
                 Quick Actions
               </h4>
               <div className="space-y-2">
-                {["Browse Templates", "Marketplace", "Usage Metrics"].map(
-                  (item) => (
-                    <div
-                      key={item}
-                      className="text-[10px] text-gray-500 hover:text-[#f1e05a] cursor-pointer flex justify-between group"
-                    >
-                      <span>{item}</span>
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        →
-                      </span>
-                    </div>
-                  ),
-                )}
+                {["Browse Templates", "Marketplace", "Usage Metrics"].map((item) => (
+                  <div
+                    key={item}
+                    className="text-[10px] text-gray-500 hover:text-[#f1e05a] cursor-pointer flex justify-between group"
+                  >
+                    <span>{item}</span>
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -224,15 +200,9 @@ export default function Landing() {
             © 2026 DEPLOYPILOT INC. Crafted in Pixels.
           </div>
           <div className="flex gap-8 text-[10px] text-gray-500 uppercase tracking-widest">
-            <a href="#" className="hover:text-white">
-              Twitter
-            </a>
-            <a href="#" className="hover:text-white">
-              GitHub
-            </a>
-            <a href="#" className="hover:text-white">
-              Discord
-            </a>
+            <a href="#" className="hover:text-white">Twitter</a>
+            <a href="#" className="hover:text-white">GitHub</a>
+            <a href="#" className="hover:text-white">Discord</a>
           </div>
         </div>
       </footer>

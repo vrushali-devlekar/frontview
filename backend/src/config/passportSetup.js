@@ -61,7 +61,15 @@ passport.use(new GitHubStrategy({
     callbackURL: "http://localhost:5000/api/auth/github/callback"
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        let user = await User.findOne({ email: profile.emails[0].value });
+        const email = profile.emails && profile.emails.length > 0 
+            ? profile.emails[0].value 
+            : `${profile.username}@github.com`;
+            
+        const avatarUrl = profile.photos && profile.photos.length > 0 
+            ? profile.photos[0].value 
+            : '';
+
+        let user = await User.findOne({ email });
         
         // Agar user pehle se hai, toh sirf uska naya accessToken update kar do
         if (user) {
@@ -72,10 +80,10 @@ passport.use(new GitHubStrategy({
 
         // Agar naya user ban raha hai, toh create karte waqt accessToken daalo
         user = await User.create({
-            username: profile.username,
-            email: profile.emails[0].value,
+            username: profile.username || profile.displayName,
+            email: email,
             githubId: profile.id,
-            avatarUrl: profile.photos[0].value,
+            avatarUrl: avatarUrl,
             authProvider: 'github',
             githubAccessToken: accessToken 
         });
@@ -94,14 +102,22 @@ passport.use(new GoogleStrategy({
     callbackURL: "http://localhost:5000/api/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        let user = await User.findOne({ email: profile.emails[0].value });
+        const email = profile.emails && profile.emails.length > 0 
+            ? profile.emails[0].value 
+            : `${profile.id}@google.com`;
+            
+        const avatarUrl = profile.photos && profile.photos.length > 0 
+            ? profile.photos[0].value 
+            : '';
+
+        let user = await User.findOne({ email });
         if (user) return done(null, user);
 
         user = await User.create({
             username: profile.displayName,
-            email: profile.emails[0].value,
+            email: email,
             googleId: profile.id,
-            avatarUrl: profile.photos[0].value,
+            avatarUrl: avatarUrl,
             authProvider: 'google'
         });
         return done(null, user);

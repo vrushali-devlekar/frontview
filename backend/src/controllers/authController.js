@@ -40,6 +40,9 @@ export const registerUser = asyncHandler(async (req, res) => {
             user: { id: user.id, username: user.username, email: user.email },
             token: generateToken(user._id),
         });
+
+      res.cookie('token',generateToken(user._id))
+
     } else {
         res.status(400);
         throw new Error('Invalid user data');
@@ -56,18 +59,25 @@ export const authSuccess = (req, res) => {
         throw new Error('Authentication Failed');
     }
 
-    // Passport ne user ko verify kar diya hai, ab hum apna JWT token bhejenge
-    res.status(200).json({
-        success: true,
-        message: `Logged in successfully via ${req.user.authProvider}`,
-        user: {
-            id: req.user._id,
-            username: req.user.username,
-            email: req.user.email,
-            avatar: req.user.avatarUrl
-        },
-        token: generateToken(req.user._id) // Backend ticket
-    });
+    const token = generateToken(req.user._id);
+
+    // If local auth, return JSON. If OAuth (github/google), redirect to frontend
+    if (req.user.authProvider === 'local') {
+        res.status(200).json({
+            success: true,
+            message: `Logged in successfully via ${req.user.authProvider}`,
+            user: {
+                id: req.user._id,
+                username: req.user.username,
+                email: req.user.email,
+                avatar: req.user.avatarUrl
+            },
+            token: token
+        });
+    } else {
+        // Redirect to frontend dashboard with token in URL query
+        res.redirect(`http://localhost:5173/dashboard?token=${token}`);
+    }
 };
 
 // ==========================================
