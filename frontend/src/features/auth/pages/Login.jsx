@@ -38,7 +38,6 @@ const Login = () => {
   return (
     /* h-screen + overflow-hidden prevents global page scrolling */
     <div className="h-screen overflow-hidden bg-[#050505] text-[#d1d1d1] font-['Minecraftia',monospace] flex flex-col lg:flex-row">
-      
       {/* LEFT SIDE: Brand & Mood */}
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-center items-center p-8 overflow-hidden border-r border-white/5">
         <div
