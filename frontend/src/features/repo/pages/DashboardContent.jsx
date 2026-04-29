@@ -1,11 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Sidebar from '../../../shared/components/Sidebar';
+
+import TopNav from '../../../shared/components/TopNav';
 
 const DashboardContent = () => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   return (
-    <main className="flex-1 overflow-y-auto p-8 h-[calc(100vh-88px)]">
-      {/* Main content area */}
-      <h1 className="text-white font">Welcome to your dashboard</h1>
-    </main>
+    <div className="flex h-screen bg-[#0a0a0a]">
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ marginLeft: isCollapsed ? '72px' : '280px' }}>
+        <TopNav />
+        <main className="flex-1 overflow-y-auto p-8">
+          {/* Dashboard content goes here */}
+          <h1 className="text-2xl font-bold text-white">Welcome to Dashboard</h1>
+        </main>
+      </div>
+    </div>
   );
 };
 
