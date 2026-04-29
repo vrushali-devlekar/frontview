@@ -59,7 +59,7 @@ deploymentSchema.index({ projectId: 1, status: 1 });
 deploymentSchema.index({ userId: 1, status: 1 });
 
 // Pre-save hook for auto-incrementing version
-deploymentSchema.pre('save', async function(next) {
+deploymentSchema.pre('save', async function() {
     // Agar naya deployment ban raha hai tabhi version badhao
     if (this.isNew) {
         const lastDeployment = await this.constructor.findOne({ projectId: this.projectId })
@@ -69,7 +69,7 @@ deploymentSchema.pre('save', async function(next) {
             this.version = lastDeployment.version + 1;
         }
     }
-    next();
+    
 });
 
 const Deployment = mongoose.model('Deployment', deploymentSchema);

@@ -29,7 +29,7 @@ exports.getUserRepos = asyncHandler(async (req, res) => {
 // @desc    Naya Project create karna (Save to DB)
 // @route   POST /api/projects
 exports.createProject = asyncHandler(async (req, res) => {
-    const { name, repoUrl, repoName, branch } = req.body;
+    const { name, repoUrl, repoName, branch, installCommand, startCommand } = req.body;
 
     // 1. Validation
     if (!name || !repoUrl || !repoName) {
@@ -55,7 +55,9 @@ exports.createProject = asyncHandler(async (req, res) => {
         repoUrl,
         repoName,
         branch: branch || 'main',
-        owner: req.user.id
+        owner: req.user.id,
+        installCommand: installCommand || 'npm install',
+        startCommand: startCommand || 'npm start'
     });
 
     res.status(201).json({ success: true, data: project });

@@ -38,7 +38,9 @@ const projectSchema = new mongoose.Schema({
     isDeleted: {
         type: Boolean,
         default: false
-    }
+    },
+    installCommand: { type: String, default: 'npm install' },
+    startCommand: { type: String, default: 'npm start' }
 }, {
     timestamps: true
 });
