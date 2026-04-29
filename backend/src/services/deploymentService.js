@@ -10,25 +10,23 @@ const { streamLogs } = require('../utils/logStreamer');
 // Ye Map track karega ki kaunsa deployment kis process me chal raha hai (Stop karne ke kaam aayega)
 const activeProcesses = new Map();
 
-const executeDeployment = async (projectId, userId, io) => {
+const executeDeployment = async (deploymentId, io) => { 
     let deploymentRecord = null;
     let assignedPort = null;
 
     try {
-        // 1. Project details nikalo
-        const project = await Project.findById(projectId);
-        if (!project) throw new Error('Project not found');
+        // 1. Jo deployment controller ne banaya, use DB se nikalo
+        deploymentRecord = await Deployment.findById(deploymentId);
+        if (!deploymentRecord) throw new Error('Deployment record not found');
 
-        // 2. Database mein naya Deployment "building" status ke sath banao
-        deploymentRecord = await Deployment.create({
-            projectId,
-            userId,
-            branch: project.branch,
-            status: 'building',
-            startedAt: new Date()
-        });
+        // 2. Project details nikalo
+        const project = await Project.findById(deploymentRecord.projectId);
+        
+        // Status update kar do ki build shuru ho gaya
+        deploymentRecord.status = 'building';
+        await deploymentRecord.save();
 
-        // 3. GitHub se Repo Clone karo (Humara banaya hua fsManager)
+        // 3. GitHub se Repo Clone karo
         const targetPath = await cloneRepo(project.repoUrl, deploymentRecord._id.toString());
 
         // 🌟 NEW: Auto-Detect Framework & Commands

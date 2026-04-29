@@ -1,8 +1,35 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { login } from "../api/api";
 import val from "../assets/val.png";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await login(formData);
+      if (response.data.success) {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     /* h-screen + overflow-hidden prevents global page scrolling */
     <div className="h-screen overflow-hidden bg-[#050505] text-[#d1d1d1] font-['Minecraftia',monospace] flex flex-col lg:flex-row">
@@ -79,7 +106,12 @@ const Login = () => {
             </div>
 
             {/* Form - Condensed spacing */}
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] p-3 text-center">
+                  {error}
+                </div>
+              )}
               <div>
                 <label className="block text-[9px] uppercase text-gray-500 mb-1 tracking-widest">
                   Email Address
@@ -90,7 +122,10 @@ const Login = () => {
                   </span>
                   <input
                     type="email"
+                    name="email"
                     placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={handleChange}
                     className="w-full bg-[#050505] border border-white/10 p-3 pl-10 text-[11px] focus:outline-none focus:border-[#f1e05a]/50 transition-colors"
                   />
                 </div>
@@ -106,7 +141,10 @@ const Login = () => {
                   </span>
                   <input
                     type="password"
+                    name="password"
                     placeholder="••••••••"
+                    value={formData.password}
+                    onChange={handleChange}
                     className="w-full bg-[#050505] border border-white/10 p-3 pl-10 text-[11px] focus:outline-none focus:border-[#f1e05a]/50 transition-colors"
                   />
                 </div>
@@ -120,8 +158,12 @@ const Login = () => {
                 </div>
               </div>
 
-              <button className="w-full bg-[#39ff14]/10 text-[#39ff14] border border-[#39ff14]/30 py-3 text-[11px] font-bold border-b-4 border-[#1a7a0a] hover:bg-[#39ff14]/20 transition-all uppercase tracking-widest mt-2">
-                Login to Panel
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full bg-[#39ff14]/10 text-[#39ff14] border border-[#39ff14]/30 py-3 text-[11px] font-bold border-b-4 border-[#1a7a0a] hover:bg-[#39ff14]/20 transition-all uppercase tracking-widest mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Logging in..." : "Login to Panel"}
               </button>
             </form>
 
