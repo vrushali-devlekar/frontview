@@ -1,3 +1,5 @@
+node_modules/
 .env
-Shipyard-Backend/.env
-/node_modules
+
+# DeployPilot Temporary Data (YEH ADD KARNA HAI)
+deployments_temp/

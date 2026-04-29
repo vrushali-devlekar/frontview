@@ -4,6 +4,8 @@ import Project from '../models/Project.js';
 import Deployment from '../models/Deployment.js';
 import { cloneRepo } from './fsManager.js';
 import { getAvailablePort, releasePort } from '../utils/portManager.js';
+import { detectFramework } from '../utils/frameworkDetector.js';
+
 
 // Ye Map track karega ki kaunsa deployment kis process me chal raha hai (Stop karne ke kaam aayega)
 const activeProcesses = new Map();
@@ -29,33 +31,62 @@ const executeDeployment = async (projectId, userId) => {
         // 3. GitHub se Repo Clone karo (Humara banaya hua fsManager)
         const targetPath = await cloneRepo(project.repoUrl, deploymentRecord._id.toString());
 
-        // 4. NPM Install chalao (Dependencies download karne ke liye)
-        await new Promise((resolve, reject) => {
-            console.log(`📦 Running npm install for ${deploymentRecord._id}...`);
-            // Windows pe 'npm.cmd', Mac/Linux pe 'npm' chalana padta hai
-            const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-            
-            const installProcess = spawn(npmCmd, ['install'], { cwd: targetPath });
+        // 🌟 NEW: Auto-Detect Framework & Commands
+        console.log(`🔍 Analyzing repository structure...`);
+        const frameworkInfo = await detectFramework(targetPath);
 
-            // Logs collect kar rahe hain (Phase 5 mein ye frontend pe bhejenge)
-            installProcess.stdout.on('data', (data) => console.log(`[INSTALL]: ${data}`));
-            installProcess.stderr.on('data', (data) => console.error(`[INSTALL ERR]: ${data}`));
+        if (frameworkInfo.error) {
+            throw new Error(frameworkInfo.error);
+        }
+        console.log(`🎯 Detected Type: ${frameworkInfo.type}`);
 
-            installProcess.on('close', (code) => {
-                if (code === 0) resolve();
-                else reject(new Error('npm install failed'));
+        // 4. NPM Install chalao (Sirf tab jab frameworkInfo me installCmd ho)
+        if (frameworkInfo.installCmd) {
+            await new Promise((resolve, reject) => {
+                console.log(`📦 Running ${frameworkInfo.installCmd} for ${deploymentRecord._id}...`);
+                const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+                const installProcess = spawn(npmCmd, ['install', '--legacy-peer-deps'], { 
+                    cwd: targetPath,
+                    shell: true 
+                });
+
+                installProcess.stdout.on('data', (data) => console.log(`[INSTALL]: ${data}`));
+                installProcess.stderr.on('data', (data) => console.error(`[INSTALL ERR]: ${data}`));
+
+                installProcess.on('close', (code) => {
+                    if (code === 0) resolve();
+                    else reject(new Error('npm install failed'));
+                });
             });
-        });
+        } else {
+            console.log(`⚡ Skipping install phase (Vanilla Frontend detected)`);
+        }
 
-        // 5. Port assign karo aur NPM Start chalao
+        // 🌟 NEW: Agar Frontend hai, toh NPM Build chalao
+        if (frameworkInfo.buildCmd) {
+            await new Promise((resolve, reject) => {
+                console.log(`🔨 Building project: ${frameworkInfo.buildCmd}`);
+                const buildProcess = spawn('npm', ['run', 'build'], { cwd: targetPath, shell: true });
+                buildProcess.on('close', (code) => {
+                    if (code === 0) resolve();
+                    else reject(new Error('Build failed'));
+                });
+            });
+        }
+
+        // 5. Port assign karo aur Start chalao
         assignedPort = getAvailablePort();
         console.log(`🚀 Starting app on port ${assignedPort}...`);
 
-        const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-        const startProcess = spawn(npmCmd, ['start'], { 
+        // Custom start command use karo jo detector ne nikali hai
+        const startCmdString = frameworkInfo.startCmd.replace('$PORT', assignedPort);
+        const [cmd, ...args] = startCmdString.split(' ');
+
+        const startProcess = spawn(cmd, args, {
             cwd: targetPath,
-            // Process ko environment variables de rahe hain, jisme uska naya PORT bhi hai
-            env: { ...process.env, PORT: assignedPort } 
+            env: { ...process.env, PORT: assignedPort },
+            shell: true
         });
 
         // Is process ko Map mein save kar lo taaki baad me Kill kar sakein
