@@ -1,5 +1,6 @@
 // and ye phase 3 hai - imlementing the project management features and soft deletion of projects. if user se galti se delete ho gaya ho project so ham use database se pura nahi uda denge sirf value tru kr denge taki if use wapas chahiye ye tho wapas se recover kr pay ..
 // controllers/projectController.js
+const Project = require('../models/Project');
 const asyncHandler = require('../middlewares/asyncHandler');
 const User = require('../models/User');
 const { fetchUserRepos } = require('../services/repoService'); // Nayi service import ki
