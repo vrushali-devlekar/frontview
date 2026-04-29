@@ -1,7 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { register } from "../api/api";
 import val from "../assets/val.png";
 
 const Register = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ username: "", email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await register(formData);
+      if (response.data.success) {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-[#050505] text-[#d1d1d1] font-['Minecraftia',monospace] flex flex-col lg:flex-row">
       
@@ -51,14 +79,22 @@ const Register = () => {
               <div className="flex-1 h-[1px] bg-white/5"></div>
             </div>
 
-            <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-3" onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] p-3 text-center">
+                  {error}
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-3">
                 {/* Username */}
                 <div>
                   <label className="block text-[9px] uppercase text-gray-500 mb-1 tracking-widest">Username</label>
                   <input
                     type="text"
+                    name="username"
                     placeholder="SteveCraft"
+                    value={formData.username}
+                    onChange={handleChange}
                     className="w-full bg-[#050505] border border-white/10 p-3 text-[11px] focus:outline-none focus:border-[#39ff14]/50"
                   />
                 </div>
@@ -68,7 +104,10 @@ const Register = () => {
                   <label className="block text-[9px] uppercase text-gray-500 mb-1 tracking-widest">Email Address</label>
                   <input
                     type="email"
+                    name="email"
                     placeholder="steve@velora.io"
+                    value={formData.email}
+                    onChange={handleChange}
                     className="w-full bg-[#050505] border border-white/10 p-3 text-[11px] focus:outline-none focus:border-[#39ff14]/50"
                   />
                 </div>
@@ -78,15 +117,22 @@ const Register = () => {
                   <label className="block text-[9px] uppercase text-gray-500 mb-1 tracking-widest">Password</label>
                   <input
                     type="password"
+                    name="password"
                     placeholder="••••••••"
+                    value={formData.password}
+                    onChange={handleChange}
                     className="w-full bg-[#050505] border border-white/10 p-3 text-[11px] focus:outline-none focus:border-[#39ff14]/50"
                   />
                 </div>
               </div>
 
               {/* Submit Button */}
-              <button className="w-full bg-[#39ff14]/10 text-[#39ff14] border border-[#39ff14]/30 py-3 text-[11px] font-bold border-b-4 border-[#1a7a0a] hover:bg-[#39ff14]/20 transition-all uppercase tracking-widest mt-4">
-                Create Account
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full bg-[#39ff14]/10 text-[#39ff14] border border-[#39ff14]/30 py-3 text-[11px] font-bold border-b-4 border-[#1a7a0a] hover:bg-[#39ff14]/20 transition-all uppercase tracking-widest mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Creating account..." : "Create Account"}
               </button>
             </form>
 
