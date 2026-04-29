@@ -5,11 +5,12 @@ const Deployment = require('../models/Deployment');
 const { cloneRepo } = require('./fsManager');
 const { getAvailablePort, releasePort } = require('../utils/portManager');
 const { detectFramework } = require('../utils/frameworkDetector');
+const { streamLogs } = require('../utils/logStreamer');
 
 // Ye Map track karega ki kaunsa deployment kis process me chal raha hai (Stop karne ke kaam aayega)
 const activeProcesses = new Map();
 
-const executeDeployment = async (projectId, userId) => {
+const executeDeployment = async (projectId, userId, io) => {
     let deploymentRecord = null;
     let assignedPort = null;
 
@@ -50,8 +51,8 @@ const executeDeployment = async (projectId, userId) => {
                     shell: true 
                 });
 
-                installProcess.stdout.on('data', (data) => console.log(`[INSTALL]: ${data}`));
-                installProcess.stderr.on('data', (data) => console.error(`[INSTALL ERR]: ${data}`));
+                // 🌟 JADOO YAHAN HAI: Socket.io ko Install logs bhej do
+                streamLogs(deploymentRecord._id.toString(), installProcess, io);
 
                 installProcess.on('close', (code) => {
                     if (code === 0) resolve();
@@ -66,7 +67,17 @@ const executeDeployment = async (projectId, userId) => {
         if (frameworkInfo.buildCmd) {
             await new Promise((resolve, reject) => {
                 console.log(`🔨 Building project: ${frameworkInfo.buildCmd}`);
-                const buildProcess = spawn('npm', ['run', 'build'], { cwd: targetPath, shell: true });
+                const buildCmdString = frameworkInfo.buildCmd;
+                
+                // Cross-platform support for build command
+                const [bCmd, ...bArgs] = buildCmdString.split(' ');
+                const finalBuildCmd = (bCmd === 'npm' && process.platform === 'win32') ? 'npm.cmd' : bCmd;
+
+                const buildProcess = spawn(finalBuildCmd, bArgs, { cwd: targetPath, shell: true });
+                
+                // 🌟 BUILD COMMAND KE LOGS BHI STREAM KARO
+                streamLogs(deploymentRecord._id.toString(), buildProcess, io);
+
                 buildProcess.on('close', (code) => {
                     if (code === 0) resolve();
                     else reject(new Error('Build failed'));
@@ -88,9 +99,13 @@ const executeDeployment = async (projectId, userId) => {
             shell: true
         });
 
+        // 🌟 START COMMAND KE LOGS BHI STREAM KARO
+        streamLogs(deploymentRecord._id.toString(), startProcess, io);
+
         // Is process ko Map mein save kar lo taaki baad me Kill kar sakein
         activeProcesses.set(deploymentRecord._id.toString(), startProcess);
 
+        // Terminal ke liye local logs taaki VS Code me bhi dikhe
         startProcess.stdout.on('data', (data) => console.log(`[APP ${assignedPort}]: ${data}`));
         startProcess.stderr.on('data', (data) => console.error(`[APP ERR]: ${data}`));
 

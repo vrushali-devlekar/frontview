@@ -8,7 +8,7 @@ const { executeDeployment, stopDeployment } = require('../services/deploymentSer
 // @route   POST /api/deployments
 exports.triggerDeployment = asyncHandler(async (req, res) => {
     const { projectId } = req.body;
-
+    
     if (!projectId) {
         res.status(400);
         throw new Error('Project ID is required');
@@ -20,9 +20,10 @@ exports.triggerDeployment = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error('Project not found');
     }
-
+    
+    const io = req.app.get('io');
     // Engine ko background mein start kar do (await nahi laga rahe taaki API block na ho)
-    executeDeployment(projectId, req.user.id).catch(console.error);
+    executeDeployment(projectId, req.user.id, io).catch(console.error);
 
     // Frontend ko 202 (Accepted) response bhej do ki kaam shuru ho gaya hai
     res.status(202).json({
