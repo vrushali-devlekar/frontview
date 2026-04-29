@@ -89,8 +89,9 @@ export default function Landing() {
         />
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          <div className="inline-block border border-yellow-500/50 bg-yellow-500/10 px-4 py-1 mb-8">
-            <span className="text-yellow-500 text-[10px] tracking-[0.2em] uppercase font-bold">
+          <div className="inline-block border rounded-full
+           border-yellow-500/50 bg-yellow-500/10 px-4 py-1 mb-8">
+            <span className="text-yellow-500 text-[10px] tracking-[0.1em] uppercase font-medium ">
               v3.0.0 is now live 🚀
             </span>
           </div>
@@ -101,9 +102,7 @@ export default function Landing() {
             </span>
           </h1>
           <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light">
-            DeployPilot provides the infrastructure to build a faster,
-            pixel-perfect web. Craft your microservices with the precision of a
-            master builder.
+            Velora provides the infrastructure to build a 
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-6">
             <button className="bg-white text-black px-12 py-5 text-sm font-bold shadow-[4px_4px_0px_#888] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
