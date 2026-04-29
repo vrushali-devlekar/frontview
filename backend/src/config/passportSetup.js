@@ -61,14 +61,22 @@ passport.use(new GitHubStrategy({
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         let user = await User.findOne({ email: profile.emails[0].value });
-        if (user) return done(null, user);
+        
+        // Agar user pehle se hai, toh sirf uska naya accessToken update kar do
+        if (user) {
+            user.githubAccessToken = accessToken; 
+            await user.save();
+            return done(null, user);
+        }
 
+        // Agar naya user ban raha hai, toh create karte waqt accessToken daalo
         user = await User.create({
             username: profile.username,
             email: profile.emails[0].value,
             githubId: profile.id,
             avatarUrl: profile.photos[0].value,
-            authProvider: 'github'
+            authProvider: 'github',
+            githubAccessToken: accessToken 
         });
         return done(null, user);
     } catch (err) {
