@@ -5,14 +5,15 @@ const { registerUser, authSuccess, logout } = require('../controllers/authContro
 
 const router = express.Router();
 
-// ==========================================
+/// ==========================================
 // 1. LOCAL ROUTES (Email & Password)
 // ==========================================
 router.post('/register', registerUser);
 
-// Local login ke liye hum 'local' bouncer use kar rahe hain
+// Sahi tareeka: Ek hi baar route define karna hai
 router.post('/login', 
-   router.post('/login', passport.authenticate('local', { session: false }), authSuccess) // JWT use kar rahe hain toh session ki zaroorat nahi local ke liye
+    passport.authenticate('local', { session: false }), 
+    authSuccess 
 );
 
 // ==========================================

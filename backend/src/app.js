@@ -5,6 +5,8 @@ const session = require('express-session');
 const passport = require('passport');
 require('./config/passportSetup');
 const authRoutes = require('./routes/authRoutes');
+const projectRoutes = require('./routes/projectRoutes');
+const { protect } = require('./middlewares/authMiddleware');
 
 // Express app initialize karna
 const app = express();
@@ -34,7 +36,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 5. Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth' , authRoutes);
+app.use('/api/projects', projectRoutes);
 
 // --- BASIC ROUTE ---
 app.get('/', (req, res) => {
