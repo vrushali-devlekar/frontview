@@ -1,14 +1,10 @@
-import React from 'react'
-import Landing from './pages/Landing'
-import "./App.css"
-import Login from './pages/Login'
-const App = () => {
-  return (
-    <div>
-      {/* <Landing/> */}
-      <Login/>
-    </div>
-  )
-}
+import React from "react";
+import { RouterProvider } from "react-router-dom";
+import { router } from "./routes";
+import "./App.css";
 
-export default App
+const App = () => {
+  return <RouterProvider router={router} />;
+};
+
+export default App;
