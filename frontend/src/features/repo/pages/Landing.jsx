@@ -92,6 +92,7 @@ export default function Landing() {
           </h1>
           <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light">
             Velora provides the infrastructure to build a
+
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-6">
             <button className="bg-white text-black px-12 py-5 text-sm font-bold shadow-[4px_4px_0px_#888] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
