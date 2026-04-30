@@ -10,7 +10,7 @@ fs.mkdir(BASE_DIR, { recursive: true }).catch(() => {});
 
 
 // 1. Repo Clone karne ka function
-const cloneRepo = async (repoUrl, deploymentId) => {
+const cloneRepo = async (repoUrl, deploymentId, branch = 'main') => {
     const targetPath = path.join(BASE_DIR, deploymentId);
 
     // Agar same ID ka folder pehle se hai (retry case), toh usko clean kar do
@@ -23,9 +23,9 @@ const cloneRepo = async (repoUrl, deploymentId) => {
     return new Promise((resolve, reject) => {
         console.log(`🚀 Cloning repo into ${targetPath}...`);
         
-        // Child Process: "git clone --depth 1 <URL> <Path>"
+        // Child Process: "git clone --depth 1 --branch <branch> <URL> <Path>"
         // --depth 1 se cloning ultra-fast hoti hai kyunki sirf latest code aata hai, poori history nahi
-        const gitProcess = spawn('git', ['clone', '--depth', '1', repoUrl, targetPath]);
+        const gitProcess = spawn('git', ['clone', '--depth', '1', '--branch', branch, repoUrl, targetPath]);
 
         gitProcess.on('close', (code) => {
             if (code === 0) {

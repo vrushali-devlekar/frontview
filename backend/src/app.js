@@ -11,6 +11,7 @@ const projectRoutes = require('./routes/projectRoutes');
 const { protect } = require('./middlewares/authMiddleware');
 const deploymentRoutes = require('./routes/deploymentRoutes');
 const envRoutes = require('./routes/envRoutes');
+const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 
 // Express app initialize karna
 const app = express();
@@ -64,5 +65,9 @@ app.use('/api/projects', envRoutes);
 app.get('/', (req, res) => {
     res.send('DeployPilot API is running perfectly!');
 });
+
+// --- ERROR HANDLERS ---
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;
