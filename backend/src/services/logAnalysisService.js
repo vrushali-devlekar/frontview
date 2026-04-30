@@ -3,6 +3,84 @@ const { ChatCohere } = require('@langchain/cohere');
 const { ChatMistralAI } = require('@langchain/mistralai');
 const { PromptTemplate } = require('@langchain/core/prompts');
 
+const normalizeModelContent = (content) => {
+    if (typeof content === 'string') return content.trim();
+    if (Array.isArray(content)) {
+        return content
+            .map((part) => {
+                if (typeof part === 'string') return part;
+                if (typeof part?.text === 'string') return part.text;
+                if (typeof part?.content === 'string') return part.content;
+                return '';
+            })
+            .join('\n')
+            .trim();
+    }
+    return String(content || '').trim();
+};
+
+const extractLikelyJson = (raw) => {
+    let text = raw.trim();
+
+    if (text.startsWith('```json')) {
+        text = text.replace(/^```json/i, '').replace(/```$/i, '').trim();
+    } else if (text.startsWith('```')) {
+        text = text.replace(/^```/i, '').replace(/```$/i, '').trim();
+    }
+
+    // If extra explanation text exists, isolate the first JSON object body.
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        text = text.slice(firstBrace, lastBrace + 1).trim();
+    }
+
+    return text;
+};
+
+const createModelForProvider = (provider) => {
+    const selected = (provider || 'gemini').toLowerCase();
+
+    switch (selected) {
+        case 'mistral': {
+            if (!process.env.MISTRAL_API_KEY) {
+                const err = new Error('MISTRAL_API_KEY is missing in environment');
+                err.statusCode = 400;
+                throw err;
+            }
+            return new ChatMistralAI({
+                apiKey: process.env.MISTRAL_API_KEY,
+                model: 'mistral-large-latest',
+                temperature: 0.2
+            });
+        }
+        case 'cohere': {
+            if (!process.env.COHERE_API_KEY) {
+                const err = new Error('COHERE_API_KEY is missing in environment');
+                err.statusCode = 400;
+                throw err;
+            }
+            return new ChatCohere({
+                apiKey: process.env.COHERE_API_KEY,
+                model: 'command-a-03-2025',
+                temperature: 0.2
+            });
+        }
+        case 'gemini':
+        default: {
+            if (!process.env.GEMINI_API_KEY) {
+                const err = new Error('GEMINI_API_KEY is missing in environment');
+                err.statusCode = 400;
+                throw err;
+            }
+            return new ChatGoogleGenerativeAI('gemini-2.0-flash', {
+                apiKey: process.env.GEMINI_API_KEY,
+                temperature: 0.2
+            });
+        }
+    }
+};
+
 const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
     // We will give up to 200 lines of logs
     const logsToAnalyze = Array.isArray(logs) ? logs.slice(-200).join('\n') : logs.split('\n').slice(-200).join('\n');
@@ -20,32 +98,7 @@ const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
 
     const promptTemplate = PromptTemplate.fromTemplate(promptText);
     
-    let model;
-
-    switch (provider.toLowerCase()) {
-        case 'mistral':
-            model = new ChatMistralAI({
-                apiKey: process.env.MISTRAL_API_KEY,
-                modelName: 'mistral-large-latest',
-                temperature: 0.2
-            });
-            break;
-        case 'cohere':
-            model = new ChatCohere({
-                apiKey: process.env.COHERE_API_KEY,
-                model: 'command-a-03-2025',
-                temperature: 0.2
-            });
-            break;
-        case 'gemini':
-        default:
-            model = new ChatGoogleGenerativeAI({
-                apiKey: process.env.GEMINI_API_KEY,
-                modelName: 'gemini-flash-latest',
-                temperature: 0.2
-            });
-            break;
-    }
+    const model = createModelForProvider(provider);
 
     const chain = promptTemplate.pipe(model);
     const response = await chain.invoke({ logs: logsToAnalyze });
@@ -53,12 +106,12 @@ const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
     // Parse the JSON output from the model
     let parsedResult;
     try {
-        let content = response.content.trim();
-        if (content.startsWith('```json')) {
-            content = content.replace(/^```json/, '').replace(/```$/, '').trim();
-        } else if (content.startsWith('```')) {
-            content = content.replace(/^```/, '').replace(/```$/, '').trim();
+        let content = normalizeModelContent(response.content);
+
+        if (!content) {
+            throw new Error('AI response was empty');
         }
+        content = extractLikelyJson(content);
         parsedResult = JSON.parse(content);
     } catch (e) {
         console.error('Error parsing AI response:', e);
