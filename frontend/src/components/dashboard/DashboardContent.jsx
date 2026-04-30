@@ -76,10 +76,10 @@ export default function Dashboard() {
                   className="bg-[#11151c] border border-white/10 rounded-lg p-3 flex justify-between items-center"
                 >
                   <div>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-[9px] text-slate-400">
                       {item.title}
                     </p>
-                    <h2 className="text-lg md:text-xl mt-1">
+                    <h2 className="text-base md:text-lg mt-1 font-medium">
                       {item.value}
                     </h2>
                   </div>
