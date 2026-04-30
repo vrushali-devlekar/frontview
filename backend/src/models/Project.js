@@ -38,7 +38,14 @@ const projectSchema = new mongoose.Schema({
     isDeleted: {
         type: Boolean,
         default: false
-    }
+    },
+    installCommand: { type: String, default: 'npm install' },
+    startCommand: { type: String, default: 'npm start' },
+    envVars: [{
+        key: { type: String, required: true },
+        encryptedValue: { type: String, required: true },
+        iv: { type: String, required: true }
+    }]
 }, {
     timestamps: true
 });

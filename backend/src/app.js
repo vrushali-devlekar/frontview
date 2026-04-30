@@ -7,6 +7,8 @@ require('./config/passportSetup');
 const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const { protect } = require('./middlewares/authMiddleware');
+const deploymentRoutes = require('./routes/deploymentRoutes');
+const envRoutes = require('./routes/envRoutes');
 
 // Express app initialize karna
 const app = express();
@@ -38,6 +40,8 @@ app.use(express.urlencoded({ extended: true }));
 // 5. Routes
 app.use('/api/auth' , authRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/deployments', deploymentRoutes);
+app.use('/api/projects', envRoutes);
 
 // --- BASIC ROUTE ---
 app.get('/', (req, res) => {
