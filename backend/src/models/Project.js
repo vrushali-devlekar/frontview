@@ -40,7 +40,12 @@ const projectSchema = new mongoose.Schema({
         default: false
     },
     installCommand: { type: String, default: 'npm install' },
-    startCommand: { type: String, default: 'npm start' }
+    startCommand: { type: String, default: 'npm start' },
+    envVars: [{
+        key: { type: String, required: true },
+        encryptedValue: { type: String, required: true },
+        iv: { type: String, required: true }
+    }]
 }, {
     timestamps: true
 });

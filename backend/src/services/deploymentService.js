@@ -6,6 +6,9 @@ const { cloneRepo } = require('./fsManager');
 const { getAvailablePort, releasePort } = require('../utils/portManager');
 const { detectFramework } = require('../utils/frameworkDetector');
 const { streamLogs } = require('../utils/logStreamer');
+const fs = require('fs').promises;
+const path = require('path');
+const { decrypt } = require('../utils/crypto');
 
 // Ye Map track karega ki kaunsa deployment kis process me chal raha hai (Stop karne ke kaam aayega)
 const activeProcesses = new Map();
