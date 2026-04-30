@@ -12,11 +12,10 @@ import {
 
 const MenuItem = ({ icon: Icon, label, active, isCollapsed }) => (
   <div
-    className={`flex items-center px-4 py-3 my-1 cursor-pointer rounded-lg transition-colors duration-200 ${
-      active
+    className={`flex items-center px-4 py-3 my-1 cursor-pointer rounded-lg transition-colors duration-200 ${active
         ? "bg-[#3b3b38] text-white"
         : "text-slate-400 hover:bg-[#2c2c2b] hover:text-white"
-    }`}
+      }`}
   >
     <Icon size={20} className="min-w-[20px]" />
     {!isCollapsed && (
@@ -30,9 +29,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     <>
       {/* Mobile Backdrop */}
       <div
-        className={`md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
-          !isCollapsed ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
+        className={`md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${!isCollapsed ? "opacity-100 visible" : "opacity-0 invisible"
+          }`}
         onClick={toggleSidebar}
       />
 
