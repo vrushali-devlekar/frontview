@@ -8,27 +8,37 @@ const { executeDeployment, stopDeployment } = require('../services/deploymentSer
 // @route   POST /api/deployments
 exports.triggerDeployment = asyncHandler(async (req, res) => {
     const { projectId } = req.body;
-    
+
     if (!projectId) {
         res.status(400);
         throw new Error('Project ID is required');
     }
 
-    // Check project exists and belongs to user
     const project = await Project.findOne({ _id: projectId, owner: req.user.id, isDeleted: false });
     if (!project) {
         res.status(404);
         throw new Error('Project not found');
     }
-    
-    const io = req.app.get('io');
-    // Engine ko background mein start kar do (await nahi laga rahe taaki API block na ho)
-    executeDeployment(projectId, req.user.id, io).catch(console.error);
 
-    // Frontend ko 202 (Accepted) response bhej do ki kaam shuru ho gaya hai
+    // 🌟 SDE FIX: Engine start hone se pehle DB me entry banao
+    const deployment = await Deployment.create({
+        projectId: project._id,
+        userId: req.user.id,
+        branch: project.branch,
+        status: 'queued', // Shuru mein queued
+        startedAt: new Date()
+    });
+
+    const io = req.app.get('io'); 
+
+    // Engine ko ab Project ID nahi, Deployment ID bhejenge
+    executeDeployment(deployment._id, io).catch(console.error);
+
+    // 🌟 Frontend ko Deployment ID de do taaki wo Socket Room join kar sake
     res.status(202).json({
         success: true,
-        message: 'Deployment triggered successfully. Process is running in the background.',
+        deploymentId: deployment._id, // Ye gaya ID frontend ke paas!
+        message: 'Deployment triggered successfully.'
     });
 });
 
