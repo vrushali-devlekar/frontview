@@ -17,7 +17,7 @@ const StatusBadge = ({ status }) => {
   };
 
   return (
-    <span className={`text-[9px] px-2 py-[2px] rounded ${styles[status]}`}>
+    <span className={`text-[10px] px-2 py-[2px] rounded ${styles[status]}`}>
       {status}
     </span>
   );
@@ -54,10 +54,10 @@ export default function Dashboard() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
 
           <div className="relative z-10">
-            <h1 className="text-base md:text-lg font-medium tracking-tight">
+            <h1 className="text-lg md:text-xl font-semibold tracking-tight">
               Good evening, Sheryian 🚀
             </h1>
-            <p className="text-[10px] md:text-[11px] text-slate-300 mt-1">
+            <p className="text-[11px] md:text-xs text-slate-300 mt-1">
               Here's what's happening with your projects today.
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function Dashboard() {
                   </div>
 
                   <div className="p-2 rounded bg-white/5">
-                    <Icon size={15} />
+                    <Icon size={16} />
                   </div>
                 </div>
               );
@@ -95,14 +95,14 @@ export default function Dashboard() {
           {/* MIDDLE */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 overflow-hidden">
             
-            {/* DEPLOYMENTS */}
+            {/* RECENT DEPLOYMENTS */}
             <div className="md:col-span-2 bg-[#11151c] border border-white/10 rounded-lg p-2.5 flex flex-col">
               
               <div className="flex justify-between items-center mb-3">
-                <h2 className="text-[14px] px-[5px] my-[5px] font-medium text-slate-300">
+                <h2 className="text-xs text-slate-300">
                   Recent Deployments
                 </h2>
-                <span className="text-[9px] text-slate-400 cursor-pointer">
+                <span className="text-[10px] text-slate-400 cursor-pointer">
                   View all →
                 </span>
               </div>
@@ -118,13 +118,13 @@ export default function Dashboard() {
                     key={i}
                     className="flex items-center justify-between px-2 py-1 rounded hover:bg-white/5"
                   >
-                    <span className="text-[10px] text-slate-200">
+                    <span className="text-[11px] text-slate-200">
                       {item.name}
                     </span>
 
                     <div className="flex items-center gap-2">
                       <StatusBadge status={item.status} />
-                      <span className="text-[9px] text-slate-500">
+                      <span className="text-[10px] text-slate-500">
                         {item.time}
                       </span>
                     </div>
@@ -137,10 +137,10 @@ export default function Dashboard() {
             <div className="bg-[#11151c] border border-white/10 rounded-lg p-2.5 flex flex-col">
               
               <div className="flex justify-between items-center mb-3">
-                <h2 className="text-[14px] px-[5px] my-[5px]font-medium text-slate-300">
+                <h2 className="text-xs text-slate-300">
                   Tech Stack
                 </h2>
-                <span className="text-[9px] text-slate-400 cursor-pointer">
+                <span className="text-[10px] text-slate-400 cursor-pointer">
                   View all →
                 </span>
               </div>
@@ -159,7 +159,7 @@ export default function Dashboard() {
                     className="flex items-center gap-2 bg-white/5 rounded px-2 py-1"
                   >
                     <div className={`w-2 h-2 rounded-full ${tech.color}`} />
-                    <span className="text-[9px] text-slate-200">
+                    <span className="text-[10px] text-slate-200">
                       {tech.name}
                     </span>
                   </div>
@@ -179,7 +179,7 @@ export default function Dashboard() {
             ].map((action, i) => (
               <div
                 key={i}
-                className="bg-[#11151c] border border-white/10 rounded-lg py-3 text-[12px] font-medium text-center hover:bg-white/5 cursor-pointer"
+                className="bg-[#11151c] border border-white/10 rounded-lg py-3 text-sm text-center hover:bg-white/5 cursor-pointer"
               >
                 {action}
               </div>
