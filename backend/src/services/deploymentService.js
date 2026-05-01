@@ -179,21 +179,59 @@ const executeDeployment = async (deploymentId, io) => {
 };
 
 // Stop Deployment Function
-const stopDeployment = async (deploymentId) => {
+const killProcessTree = async (childProcess) => {
+    if (!childProcess || !childProcess.pid) return;
+
+    // Best-effort: kill the whole tree on Windows, fallback to kill() elsewhere
+    if (process.platform === 'win32') {
+        await new Promise((resolve) => {
+            const killer = spawn('taskkill', ['/pid', String(childProcess.pid), '/T', '/F'], {
+                shell: true
+            });
+            killer.on('close', () => resolve());
+            killer.on('error', () => resolve());
+        });
+        return;
+    }
+
+    try {
+        childProcess.kill('SIGTERM');
+    } catch {
+        // ignore
+    }
+};
+
+const stopDeployment = async (deploymentId, io) => {
     const processToKill = activeProcesses.get(deploymentId.toString());
     
     if (processToKill) {
-        processToKill.kill(); // Node.js ka command process rokne ke liye
+        await killProcessTree(processToKill);
         activeProcesses.delete(deploymentId.toString());
         console.log(`🛑 Process killed for deployment ${deploymentId}`);
     }
 
     const deployment = await Deployment.findById(deploymentId);
-    if (deployment && deployment.status === 'running') {
+    if (!deployment) return;
+
+    if (deployment.port) {
         releasePort(deployment.port);
-        deployment.status = 'stopped';
-        deployment.completedAt = new Date();
-        await deployment.save();
+    }
+
+    deployment.status = 'stopped';
+    deployment.completedAt = new Date();
+    await deployment.save();
+
+    if (io) {
+        const roomName = `dep:${deploymentId}`;
+        io.to(roomName).emit('log:line', {
+            timestamp: new Date(),
+            level: 'info',
+            message: 'Deployment stopped by user'
+        });
+        io.to(roomName).emit('log:complete', {
+            timestamp: new Date(),
+            message: 'Deployment stopped'
+        });
     }
 };
 

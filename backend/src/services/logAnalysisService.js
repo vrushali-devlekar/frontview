@@ -2,6 +2,65 @@ const { ChatGoogleGenerativeAI } = require('@langchain/google-genai');
 const { ChatCohere } = require('@langchain/cohere');
 const { ChatMistralAI } = require('@langchain/mistralai');
 const { PromptTemplate } = require('@langchain/core/prompts');
+const crypto = require('crypto');
+
+const ANALYSIS_CACHE_TTL_MS = 5 * 60 * 1000;
+const analysisCache = new Map();
+
+const stableHash = (text) =>
+    crypto.createHash('sha256').update(String(text || ''), 'utf8').digest('hex');
+
+const IMPORTANT_PATTERNS = [
+    /(\berror\b|\bfailed\b|\bfailure\b|\bexception\b|\btrace\b)/i,
+    /(\bnpm\s+err\b|\byarn\s+err\b|\bpnpm\b|\bnode:\b|\bE[A-Z0-9_]{3,}\b)/i,
+    /(\bwarn\b|\bwarning\b|\bdeprecated\b)/i,
+    /(exit code|returned non-zero|killed|SIGTERM|SIGKILL)/i,
+];
+
+const buildSignalExcerpt = (rawLogs) => {
+    const lines = Array.isArray(rawLogs)
+        ? rawLogs.flatMap((entry) => String(entry || '').split('\n'))
+        : String(rawLogs || '').split('\n');
+
+    const trimmed = lines.map((l) => l.trimEnd()).filter(Boolean);
+    if (trimmed.length === 0) return '';
+
+    const window = 2;
+    const selected = new Set();
+
+    for (let i = 0; i < trimmed.length; i += 1) {
+        const line = trimmed[i];
+        if (IMPORTANT_PATTERNS.some((re) => re.test(line))) {
+            for (let j = Math.max(0, i - window); j <= Math.min(trimmed.length - 1, i + window); j += 1) {
+                selected.add(j);
+            }
+        }
+    }
+
+    const tailCount = 140;
+    for (let i = Math.max(0, trimmed.length - tailCount); i < trimmed.length; i += 1) {
+        selected.add(i);
+    }
+
+    const indices = Array.from(selected).sort((a, b) => a - b);
+    const maxLines = 220;
+    const final = indices.slice(Math.max(0, indices.length - maxLines)).map((i) => trimmed[i]);
+    return final.join('\n');
+};
+
+const getCachedAnalysis = (cacheKey) => {
+    const entry = analysisCache.get(cacheKey);
+    if (!entry) return null;
+    if (Date.now() - entry.createdAt > ANALYSIS_CACHE_TTL_MS) {
+        analysisCache.delete(cacheKey);
+        return null;
+    }
+    return entry.value;
+};
+
+const setCachedAnalysis = (cacheKey, value) => {
+    analysisCache.set(cacheKey, { createdAt: Date.now(), value });
+};
 
 const normalizeModelContent = (content) => {
     if (typeof content === 'string') return content.trim();
@@ -50,8 +109,10 @@ const createModelForProvider = (provider) => {
             }
             return new ChatMistralAI({
                 apiKey: process.env.MISTRAL_API_KEY,
+                // Quality-first, speed kept by curated excerpt + cache.
                 model: 'mistral-large-latest',
-                temperature: 0.2
+                temperature: 0.2,
+                maxTokens: 900
             });
         }
         case 'cohere': {
@@ -63,7 +124,8 @@ const createModelForProvider = (provider) => {
             return new ChatCohere({
                 apiKey: process.env.COHERE_API_KEY,
                 model: 'command-a-03-2025',
-                temperature: 0.2
+                temperature: 0.2,
+                maxTokens: 900
             });
         }
         case 'gemini':
@@ -75,26 +137,35 @@ const createModelForProvider = (provider) => {
             }
             return new ChatGoogleGenerativeAI('gemini-2.0-flash', {
                 apiKey: process.env.GEMINI_API_KEY,
-                temperature: 0.2
+                temperature: 0.2,
+                maxOutputTokens: 900
             });
         }
     }
 };
 
 const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
-    // We will give up to 200 lines of logs
-    const logsToAnalyze = Array.isArray(logs) ? logs.slice(-200).join('\n') : logs.split('\n').slice(-200).join('\n');
+    // Keep latency stable WITHOUT sacrificing quality:
+    // feed the model a signal-dense excerpt (errors/warns + tail + local context).
+    const logsToAnalyze = buildSignalExcerpt(logs);
 
-    const promptText = `You are a senior DevOps engineer. Analyze this deployment log and: 1) identify the root cause, 2) provide a step-by-step fix, 3) flag any security issues. 
-    Provide the response in the following structured JSON format:
-    {{
-        "rootCause": "string",
-        "stepByStepFix": ["string", "string"],
-        "securityFlags": ["string", "string"]
-    }}
+    const cacheKey = `${String(provider || 'gemini').toLowerCase()}:${stableHash(logsToAnalyze)}`;
+    const cached = getCachedAnalysis(cacheKey);
+    if (cached) return cached;
 
-    Deployment Logs:
-    {logs}`;
+    const promptText = `You are a senior DevOps engineer. Analyze the deployment log and return ONLY valid JSON (no markdown, no code fences, no extra keys).
+
+Schema (example JSON shape):
+{{"rootCause":"string","stepByStepFix":["string"],"securityFlags":["string"]}}
+
+Rules:
+- Be specific and actionable; avoid vague advice.
+- Keep each array to at most 8 items.
+- Include exact commands/config snippets where relevant (but keep each item <= 220 chars).
+- Root cause must cite 1-2 concrete log clues (error line, exit code, missing env var, etc.).
+
+Deployment Logs:
+{logs}`;
 
     const promptTemplate = PromptTemplate.fromTemplate(promptText);
     
@@ -123,6 +194,7 @@ const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
         };
     }
 
+    setCachedAnalysis(cacheKey, parsedResult);
     return parsedResult;
 };
 

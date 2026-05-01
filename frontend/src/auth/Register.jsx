@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { register } from "../api/api";
+import { API_BASE_URL } from "../api/api";
 import val from "../assets/val.png";
 
 const Register = () => {
@@ -69,7 +70,14 @@ const Register = () => {
             </header>
 
             {/* Social Login: Smaller padding */}
-            <button className="w-full bg-[#f1e05a] text-black py-3 flex items-center justify-center gap-3 font-bold text-[11px] border-b-4 border-[#8a7b2e] active:border-b-0 active:translate-y-[2px] transition-all mb-6 uppercase">
+            <button
+              type="button"
+              onClick={() => {
+                const redirect = `${window.location.origin}/dashboard`;
+                window.location.href = `${API_BASE_URL}/auth/github?redirect=${encodeURIComponent(redirect)}`;
+              }}
+              className="w-full bg-[#f1e05a] text-black py-3 flex items-center justify-center gap-3 font-bold text-[11px] border-b-4 border-[#8a7b2e] active:border-b-0 active:translate-y-[2px] transition-all mb-6 uppercase"
+            >
               <span className="text-lg"></span> Sign up with GitHub
             </button>
 

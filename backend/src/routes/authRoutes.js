@@ -44,9 +44,13 @@ router.post('/login',
 // 2. GITHUB ROUTES
 // ==========================================
 // User browser se yahan aayega -> GitHub ka page khulega
-router.get('/github', 
-    passport.authenticate('github', { scope: ['user:email', 'repo'] }) 
-);
+router.get('/github', (req, res, next) => {
+    const redirect = req.query.redirect;
+    if (typeof redirect === 'string' && redirect.length > 0) {
+        req.session.oauthRedirect = redirect;
+    }
+    passport.authenticate('github', { scope: ['user:email', 'repo'] })(req, res, next);
+});
 
 // GitHub login ke baad yahan wapas bhejega
 router.get('/github/callback', 

@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session'); 
 const passport = require('passport');
+const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('./config/passportSetup');
@@ -54,6 +55,9 @@ app.use(cors({
 // 6. Body Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 6.5 Cookies (for JWT token cookie auth)
+app.use(cookieParser());
 
 // 7. Routes
 app.use('/api/auth' , authRoutes);

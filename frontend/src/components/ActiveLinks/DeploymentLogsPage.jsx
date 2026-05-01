@@ -1,46 +1,58 @@
-import React, { useState, useEffect } from 'react';
-import { Terminal, Activity, ArrowLeft, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { useEffect } from 'react';
+import { ArrowLeft, RefreshCw, ShieldCheck, Terminal } from 'lucide-react';
+import {
+  LiveLogsConsole,
+  LogAnalysisPanel,
+  PROVIDERS,
+  useDeploymentLogs,
+  useLogAnalysis,
+} from '../../features/deployments';
 
-const DeploymentLogsPage = ({ deploymentId = "dp-003a", onBack }) => {
-  const [logs, setLogs] = useState([]);
-  const [isStreaming, setIsStreaming] = useState(true);
+const DeploymentLogsPage = ({
+  deploymentId,
+  deployment,
+  onBack,
+  onRefresh,
+  onStop,
+  isLoadingStatus,
+  isStopping,
+}) => {
+  const deployedUrl = deployment?.url || (deployment?.port ? `http://localhost:${deployment.port}` : null);
+  const { logs, streamError, isStreaming } = useDeploymentLogs(deploymentId, deployment?.logs || [], {
+    onComplete: () => {
+      onRefresh?.();
+    },
+  });
+  const {
+    provider,
+    analysis,
+    isAnalyzing,
+    error: analysisError,
+    setProvider,
+    runAnalysis,
+    resetAnalysis,
+  } = useLogAnalysis();
 
-  // Mocking real-time logs
   useEffect(() => {
-    if (!isStreaming) return;
-    
-    const mockLogStream = [
-      { type: 'info', time: '10:00:01', message: 'Starting deployment pipeline dp-003a...' },
-      { type: 'info', time: '10:00:03', message: 'Cloning repository from GitHub...' },
-      { type: 'info', time: '10:00:05', message: 'Resolving dependencies...' },
-      { type: 'info', time: '10:00:12', message: 'Building application...' },
-      { type: 'warn', time: '10:00:15', message: 'Warning: Deprecated dependency "marked" found.' },
-      { type: 'info', time: '10:00:22', message: 'Running unit tests...' },
-      { type: 'info', time: '10:00:30', message: 'Tests passed (142/142).' },
-      { type: 'info', time: '10:00:32', message: 'Creating Docker image...' },
-      { type: 'info', time: '10:00:45', message: 'Pushing image to registry...' },
-      { type: 'info', time: '10:00:55', message: 'Updating container orchestration...' },
-      { type: 'success', time: '10:01:05', message: 'Deployment successful!' },
-    ];
+    resetAnalysis();
+  }, [deploymentId, resetAnalysis]);
 
-    let currentIndex = 0;
+  useEffect(() => {
+    if (!deploymentId) return () => {};
+    if (deployedUrl) return () => {};
+
+    const status = String(deployment?.status || '').toLowerCase();
+    if (status === 'failed' || status === 'stopped') return () => {};
+
     const interval = setInterval(() => {
-      if (currentIndex < mockLogStream.length) {
-        setLogs(prev => [...prev, mockLogStream[currentIndex]]);
-        currentIndex++;
-      } else {
-        setIsStreaming(false);
-        clearInterval(interval);
-      }
-    }, 800);
+      onRefresh?.();
+    }, 2000);
 
     return () => clearInterval(interval);
-  }, [isStreaming]);
+  }, [deployedUrl, deployment?.status, deploymentId, onRefresh]);
 
   return (
     <div className="relative p-6 md:p-8 min-h-screen font-sans text-[var(--color-velora-text)] z-0">
-      
-      {/* Background Banner */}
       <div 
         className="absolute top-0 left-0 right-0 h-[150px] md:h-[200px] -z-10 bg-no-repeat bg-cover bg-center pointer-events-none"
         style={{ 
@@ -60,7 +72,14 @@ const DeploymentLogsPage = ({ deploymentId = "dp-003a", onBack }) => {
           <Terminal size={20} className="text-[var(--color-velora-accent-green)]" />
           Logs: {deploymentId}
         </h2>
-        {isStreaming ? (
+        <button
+          onClick={onRefresh}
+          className="ml-auto p-2 border border-[#40403a] rounded-lg hover:bg-[#40403a] transition-colors"
+          title="Refresh deployment status"
+        >
+          <RefreshCw size={14} className={isLoadingStatus ? 'animate-spin' : ''} />
+        </button>
+        {isStreaming || isStopping ? (
           <div className="flex items-center gap-2 ml-auto text-[var(--color-velora-accent-yellow)] border border-[var(--color-velora-accent-yellow)]/30 bg-[var(--color-velora-accent-yellow)]/10 px-3 py-1 rounded-full text-xs font-mono">
             <RefreshCw size={12} className="animate-spin" /> Streaming
           </div>
@@ -71,54 +90,52 @@ const DeploymentLogsPage = ({ deploymentId = "dp-003a", onBack }) => {
         )}
       </div>
 
-      {/* Log Console Viewer */}
-      <div className="bg-[var(--color-velora-sidebar)] border border-[#40403a] rounded-xl p-4 md:p-6 shadow-2xl relative overflow-hidden flex flex-col h-[600px]">
-        {/* Terminal Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#40403a] mb-4">
-          <div className="flex gap-2">
-            <div className="w-3 h-3 rounded-full bg-[var(--color-velora-accent-red)]/50" />
-            <div className="w-3 h-3 rounded-full bg-[var(--color-velora-accent-yellow)]/50" />
-            <div className="w-3 h-3 rounded-full bg-[var(--color-velora-accent-green)]/50" />
+      {deployedUrl && (
+        <div className="mb-6 bg-[var(--color-velora-sidebar)] border border-[#40403a] rounded-xl p-5">
+          <p className="text-xs tracking-widest text-[var(--color-velora-text-muted)] uppercase">
+            App is live
+          </p>
+          <div className="mt-2 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <a
+              href={deployedUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono text-sm tracking-wider underline underline-offset-4 text-[var(--color-velora-accent-green)]"
+            >
+              {deployedUrl}
+            </a>
+            <p className="text-xs text-[var(--color-velora-text-muted)]">
+              Open this link to view your deployed app.
+            </p>
           </div>
-          <p className="text-xs font-mono text-[var(--color-velora-text-muted)] tracking-widest">DeployPilot Secure Shell</p>
-          <div className="w-16"></div> {/* Spacer for centering */}
-        </div>
-
-        {/* Log Lines */}
-        <div className="flex-1 overflow-y-auto font-mono text-[11px] md:text-xs tracking-wider leading-relaxed pr-2 custom-scrollbar">
-          {logs.map((log, index) => (
-            <div key={index} className="flex gap-4 mb-2 hover:bg-[#40403a]/50 px-2 py-1 rounded transition-colors group">
-              <span className="text-[var(--color-velora-text-muted)] min-w-[60px] opacity-50 group-hover:opacity-100 transition-opacity">
-                {log.time}
-              </span>
-              <span className={`flex-1 ${
-                log.type === 'error' ? 'text-[var(--color-velora-accent-red)]' : 
-                log.type === 'warn' ? 'text-[var(--color-velora-accent-yellow)]' : 
-                log.type === 'success' ? 'text-[var(--color-velora-accent-green)] text-shadow-glow' : 
-                'text-[var(--color-velora-text)]'
-              }`}>
-                {log.message}
-              </span>
-            </div>
-          ))}
-          {isStreaming && (
-            <div className="flex gap-4 px-2 py-1">
-              <span className="text-[var(--color-velora-text-muted)] min-w-[60px] opacity-50">--:--:--</span>
-              <span className="text-[var(--color-velora-text-muted)] animate-pulse">_</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* AI Analysis Button (Mock) */}
-      {!isStreaming && (
-        <div className="mt-6 flex justify-end">
-          <button className="bg-[var(--color-velora-bg)] px-6 py-3 rounded-xl border border-[var(--color-velora-accent-green)]/50 hover:bg-[#40403a] hover:border-[var(--color-velora-accent-green)] transition-all flex items-center gap-3 drop-shadow-[0_0_8px_rgba(40,167,69,0.2)]">
-            <Activity size={16} className="text-[var(--color-velora-accent-green)]" />
-            <span className="font-mono text-sm tracking-widest">Run AI Log Analysis</span>
-          </button>
         </div>
       )}
+
+      {streamError && (
+        <p className="text-sm mb-4 text-[var(--color-velora-accent-red)]">{streamError}</p>
+      )}
+
+      <LiveLogsConsole logs={logs} isStreaming={isStreaming || isStopping} />
+
+      <LogAnalysisPanel
+        provider={provider}
+        providers={PROVIDERS}
+        onProviderChange={setProvider}
+        onAnalyze={() => runAnalysis(deploymentId)}
+        isAnalyzing={isAnalyzing}
+        analysis={analysis}
+        error={analysisError}
+        disabled={logs.length === 0}
+      />
+
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={onStop}
+          className="text-xs border border-[var(--color-velora-accent-red)]/40 px-4 py-2 rounded-lg hover:border-[var(--color-velora-accent-red)] transition-colors"
+        >
+          {isStopping ? 'Stopping...' : 'Stop Deployment'}
+        </button>
+      </div>
 
     </div>
   );

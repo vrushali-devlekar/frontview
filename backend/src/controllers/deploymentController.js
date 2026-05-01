@@ -62,9 +62,10 @@ exports.getDeploymentStatus = asyncHandler(async (req, res) => {
 // @route   POST /api/deployments/:id/stop
 exports.stopActiveDeployment = asyncHandler(async (req, res) => {
     const deploymentId = req.params.id;
+    const io = req.app.get('io');
 
     // Service function call karo jo process ko kill karega aur DB update karega
-    await stopDeployment(deploymentId);
+    await stopDeployment(deploymentId, io);
 
     res.status(200).json({
         success: true,

@@ -35,10 +35,16 @@ exports.registerUser = asyncHandler(async (req, res) => {
     });
 
     if (user) {
+        const token = generateToken(user._id);
+        res.cookie('token', token, {
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production'
+        });
         res.status(201).json({
             success: true,
             user: { id: user.id, username: user.username, email: user.email },
-            token: generateToken(user._id),
+            token,
         });
     } else {
         res.status(400);
@@ -55,7 +61,19 @@ exports.authSuccess = (req, res) => {
         res.status(401);
         throw new Error('Authentication Failed');
     }
-    res.cookie('token',generateToken(req.user._id))
+    const token = generateToken(req.user._id);
+    res.cookie('token', token, {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production'
+    });
+
+    const redirect = req.session?.oauthRedirect;
+    if (redirect) {
+        req.session.oauthRedirect = null;
+        return res.redirect(redirect);
+    }
+
     // Passport ne user ko verify kar diya hai, ab hum apna JWT token bhejenge
     res.status(200).json({
         success: true,
@@ -66,7 +84,7 @@ exports.authSuccess = (req, res) => {
             email: req.user.email,
             avatar: req.user.avatarUrl
         },
-        token: generateToken(req.user._id) // Backend ticket
+        token // Backend ticket (also stored as httpOnly cookie)
     });
 };
 
