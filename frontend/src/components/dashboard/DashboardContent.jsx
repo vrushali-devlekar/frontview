@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
+import TopNav from "./TopNav";
 import {
   Rocket,
   AlertCircle,
@@ -7,7 +8,7 @@ import {
   Folder,
 } from "lucide-react";
 
-import heroBg from "../../assets/bg-top.png";
+import heroBg from "../../assets/new-top.png";
 
 const StatusBadge = ({ status }) => {
   const styles = {
@@ -24,7 +25,7 @@ const StatusBadge = ({ status }) => {
 };
 
 export default function Dashboard() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const stats = [
     { title: "Projects", value: "12", icon: Folder },
@@ -34,7 +35,10 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0b0f14] text-white">
+    <div 
+      className="flex h-screen overflow-hidden bg-[#0b0f14] text-white"
+      style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif' }}
+    >
       
       <Sidebar
         isCollapsed={isCollapsed}
@@ -48,16 +52,23 @@ export default function Dashboard() {
         
         {/* HERO */}
         <div
-          className="relative h-[140px] md:h-[150px] bg-cover bg-center px-4 md:px-6 py-4 flex flex-col justify-end border-b border-white/10"
-          style={{ backgroundImage: `url(${heroBg})` }}
+          className="relative min-h-[160px] md:min-h-[180px] bg-cover bg-center flex flex-col justify-between border-b border-white/10"
+          style={{ backgroundImage: `url(${heroBg})` ,
+          
+        }}
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
 
-          <div className="relative z-10">
-            <h1 className="text-lg md:text-xl font-semibold tracking-tight">
+          <TopNav />
+
+          <div 
+            className="relative z-10 px-4 md:px-6 pb-4 font-normal tracking-tighter"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+          >
+            <h1 className="text-sm md:text-base leading-relaxed">
               Good evening, Sheryian 🚀
             </h1>
-            <p className="text-[11px] md:text-xs text-slate-300 mt-1">
+            <p className="text-[9px] md:text-[10px] text-slate-300 mt-2 leading-loose tracking-tighter">
               Here's what's happening with your projects today.
             </p>
           </div>
@@ -93,21 +104,21 @@ export default function Dashboard() {
           </div>
 
           {/* MIDDLE */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 overflow-hidden items-start">
             
             {/* RECENT DEPLOYMENTS */}
-            <div className="md:col-span-2 bg-[#11151c] border border-white/10 rounded-lg p-2.5 flex flex-col">
+            <div className="md:col-span-2 bg-[#11151c] border border-white/10 rounded-lg p-3 flex flex-col">
               
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-xs text-slate-300">
+              <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
+                <h2 className="text-xl text-slate-300">
                   Recent Deployments
                 </h2>
-                <span className="text-[10px] text-slate-400 cursor-pointer">
+                <span className="text-xs text-slate-400 cursor-pointer">
                   View all →
                 </span>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {[
                   { name: "Auth Service", status: "SUCCESS", time: "3m" },
                   { name: "Frontend", status: "SUCCESS", time: "15m" },
@@ -116,15 +127,15 @@ export default function Dashboard() {
                 ].map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between px-2 py-1 rounded hover:bg-white/5"
+                    className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-white/5"
                   >
-                    <span className="text-[11px] text-slate-200">
+                    <span className="text-sm text-slate-200">
                       {item.name}
                     </span>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <StatusBadge status={item.status} />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-xs text-slate-500">
                         {item.time}
                       </span>
                     </div>
@@ -134,18 +145,18 @@ export default function Dashboard() {
             </div>
 
             {/* TECH STACK */}
-            <div className="bg-[#11151c] border border-white/10 rounded-lg p-2.5 flex flex-col">
+            <div className="bg-[#11151c] border border-white/10 rounded-lg p-3 flex flex-col">
               
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-xs text-slate-300">
+              <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
+                <h2 className="text-xl text-slate-300">
                   Tech Stack
                 </h2>
-                <span className="text-[10px] text-slate-400 cursor-pointer">
+                <span className="text-xs text-slate-400 cursor-pointer">
                   View all →
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   { name: "React", color: "bg-blue-400" },
                   { name: "Node", color: "bg-green-400" },
@@ -156,10 +167,10 @@ export default function Dashboard() {
                 ].map((tech, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2 bg-white/5 rounded px-2 py-1"
+                    className="flex items-center gap-2 bg-white/5 rounded px-2 py-1.5"
                   >
-                    <div className={`w-2 h-2 rounded-full ${tech.color}`} />
-                    <span className="text-[10px] text-slate-200">
+                    <div className={`w-2.5 h-2.5 rounded-full ${tech.color}`} />
+                    <span className="text-xs text-slate-200">
                       {tech.name}
                     </span>
                   </div>
@@ -169,7 +180,7 @@ export default function Dashboard() {
           </div>
 
           {/* ACTIONS */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 md:grid-cols-5 gap-3">
             {[
               "New Project",
               "Deploy",
@@ -179,7 +190,7 @@ export default function Dashboard() {
             ].map((action, i) => (
               <div
                 key={i}
-                className="bg-[#11151c] border border-white/10 rounded-lg py-3 text-sm text-center hover:bg-white/5 cursor-pointer"
+                className="bg-[#11151c] border border-white/10 rounded-lg py-4 text-base font-medium text-center hover:bg-white/5 cursor-pointer transition-colors"
               >
                 {action}
               </div>
