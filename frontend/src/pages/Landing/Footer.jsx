@@ -32,9 +32,9 @@ const Footer = () => {
       {/* BACKGROUND IMAGE WITH PRECISE POSITIONING */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-no-repeat opacity-50"
-        style={{ 
-            backgroundImage: `url(${footerBg})`,
-            backgroundPosition: 'right center' // Keeps the pixel art character visible
+        style={{
+          backgroundImage: `url(${footerBg})`,
+          backgroundPosition: "right center", // Keeps the pixel art character visible
         }}
       >
         {/* Darkening overlay for readability */}
@@ -43,7 +43,6 @@ const Footer = () => {
 
       <div className="relative z-10 max-w-[1600px] mx-auto px-6 py-12 md:px-12">
         <div className="flex flex-col lg:flex-row justify-between gap-8">
-          
           {/* 1. LOGO AND BRANDING */}
           <div className="lg:w-1/4 space-y-6 pr-8 border-r border-gray-800/50">
             <div className="flex items-center gap-3 text-lg font-bold tracking-tighter uppercase text-[#facc15]">
@@ -67,17 +66,32 @@ const Footer = () => {
 
             {/* SOCIAL ICONS */}
             <div className="flex gap-5 text-gray-400">
-              <Github size={16} className="hover:text-white cursor-pointer transition-colors" />
-              <Twitter size={16} className="hover:text-white cursor-pointer transition-colors" />
-              <Discord size={16} className="hover:text-white cursor-pointer transition-colors" />
-              <Youtube size={16} className="hover:text-white cursor-pointer transition-colors" />
+              <Github
+                size={16}
+                className="hover:text-white cursor-pointer transition-colors"
+              />
+              <Twitter
+                size={16}
+                className="hover:text-white cursor-pointer transition-colors"
+              />
+              <Discord
+                size={16}
+                className="hover:text-white cursor-pointer transition-colors"
+              />
+              <Youtube
+                size={16}
+                className="hover:text-white cursor-pointer transition-colors"
+              />
             </div>
           </div>
 
           {/* 2. DYNAMIC LINK COLUMNS WITH SEPARATORS */}
           <div className="lg:w-3/4 grid grid-cols-2 md:grid-cols-4 gap-8">
             {footerLinks.map((section) => (
-              <div key={section.title} className="space-y-6 md:border-l md:border-gray-800/50 md:pl-8">
+              <div
+                key={section.title}
+                className="space-y-6 md:border-l md:border-gray-800/50 md:pl-8"
+              >
                 <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">
                   {section.title}
                 </h4>
@@ -109,7 +123,11 @@ const Footer = () => {
       {/* FLOATING RETRO TEXT (Optional extra from your design) */}
       <div className="hidden xl:block absolute right-16 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none">
         <h3 className="text-xl text-[#facc15] font-black leading-none uppercase italic border border-[#facc15]/20 p-4">
-          DEPLOY<br />SCALE<br />RELAX
+          DEPLOY
+          <br />
+          SCALE
+          <br />
+          RELAX
         </h3>
       </div>
     </footer>

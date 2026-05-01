@@ -32,22 +32,22 @@ const FeaturesSection = () => {
   ];
 
   return (
-    <section className="bg-black text-white font-press-start py-14 px-6 md:px-14">
+    <section className="bg-black text-white font-press-start py-20 px-6 md:px-20">
       {/* Heading Area */}
       <div className="mb-16">
-        <h2 className="text-xl md:text-2xl leading-relaxed max-w-xl uppercase">
+        <h2 className="text-xl md:text-3xl leading-relaxed max-w-2xl uppercase">
           Everything you need to <span className="text-[#facc15]">ship</span> and scale.
         </h2>
-        <div className="h-1 w-16 bg-green-500 mt-4"></div>
+        <div className="h-1 w-8 bg-green-500 mt-4"></div>
       </div>
 
       {/* Grid of 4 Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {cards.map((card, index) => (
-          <div key={index} className="bg-[#111111] border border-gray-800 rounded-xl px-4 py-4 flex flex-col items-start relative group hover:border-[#facc15] transition-colors">
-            <img src={card.img} alt={card.title} className="w-18 h-16 mb-8 object-contain" />
-            <h3 className="text-[11px] mb-4 text-white uppercase tracking-tight">{card.title}</h3>
-            <p className="text-[10px] leading-loose text-gray-500 uppercase mb-8">{card.desc}</p>
+          <div key={index} className="bg-[#111111] border border-gray-800 rounded-xl p-8 flex flex-col items-start relative group hover:border-[#facc15] transition-colors">
+            <img src={card.img} alt={card.title} className="w-12 h-12 mb-8 object-contain" />
+            <h3 className="text-sm mb-4 text-white uppercase tracking-tight">{card.title}</h3>
+            <p className="text-[10px] leading-loose text-gray-500 mb-10 uppercase">{card.desc}</p>
             
             {/* Replaced Image with Icon */}
             <button className="absolute bottom-6 right-6 border border-gray-700 p-2 rounded hover:border-[#facc15] hover:bg-[#facc15]/10 group-hover:text-[#facc15] transition-all">
@@ -83,8 +83,8 @@ const FeaturesSection = () => {
 
         {/* Text Side */}
         <div className="w-full md:w-1/2">
-          <p className="text-[sm md:text-[12px] mb-6 uppercase leading-relaxed">Deployments that just work.</p>
-          <p className="text-[10px] md:text-[10px] text-gray-500 leading-loose uppercase">
+          <h3 className="text-sm md:text-base mb-6 uppercase leading-relaxed">Deployments that just work.</h3>
+          <p className="text-[10px] md:text-xs text-gray-500 leading-loose uppercase">
             From commit to production in seconds. Instant rollbacks. Preview deployments.
             Everything optimized for <span className="text-green-500">developers.</span>
           </p>
