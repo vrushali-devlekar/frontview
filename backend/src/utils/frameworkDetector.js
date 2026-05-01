@@ -2,9 +2,92 @@
 const fs = require('fs').promises;
 const path = require('path');
 
+const IGNORED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.next', '.turbo']);
+const PREFERRED_PATH_NAMES = ['frontend', 'client', 'web', 'app', 'apps', 'ui'];
+
+const pathExists = async (target) => {
+    try {
+        await fs.access(target);
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+const scoreCandidatePath = (candidatePath, rootPath) => {
+    const rel = path.relative(rootPath, candidatePath).toLowerCase();
+    const segments = rel.split(path.sep).filter(Boolean);
+    const depth = segments.length;
+
+    let score = depth * 10; // shallow preferred
+    if (segments.some((seg) => PREFERRED_PATH_NAMES.includes(seg))) score -= 15;
+    if (segments.includes('frontend')) score -= 20;
+    if (segments.includes('backend')) score += 10;
+
+    return score;
+};
+
+const findCandidateAppPaths = async (rootPath, maxDepth = 5, maxDirs = 600) => {
+    const candidates = [];
+    const queue = [{ dir: rootPath, depth: 0 }];
+    let scannedDirs = 0;
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+        scannedDirs += 1;
+        if (scannedDirs > maxDirs) break;
+        const packageJsonPath = path.join(current.dir, 'package.json');
+        const indexHtmlPath = path.join(current.dir, 'index.html');
+
+        if (await pathExists(packageJsonPath) || await pathExists(indexHtmlPath)) {
+            candidates.push(current.dir);
+        }
+
+        if (current.depth >= maxDepth) continue;
+
+        let entries = [];
+        try {
+            entries = await fs.readdir(current.dir, { withFileTypes: true });
+        } catch {
+            continue;
+        }
+
+        entries
+            .filter((entry) => entry.isDirectory() && !IGNORED_DIRS.has(entry.name))
+            .forEach((entry) => {
+                queue.push({
+                    dir: path.join(current.dir, entry.name),
+                    depth: current.depth + 1
+                });
+            });
+    }
+
+    const sorted = candidates.sort(
+        (a, b) => scoreCandidatePath(a, rootPath) - scoreCandidatePath(b, rootPath)
+    );
+
+    return { candidates: sorted, scannedDirs };
+};
+
+const resolveProjectPath = async (targetPath) => {
+    const { candidates, scannedDirs } = await findCandidateAppPaths(targetPath, 5, 600);
+
+    if (!candidates.length) return { projectPath: null, scannedDirs };
+    return { projectPath: candidates[0], scannedDirs };
+};
+
 const detectFramework = async (targetPath) => {
     try {
-        const packageJsonPath = path.join(targetPath, 'package.json');
+        const { projectPath, scannedDirs } = await resolveProjectPath(targetPath);
+
+        if (!projectPath) {
+            return {
+                type: 'error',
+                error: `No package.json OR index.html found. Scanned ${scannedDirs} directories from repository root.`
+            };
+        }
+
+        const packageJsonPath = path.join(projectPath, 'package.json');
         
         // 1. Check if package.json exists
         try {
@@ -12,10 +95,11 @@ const detectFramework = async (targetPath) => {
         } catch {
             // 🌟 NEW: Agar package.json NAHI hai, toh check karo kya index.html hai?
             try {
-                const indexPath = path.join(targetPath, 'index.html');
+                const indexPath = path.join(projectPath, 'index.html');
                 await fs.access(indexPath);
                 return {
                     type: 'frontend-vanilla',
+                    projectPath,
                     installCmd: null, // Koi package nahi hai, toh install bhi nahi karna
                     buildCmd: null,   // Koi build nahi chahiye
                     startCmd: 'npx serve -s . -l $PORT' // Direct folder ko serve kar do
@@ -34,6 +118,7 @@ const detectFramework = async (targetPath) => {
         if (deps['vite']) {
             return {
                 type: 'frontend-vite',
+                projectPath,
                 installCmd: 'npm install',
                 buildCmd: 'npm run build',
                 // Vite build 'dist' folder banata hai. npx serve usko live karta hai.
@@ -45,6 +130,7 @@ const detectFramework = async (targetPath) => {
         if (deps['react-scripts']) {
             return {
                 type: 'frontend-cra',
+                projectPath,
                 installCmd: 'npm install',
                 buildCmd: 'npm run build',
                 // CRA 'build' folder banata hai.
@@ -56,6 +142,7 @@ const detectFramework = async (targetPath) => {
         if (scripts['start']) {
             return {
                 type: 'backend-node',
+                projectPath,
                 installCmd: 'npm install',
                 buildCmd: null, // Backend me generally build nahi hota (unless TS ho)
                 startCmd: 'npm start'
@@ -66,6 +153,7 @@ const detectFramework = async (targetPath) => {
         const mainFile = packageData.main || 'index.js';
         return {
             type: 'backend-fallback',
+            projectPath,
             installCmd: 'npm install',
             buildCmd: null,
             startCmd: `node ${mainFile}` // e.g., node server.js

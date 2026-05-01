@@ -13,6 +13,20 @@ const { decrypt } = require('../utils/crypto');
 // Ye Map track karega ki kaunsa deployment kis process me chal raha hai (Stop karne ke kaam aayega)
 const activeProcesses = new Map();
 
+const appendDeploymentLog = async (deploymentRecord, level, message) => {
+    if (!deploymentRecord) return;
+
+    const entry = `[${new Date().toISOString()}] [${level.toUpperCase()}] ${message}`;
+    deploymentRecord.logs = deploymentRecord.logs || [];
+    deploymentRecord.logs.push(entry);
+
+    if (deploymentRecord.logs.length > 5000) {
+        deploymentRecord.logs = deploymentRecord.logs.slice(-5000);
+    }
+
+    await deploymentRecord.save();
+};
+
 const executeDeployment = async (deploymentId, io) => { 
     let deploymentRecord = null;
     let assignedPort = null;
@@ -28,27 +42,39 @@ const executeDeployment = async (deploymentId, io) => {
         // Status update kar do ki build shuru ho gaya
         deploymentRecord.status = 'building';
         await deploymentRecord.save();
+        await appendDeploymentLog(deploymentRecord, 'info', 'Deployment started');
 
         // 3. GitHub se Repo Clone karo
-        const targetPath = await cloneRepo(project.repoUrl, deploymentRecord._id.toString());
+        const targetPath = await cloneRepo(
+            project.repoUrl,
+            deploymentRecord._id.toString(),
+            project.branch || 'main'
+        );
+        await appendDeploymentLog(deploymentRecord, 'info', `Repository cloned to ${targetPath}`);
 
         // 🌟 NEW: Auto-Detect Framework & Commands
         console.log(`🔍 Analyzing repository structure...`);
+        await appendDeploymentLog(deploymentRecord, 'info', 'Analyzing repository structure');
         const frameworkInfo = await detectFramework(targetPath);
 
         if (frameworkInfo.error) {
             throw new Error(frameworkInfo.error);
         }
+
+        const appPath = frameworkInfo.projectPath || targetPath;
         console.log(`🎯 Detected Type: ${frameworkInfo.type}`);
+        await appendDeploymentLog(deploymentRecord, 'info', `Detected framework type: ${frameworkInfo.type}`);
+        await appendDeploymentLog(deploymentRecord, 'info', `Using project path: ${appPath}`);
 
         // 4. NPM Install chalao (Sirf tab jab frameworkInfo me installCmd ho)
         if (frameworkInfo.installCmd) {
+            await appendDeploymentLog(deploymentRecord, 'info', `Running install command: ${frameworkInfo.installCmd}`);
             await new Promise((resolve, reject) => {
                 console.log(`📦 Running ${frameworkInfo.installCmd} for ${deploymentRecord._id}...`);
                 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
                 const installProcess = spawn(npmCmd, ['install', '--legacy-peer-deps'], { 
-                    cwd: targetPath,
+                    cwd: appPath,
                     shell: true 
                 });
 
@@ -60,12 +86,15 @@ const executeDeployment = async (deploymentId, io) => {
                     else reject(new Error('npm install failed'));
                 });
             });
+            await appendDeploymentLog(deploymentRecord, 'info', 'Install completed');
         } else {
             console.log(`⚡ Skipping install phase (Vanilla Frontend detected)`);
+            await appendDeploymentLog(deploymentRecord, 'info', 'Skipping install phase');
         }
 
         // 🌟 NEW: Agar Frontend hai, toh NPM Build chalao
         if (frameworkInfo.buildCmd) {
+            await appendDeploymentLog(deploymentRecord, 'info', `Running build command: ${frameworkInfo.buildCmd}`);
             await new Promise((resolve, reject) => {
                 console.log(`🔨 Building project: ${frameworkInfo.buildCmd}`);
                 const buildCmdString = frameworkInfo.buildCmd;
@@ -74,7 +103,7 @@ const executeDeployment = async (deploymentId, io) => {
                 const [bCmd, ...bArgs] = buildCmdString.split(' ');
                 const finalBuildCmd = (bCmd === 'npm' && process.platform === 'win32') ? 'npm.cmd' : bCmd;
 
-                const buildProcess = spawn(finalBuildCmd, bArgs, { cwd: targetPath, shell: true });
+                const buildProcess = spawn(finalBuildCmd, bArgs, { cwd: appPath, shell: true });
                 
                 // 🌟 BUILD COMMAND KE LOGS BHI STREAM KARO
                 streamLogs(deploymentRecord._id.toString(), buildProcess, io);
@@ -84,21 +113,24 @@ const executeDeployment = async (deploymentId, io) => {
                     else reject(new Error('Build failed'));
                 });
             });
+            await appendDeploymentLog(deploymentRecord, 'info', 'Build completed');
         }
 
         // 5. Port assign karo aur Start chalao
         assignedPort = getAvailablePort();
         console.log(`🚀 Starting app on port ${assignedPort}...`);
+        await appendDeploymentLog(deploymentRecord, 'info', `Starting application on port ${assignedPort}`);
 
         // Custom start command use karo jo detector ne nikali hai
         const startCmdString = frameworkInfo.startCmd.replace('$PORT', assignedPort);
         const [cmd, ...args] = startCmdString.split(' ');
 
         const startProcess = spawn(cmd, args, {
-            cwd: targetPath,
+            cwd: appPath,
             env: { ...process.env, PORT: assignedPort },
             shell: true
         });
+        await appendDeploymentLog(deploymentRecord, 'info', `Start command launched: ${startCmdString}`);
 
         // 🌟 START COMMAND KE LOGS BHI STREAM KARO
         streamLogs(deploymentRecord._id.toString(), startProcess, io);
@@ -120,6 +152,7 @@ const executeDeployment = async (deploymentId, io) => {
         await project.save();
 
         console.log(`✅ Deployment ${deploymentRecord._id} is now LIVE at http://localhost:${assignedPort}`);
+        await appendDeploymentLog(deploymentRecord, 'info', `Deployment live at http://localhost:${assignedPort}`);
 
     } catch (error) {
         console.error(`❌ Deployment failed: ${error.message}`);
@@ -128,6 +161,15 @@ const executeDeployment = async (deploymentId, io) => {
         if (assignedPort) releasePort(assignedPort);
         
         if (deploymentRecord) {
+            deploymentRecord.logs = deploymentRecord.logs || [];
+            deploymentRecord.logs.push(
+                `[${new Date().toISOString()}] [ERROR] Deployment failed: ${error.message}`
+            );
+
+            if (deploymentRecord.logs.length > 5000) {
+                deploymentRecord.logs = deploymentRecord.logs.slice(-5000);
+            }
+
             deploymentRecord.status = 'failed';
             deploymentRecord.errorMessage = error.message;
             deploymentRecord.completedAt = new Date();

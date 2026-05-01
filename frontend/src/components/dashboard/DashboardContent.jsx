@@ -54,17 +54,10 @@ export default function Dashboard() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
 
           <div className="relative z-10">
-<<<<<<< HEAD
             <h1 className="text-lg md:text-xl font-semibold tracking-tight">
               Good evening, Sheryian 🚀
             </h1>
             <p className="text-[11px] md:text-xs text-slate-300 mt-1">
-=======
-            <h1 className="text-base md:text-lg font-medium tracking-tight">
-              Good evening, Sheryian 🚀
-            </h1>
-            <p className="text-[10px] md:text-[11px] text-slate-300 mt-1">
->>>>>>> 597ed69e37cd297a7d650b13ce740d8ce93112a6
               Here's what's happening with your projects today.
             </p>
           </div>
@@ -83,27 +76,16 @@ export default function Dashboard() {
                   className="bg-[#11151c] border border-white/10 rounded-lg p-3 flex justify-between items-center"
                 >
                   <div>
-<<<<<<< HEAD
-                    <p className="text-[10px] text-slate-400">
-                      {item.title}
-                    </p>
-                    <h2 className="text-lg md:text-xl mt-1">
-=======
                     <p className="text-[9px] text-slate-400">
                       {item.title}
                     </p>
                     <h2 className="text-base md:text-lg mt-1 font-medium">
->>>>>>> 597ed69e37cd297a7d650b13ce740d8ce93112a6
                       {item.value}
                     </h2>
                   </div>
 
                   <div className="p-2 rounded bg-white/5">
-<<<<<<< HEAD
                     <Icon size={16} />
-=======
-                    <Icon size={15} />
->>>>>>> 597ed69e37cd297a7d650b13ce740d8ce93112a6
                   </div>
                 </div>
               );
@@ -113,7 +95,6 @@ export default function Dashboard() {
           {/* MIDDLE */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 overflow-hidden">
             
-<<<<<<< HEAD
             {/* RECENT DEPLOYMENTS */}
             <div className="md:col-span-2 bg-[#11151c] border border-white/10 rounded-lg p-2.5 flex flex-col">
               
@@ -122,16 +103,6 @@ export default function Dashboard() {
                   Recent Deployments
                 </h2>
                 <span className="text-[10px] text-slate-400 cursor-pointer">
-=======
-            {/* DEPLOYMENTS */}
-            <div className="md:col-span-2 bg-[#11151c] border border-white/10 rounded-lg p-2.5 flex flex-col">
-              
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-[14px] px-[5px] my-[5px] font-medium text-slate-300">
-                  Recent Deployments
-                </h2>
-                <span className="text-[9px] text-slate-400 cursor-pointer">
->>>>>>> 597ed69e37cd297a7d650b13ce740d8ce93112a6
                   View all →
                 </span>
               </div>
@@ -147,21 +118,13 @@ export default function Dashboard() {
                     key={i}
                     className="flex items-center justify-between px-2 py-1 rounded hover:bg-white/5"
                   >
-<<<<<<< HEAD
                     <span className="text-[11px] text-slate-200">
-=======
-                    <span className="text-[10px] text-slate-200">
->>>>>>> 597ed69e37cd297a7d650b13ce740d8ce93112a6
                       {item.name}
                     </span>
 
                     <div className="flex items-center gap-2">
                       <StatusBadge status={item.status} />
-<<<<<<< HEAD
                       <span className="text-[10px] text-slate-500">
-=======
-                      <span className="text-[9px] text-slate-500">
->>>>>>> 597ed69e37cd297a7d650b13ce740d8ce93112a6
                         {item.time}
                       </span>
                     </div>
@@ -174,17 +137,10 @@ export default function Dashboard() {
             <div className="bg-[#11151c] border border-white/10 rounded-lg p-2.5 flex flex-col">
               
               <div className="flex justify-between items-center mb-3">
-<<<<<<< HEAD
                 <h2 className="text-xs text-slate-300">
                   Tech Stack
                 </h2>
                 <span className="text-[10px] text-slate-400 cursor-pointer">
-=======
-                <h2 className="text-[14px] px-[5px] my-[5px]font-medium text-slate-300">
-                  Tech Stack
-                </h2>
-                <span className="text-[9px] text-slate-400 cursor-pointer">
->>>>>>> 597ed69e37cd297a7d650b13ce740d8ce93112a6
                   View all →
                 </span>
               </div>
@@ -203,11 +159,7 @@ export default function Dashboard() {
                     className="flex items-center gap-2 bg-white/5 rounded px-2 py-1"
                   >
                     <div className={`w-2 h-2 rounded-full ${tech.color}`} />
-<<<<<<< HEAD
                     <span className="text-[10px] text-slate-200">
-=======
-                    <span className="text-[9px] text-slate-200">
->>>>>>> 597ed69e37cd297a7d650b13ce740d8ce93112a6
                       {tech.name}
                     </span>
                   </div>
@@ -227,11 +179,7 @@ export default function Dashboard() {
             ].map((action, i) => (
               <div
                 key={i}
-<<<<<<< HEAD
                 className="bg-[#11151c] border border-white/10 rounded-lg py-3 text-sm text-center hover:bg-white/5 cursor-pointer"
-=======
-                className="bg-[#11151c] border border-white/10 rounded-lg py-3 text-[12px] font-medium text-center hover:bg-white/5 cursor-pointer"
->>>>>>> 597ed69e37cd297a7d650b13ce740d8ce93112a6
               >
                 {action}
               </div>

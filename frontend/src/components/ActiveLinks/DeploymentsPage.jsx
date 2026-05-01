@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CheckCircle2, XCircle, RotateCcw, ExternalLink, Terminal, ChevronDown } from 'lucide-react';
+import DeploymentLogsPage from './DeploymentLogsPage';
 
 const DeploymentsPage = () => {
+  const [selectedDeployment, setSelectedDeployment] = useState(null);
   const deployments = [
     {
       id: 'dp-003a',
@@ -27,6 +29,10 @@ const DeploymentsPage = () => {
       note: 'Triggered by Admin'
     }
   ];
+
+  if (selectedDeployment) {
+    return <DeploymentLogsPage deploymentId={selectedDeployment} onBack={() => setSelectedDeployment(null)} />;
+  }
 
   return (
     <div className="relative p-6 md:p-8 min-h-screen font-sans text-[var(--color-velora-text)] z-0">
@@ -102,7 +108,10 @@ const DeploymentsPage = () => {
                       <span className="text-[var(--color-velora-text-muted)]">Duration</span>
                       <p className="mt-2 tracking-widest font-mono">{deploy.duration}</p>
                     </div>
-                    <button className="bg-[var(--color-velora-bg)] px-4 py-2 rounded-lg border border-[#40403a] flex items-center gap-2 hover:bg-[#40403a] transition-colors self-end md:self-auto">
+                    <button 
+                      onClick={() => setSelectedDeployment(deploy.id)}
+                      className="bg-[var(--color-velora-bg)] px-4 py-2 rounded-lg border border-[#40403a] flex items-center gap-2 hover:bg-[#40403a] transition-colors self-end md:self-auto"
+                    >
                       <span className="font-mono text-[10px]">&gt;_ Logs</span>
                     </button>
                   </div>

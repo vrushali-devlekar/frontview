@@ -1,4 +1,26 @@
 // utils/logStreamer.js
+const Deployment = require('../models/Deployment');
+
+const persistLogLine = async (deploymentId, level, message) => {
+    const entry = `[${new Date().toISOString()}] [${level.toUpperCase()}] ${message}`;
+
+    try {
+        await Deployment.updateOne(
+            { _id: deploymentId },
+            {
+                $push: {
+                    logs: {
+                        $each: [entry],
+                        $slice: -5000
+                    }
+                }
+            }
+        );
+    } catch (error) {
+        console.error(`Failed to persist log for deployment ${deploymentId}:`, error.message);
+    }
+};
+
 const streamLogs = (deploymentId, childProcess, io) => {
     const roomName = `dep:${deploymentId}`;
 
@@ -7,11 +29,15 @@ const streamLogs = (deploymentId, childProcess, io) => {
         const logLines = data.toString().split('\n').filter(line => line.trim() !== '');
         
         logLines.forEach(line => {
-            io.to(roomName).emit('log:line', {
-                timestamp: new Date(),
-                level: 'info',
-                message: line
-            });
+            if (io) {
+                io.to(roomName).emit('log:line', {
+                    timestamp: new Date(),
+                    level: 'info',
+                    message: line
+                });
+            }
+
+            persistLogLine(deploymentId, 'info', line);
         });
     });
 
@@ -20,20 +46,26 @@ const streamLogs = (deploymentId, childProcess, io) => {
         const logLines = data.toString().split('\n').filter(line => line.trim() !== '');
         
         logLines.forEach(line => {
-            io.to(roomName).emit('log:line', {
-                timestamp: new Date(),
-                level: 'error',
-                message: line
-            });
+            if (io) {
+                io.to(roomName).emit('log:line', {
+                    timestamp: new Date(),
+                    level: 'error',
+                    message: line
+                });
+            }
+
+            persistLogLine(deploymentId, 'error', line);
         });
     });
 
     // Jab process khatam ho jaye
     childProcess.on('close', (code) => {
-        io.to(roomName).emit('log:complete', {
-            timestamp: new Date(),
-            message: `Process exited with code ${code}`
-        });
+        if (io) {
+            io.to(roomName).emit('log:complete', {
+                timestamp: new Date(),
+                message: `Process exited with code ${code}`
+            });
+        }
     });
 };
 
