@@ -75,7 +75,7 @@ export default function Dashboard() {
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 p-3 md:p-4 grid grid-rows-[auto_1fr_auto] gap-3 overflow-hidden">
+        <div className="flex-1 p-3 md:p-4 flex flex-col md:grid md:grid-rows-[auto_1fr_auto] gap-3 overflow-y-auto md:overflow-hidden" style={{ scrollbarWidth: 'none' }}>
           
           {/* STATS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
