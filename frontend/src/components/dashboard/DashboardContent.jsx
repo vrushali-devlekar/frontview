@@ -25,7 +25,7 @@ const StatusBadge = ({ status }) => {
 };
 
 export default function Dashboard() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const stats = [
     { title: "Projects", value: "12", icon: Folder },
@@ -47,7 +47,7 @@ export default function Dashboard() {
 
       <div
         className={`flex flex-col flex-1 overflow-hidden transition-all duration-300
-        ${isCollapsed ? "ml-[72px]" : "ml-[260px]"}`}
+        ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}
       >
 
         {/* HERO */}
@@ -73,7 +73,7 @@ export default function Dashboard() {
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 p-3 md:p-4 grid grid-rows-[auto_1fr_auto] gap-3 overflow-hidden">
+        <div className="flex-1 p-3 md:p-4 flex flex-col gap-3 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
 
           {/* STATS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -178,7 +178,7 @@ export default function Dashboard() {
           </div>
 
           {/* ACTIONS */}
-          <div className="grid grid-cols-2 md:grid-cols-3 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
               "New Project",
               "Deploy",
