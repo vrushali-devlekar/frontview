@@ -2,17 +2,17 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "build": "npm run build && node server.js",
+    "build": "npm install --prefix ../frontend && npm run build --prefix ../frontend && rm -rf dist && cp -a ../frontend/dist ./dist",
     "start": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "commonjs", 
   "dependencies": {
     "@langchain/cohere": "^1.0.5",
     "@langchain/community": "^1.1.27",
