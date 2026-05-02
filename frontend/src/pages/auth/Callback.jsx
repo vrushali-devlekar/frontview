@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-export default function AuthSuccess() {
+export default function Callback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -16,8 +16,12 @@ export default function AuthSuccess() {
   }, [searchParams, navigate]);
 
   return (
-    <div className="h-screen bg-[#050505] flex items-center justify-center text-white">
-      <p>Logging you in...</p>
+    <div className="h-screen bg-[#050505] flex items-center justify-center text-[#d1d1d1] font-['Minecraftia',monospace] text-sm">
+      <div className="animate-pulse">
+        Establishing secure connection...
+        <br />
+        Verifying OAuth token...
+      </div>
     </div>
   );
 }

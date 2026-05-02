@@ -1,6 +1,7 @@
 import { useState } from "react";
-import Sidebar from "../dashboard/Sidebar";
-import TopNav from "../dashboard/TopNav";
+import { useSidebar } from "../../hooks/useSidebar";
+import Sidebar from "../../components/layout/Sidebar";
+import TopNav from "../../components/layout/TopNav";
 import {
   Search,
   Star,
@@ -81,7 +82,7 @@ const QuickAction = ({ icon: Icon, label, sub }) => (
 );
 
 export default function Applications() {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const { isCollapsed, toggleSidebar } = useSidebar();
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -107,7 +108,7 @@ export default function Applications() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0b0f14] text-white" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif' }}>
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
       <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}>
 
         {/* HERO */}
