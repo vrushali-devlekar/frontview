@@ -55,9 +55,9 @@ const TopNav = () => {
         </div>
 
         {/* Notification Icon */}
-        <div className="relative cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors text-slate-300">
+        <div className="relative cursor-pointer w-8 h-8 flex items-center justify-center border-2 border-transparent hover:border-valora-cyan transition-colors text-white">
           <Bell size={18} />
-          <div className="absolute top-1.5 right-1.5 bg-[#39ff14] text-black text-[8px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold">
+          <div className="absolute top-0 right-0 bg-valora-cyan text-black text-[8px] px-1 font-pixel">
             3
           </div>
         </div>
@@ -75,31 +75,31 @@ const TopNav = () => {
           
           {/* Dropdown Menu */}
           <div 
-            className={`absolute right-0 top-full mt-2 w-48 bg-[#11151c] border border-white/10 rounded-lg shadow-xl overflow-hidden transition-all duration-200 origin-top-right ${
+            className={`absolute right-0 top-full mt-2 w-48 bg-valora-card border-2 border-valora-border shadow-[4px_4px_0px_0px_#111] overflow-hidden transition-all duration-200 origin-top-right ${
               isDropdownOpen ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
             }`}
           >
-            <div className="py-1 flex flex-col">
+            <div className="py-1 flex flex-col font-mono text-[10px] uppercase tracking-widest">
               <Link 
                 to="/profile" 
                 onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-valora-cyan hover:text-black transition-colors"
               >
-                <User size={14} /> Profile
+                <User size={14} /> SYS_PROFILE
               </Link>
               <Link 
                 to="/settings" 
                 onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-valora-cyan hover:text-black transition-colors"
               >
-                <Settings size={14} /> Settings
+                <Settings size={14} /> SYS_CONFIG
               </Link>
               <Link 
                 to="/documentation" 
                 onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-colors border-t border-white/5"
+                className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-valora-cyan hover:text-black transition-colors border-t border-[#333]"
               >
-                <FileText size={14} /> Documentation
+                <FileText size={14} /> READ_DOCS
               </Link>
             </div>
           </div>
