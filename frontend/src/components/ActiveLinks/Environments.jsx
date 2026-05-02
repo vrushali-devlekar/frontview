@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Sidebar from "../dashboard/Sidebar.jsx";
-import TopNav from "../dashboard/TopNav.jsx";
+import Sidebar from "../../components/layout/Sidebar";
+import TopNav from "../../components/layout/TopNav";
 import {
   Search,
   MoreVertical,

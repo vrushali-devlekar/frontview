@@ -50,6 +50,26 @@ passport.use(new LocalStrategy({ usernameField: 'email' },
     }
 ));
 
+// GitHub often omits `profile.emails` (private email / API shape). Never index [0] blindly.
+function resolveGithubEmail(profile) {
+    const primary = profile.emails?.find((e) => e.primary)?.value;
+    const first = profile.emails?.[0]?.value;
+    const jsonEmail = profile._json?.email;
+    if (primary || first || jsonEmail) {
+        return primary || first || jsonEmail;
+    }
+    const id = profile.id;
+    const username = profile.username;
+    if (id && username) {
+        return `${id}+${username}@users.noreply.github.com`;
+    }
+    return null;
+}
+
+function resolveGithubAvatar(profile) {
+    return profile.photos?.[0]?.value || profile._json?.avatar_url || undefined;
+}
+
 // ==========================================
 // 2. GITHUB STRATEGY
 // ==========================================
@@ -59,23 +79,35 @@ passport.use(new GitHubStrategy({
     callbackURL: "http://localhost:5000/api/auth/github/callback"
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        let user = await User.findOne({ email: profile.emails[0].value });
-        
-        // Agar user pehle se hai, toh sirf uska naya accessToken update kar do
+        const email = resolveGithubEmail(profile);
+        if (!email) {
+            return done(null, false, { message: 'GitHub did not provide an email. Allow email access or set a public email on GitHub.' });
+        }
+
+        const githubId = String(profile.id);
+        let user = await User.findOne({ githubId });
+        if (!user) {
+            user = await User.findOne({ email });
+        }
+
         if (user) {
-            user.githubAccessToken = accessToken; 
+            user.githubAccessToken = accessToken;
+            if (!user.githubId) {
+                user.githubId = githubId;
+            }
             await user.save();
             return done(null, user);
         }
 
-        // Agar naya user ban raha hai, toh create karte waqt accessToken daalo
+        const avatarUrl = resolveGithubAvatar(profile);
+
         user = await User.create({
-            username: profile.username,
-            email: profile.emails[0].value,
-            githubId: profile.id,
-            avatarUrl: profile.photos[0].value,
+            username: profile.username || profile.displayName || `github-${profile.id}`,
+            email,
+            githubId,
+            ...(avatarUrl ? { avatarUrl } : {}),
             authProvider: 'github',
-            githubAccessToken: accessToken 
+            githubAccessToken: accessToken
         });
         return done(null, user);
     } catch (err) {

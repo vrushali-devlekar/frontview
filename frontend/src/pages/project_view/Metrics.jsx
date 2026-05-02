@@ -1,6 +1,7 @@
 import { useState } from "react";
-import Sidebar from "../dashboard/Sidebar";
-import TopNav from "../dashboard/TopNav";
+import { useSidebar } from "../../hooks/useSidebar";
+import Sidebar from "../../components/layout/Sidebar";
+import TopNav from "../../components/layout/TopNav";
 import {
   Calendar as CalendarIcon,
   ChevronDown,
@@ -45,7 +46,7 @@ const Sparkline = ({ data, color }) => {
 };
 
 export default function Metrics() {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const { isCollapsed, toggleSidebar } = useSidebar();
 
   const stats = [
     {
@@ -148,7 +149,7 @@ export default function Metrics() {
     >
       <Sidebar
         isCollapsed={isCollapsed}
-        toggleSidebar={() => setIsCollapsed(!isCollapsed)}
+        toggleSidebar={toggleSidebar}
       />
 
       <div

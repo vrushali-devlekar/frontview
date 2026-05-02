@@ -1,6 +1,8 @@
-import { useState } from "react";
-import Sidebar from "../dashboard/Sidebar";
-import TopNav from "../dashboard/TopNav";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSidebar } from "../../hooks/useSidebar";
+import Sidebar from "../../components/layout/Sidebar";
+import TopNav from "../../components/layout/TopNav";
 import {
   Search,
   Star,
@@ -15,6 +17,7 @@ import {
 } from "lucide-react";
 
 import heroBg from "../../assets/new-top.png";
+import { getProjects } from "../../api/api";
 
 const StatusBadge = ({ status }) => {
   const map = {
@@ -37,10 +40,21 @@ const AppIcon = ({ name, color }) => (
   </div>
 );
 
-const AppRow = ({ app, starred, onStar }) => (
-  <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
+const AppRow = ({ app, starred, onStar, onOpen }) => (
+  <button
+    type="button"
+    onClick={onOpen}
+    className="w-full text-left flex items-center justify-between px-3 py-2 border-b border-white/5 hover:bg-white/[0.03] transition-colors group"
+  >
     <div className="flex items-center gap-3">
-      <button onClick={onStar} className="text-slate-600 hover:text-yellow-400 transition-colors">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onStar();
+        }}
+        className="text-slate-600 hover:text-yellow-400 transition-colors"
+      >
         <Star size={11} className={starred ? "fill-yellow-400 text-yellow-400" : ""} />
       </button>
       <AppIcon name={app.name} color={app.color} />
@@ -64,11 +78,15 @@ const AppRow = ({ app, starred, onStar }) => (
         <MoreVertical size={12} />
       </button>
     </div>
-  </div>
+  </button>
 );
 
-const QuickAction = ({ icon: Icon, label, sub }) => (
-  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group">
+const QuickAction = ({ icon: Icon, label, sub, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group"
+  >
     <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-white/10 transition-colors">
       <Icon size={11} className="text-slate-400" />
     </div>
@@ -77,24 +95,55 @@ const QuickAction = ({ icon: Icon, label, sub }) => (
       <p className="text-[8px] text-slate-500 truncate leading-tight">{sub}</p>
     </div>
     <ChevronRight size={10} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
-  </div>
+  </button>
 );
 
 export default function Applications() {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const { isCollapsed, toggleSidebar } = useSidebar();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [currentPage, setCurrentPage] = useState(1);
   const [starredIds, setStarredIds] = useState(new Set([3]));
+  const [projects, setProjects] = useState([]);
 
-  const apps = [
-    { id: 1, name: "User Auth Service", repo: "sheryians/auth-service", branch: "main", status: "Deployed", time: "2m ago", version: "v1.2.3", buildTime: "3m 24s", color: "bg-emerald-700" },
-    { id: 2, name: "Frontend Web", repo: "sheryians/frontend-web", branch: "main", status: "Deployed", time: "15m ago", version: "v2.4.1", buildTime: "1m 45s", color: "bg-blue-600" },
-    { id: 3, name: "Payment Service", repo: "sheryians/payment-service", branch: "develop", status: "Failed", time: "1h ago", version: "v1.0.5", buildTime: "2m 10s", color: "bg-orange-600" },
-    { id: 4, name: "Data Ingest Service", repo: "sheryians/data-ingest", branch: "main", status: "Running", time: "1h 20m ago", version: "v0.9.1", buildTime: "5m 8s", color: "bg-teal-700" },
-    { id: 5, name: "Notification Service", repo: "sheryians/notification-service", branch: "main", status: "Deployed", time: "2h ago", version: "v1.3.0", buildTime: "1m 12s", color: "bg-violet-700" },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { data } = await getProjects();
+        if (cancelled) return;
+        setProjects(Array.isArray(data?.data) ? data.data : []);
+      } catch {
+        if (!cancelled) setProjects([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const apps = useMemo(() => {
+    const colors = [
+      "bg-emerald-700",
+      "bg-blue-600",
+      "bg-orange-600",
+      "bg-teal-700",
+      "bg-violet-700",
+    ];
+    return projects.map((p, idx) => ({
+      id: p._id,
+      name: p.name,
+      repo: p.repoName || p.repoUrl,
+      branch: p.branch,
+      status: "Running",
+      time: "—",
+      version: p.branch ? `branch:${p.branch}` : "—",
+      buildTime: "—",
+      color: colors[idx % colors.length],
+    }));
+  }, [projects]);
 
   const toggleStar = (id) => setStarredIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
 
@@ -107,7 +156,7 @@ export default function Applications() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0b0f14] text-white" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif' }}>
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
       <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}>
 
         {/* HERO */}
@@ -149,7 +198,19 @@ export default function Applications() {
                 {filtered.length === 0 ? (
                   <div className="flex items-center justify-center py-10 text-slate-600 text-[10px]">No applications found.</div>
                 ) : (
-                  filtered.map((app) => <AppRow key={app.id} app={app} starred={starredIds.has(app.id)} onStar={() => toggleStar(app.id)} />)
+                  filtered.map((app) => (
+                    <AppRow
+                      key={app.id}
+                      app={app}
+                      starred={starredIds.has(app.id)}
+                      onStar={() => toggleStar(app.id)}
+                      onOpen={() =>
+                        navigate(
+                          `/deploy?projectId=${encodeURIComponent(String(app.id))}`
+                        )
+                      }
+                    />
+                  ))
                 )}
               </div>
 
@@ -175,7 +236,11 @@ export default function Applications() {
                 <div className="flex items-center gap-2 my-2">
                   <div className="flex-1 h-px bg-white/10" /><span className="text-[8px] text-slate-600">or</span><div className="flex-1 h-px bg-white/10" />
                 </div>
-                <button className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm py-2 rounded-lg transition-colors">
+                <button
+                  type="button"
+                  onClick={() => navigate("/projects/new")}
+                  className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm py-2 rounded-lg transition-colors"
+                >
                   <Upload size={14} /> Import Existing Project
                 </button>
               </div>
@@ -183,10 +248,13 @@ export default function Applications() {
               <div className="bg-[#11151c] border border-white/10 rounded-xl p-3 flex-1 min-h-0 overflow-hidden flex flex-col">
                 <h3 className="text-xl font-medium text-slate-200 mb-2 shrink-0">Quick Actions</h3>
                 <div className="flex-1 min-h-0 overflow-y-auto space-y-0.5" style={{ scrollbarWidth: 'none' }}>
-                  <QuickAction icon={Plus} label="New Application" sub="Create from scratch" />
-                  <QuickAction icon={Grid} label="Browse Templates" sub="Use pre-configured templates" />
-                  <QuickAction icon={Layers} label="Manage Environments" sub="Add or edit environments" />
-                  <QuickAction icon={Zap} label="View All Deployments" sub="See deployment history" />
+                  <QuickAction icon={Plus} label="New Application" sub="Import a GitHub repo" onClick={() => navigate("/projects/new")} />
+                  <QuickAction icon={Grid} label="Browse Templates" sub="Coming soon" onClick={() => navigate("/projects/new")} />
+                  <QuickAction icon={Layers} label="Manage Environments" sub="Add or edit environments" onClick={() => navigate("/environments")} />
+                  <QuickAction icon={Zap} label="View All Deployments" sub="See deployment history" onClick={() => {
+                    const first = projects?.[0]?._id;
+                    navigate(first ? `/deploy?projectId=${encodeURIComponent(String(first))}` : "/deploy");
+                  }} />
                 </div>
               </div>
             </div>
