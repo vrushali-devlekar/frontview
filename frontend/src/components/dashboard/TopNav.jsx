@@ -1,11 +1,27 @@
-import React, { useState } from "react";
-import { Search, Bell, User } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Search, Bell, User, Settings, FileText } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import pf1 from "../../assets/pf1.jpeg";
 
 const TopNav = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <header className="h-[64px] flex items-center justify-end px-4 md:px-6 bg-transparent shrink-0 relative z-20 w-full">
+    <header className="h-[64px] flex items-center justify-end px-4 md:px-6 bg-transparent shrink-0 relative z-50 w-full">
       <div className="flex items-center gap-3 text-white">
         
         {/* Expandable Search */}
@@ -46,12 +62,48 @@ const TopNav = () => {
           </div>
         </div>
         
-        {/* Profile ID Button */}
-        <button className="flex items-center pl-3 border-l border-white/10 ml-1 cursor-pointer hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center text-slate-400 overflow-hidden">
-            <User size={16} />
+        {/* Profile ID Button with Dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <button 
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center pl-3 border-l border-white/10 ml-1 cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-slate-400 overflow-hidden">
+              <img src={pf1} alt="avatar" className="w-full h-full object-cover" />
+            </div>
+          </button>
+          
+          {/* Dropdown Menu */}
+          <div 
+            className={`absolute right-0 top-full mt-2 w-48 bg-[#11151c] border border-white/10 rounded-lg shadow-xl overflow-hidden transition-all duration-200 origin-top-right ${
+              isDropdownOpen ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
+            }`}
+          >
+            <div className="py-1 flex flex-col">
+              <Link 
+                to="/profile" 
+                onClick={() => setIsDropdownOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+              >
+                <User size={14} /> Profile
+              </Link>
+              <Link 
+                to="/settings" 
+                onClick={() => setIsDropdownOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+              >
+                <Settings size={14} /> Settings
+              </Link>
+              <Link 
+                to="/documentation" 
+                onClick={() => setIsDropdownOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-colors border-t border-white/5"
+              >
+                <FileText size={14} /> Documentation
+              </Link>
+            </div>
           </div>
-        </button>
+        </div>
         
       </div>
     </header>

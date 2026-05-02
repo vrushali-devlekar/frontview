@@ -1,7 +1,7 @@
 // app.js
 const express = require('express');
 const cors = require('cors');
-const session = require('express-session'); 
+const session = require('express-session');
 const passport = require('passport');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -34,11 +34,11 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'mera_super_secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { 
+    cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: 'strict'
-    } 
+    }
 }));
 
 // 4. Passport initialize hoga session ke BAAD
@@ -46,9 +46,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // 5. CORS
-app.use(cors({ 
-    origin: 'http://localhost:5173', 
-    credentials: true 
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
 }));
 
 // 6. Body Parsers
@@ -56,7 +56,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 7. Routes
-app.use('/api/auth' , authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/deployments', deploymentRoutes);
 app.use('/api/projects', envRoutes);
@@ -64,6 +64,25 @@ app.use('/api/projects', envRoutes);
 // --- BASIC ROUTE ---
 app.get('/', (req, res) => {
     res.send('DeployPilot API is running perfectly!');
+});
+
+const { analyzeLogsWithAI } = require('./services/logAnalysisService');
+
+app.post('/api/test-ai', async (req, res) => {
+    try {
+        const { logs } = req.body;
+        if (!logs) return res.status(400).json({ error: "Logs array is required for testing" });
+
+        console.log("🤖 Sending logs to AI for analysis...");
+
+        // Default gemini use kar rahe hain test ke liye
+        const aiResponse = await analyzeLogsWithAI(logs, 'cohere');
+
+        res.status(200).json({ success: true, aiAnalysis: aiResponse });
+    } catch (error) {
+        console.error("AI Error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 // --- ERROR HANDLERS ---

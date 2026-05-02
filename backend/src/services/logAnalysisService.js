@@ -1,8 +1,3 @@
-const { ChatGoogleGenerativeAI } = require('@langchain/google-genai');
-const { ChatCohere } = require('@langchain/cohere');
-const { ChatMistralAI } = require('@langchain/mistralai');
-const { PromptTemplate } = require('@langchain/core/prompts');
-
 const normalizeModelContent = (content) => {
     if (typeof content === 'string') return content.trim();
     if (Array.isArray(content)) {
@@ -43,11 +38,7 @@ const createModelForProvider = (provider) => {
 
     switch (selected) {
         case 'mistral': {
-            if (!process.env.MISTRAL_API_KEY) {
-                const err = new Error('MISTRAL_API_KEY is missing in environment');
-                err.statusCode = 400;
-                throw err;
-            }
+            const { ChatMistralAI } = require('@langchain/mistralai');
             return new ChatMistralAI({
                 apiKey: process.env.MISTRAL_API_KEY,
                 model: 'mistral-large-latest',
@@ -55,11 +46,7 @@ const createModelForProvider = (provider) => {
             });
         }
         case 'cohere': {
-            if (!process.env.COHERE_API_KEY) {
-                const err = new Error('COHERE_API_KEY is missing in environment');
-                err.statusCode = 400;
-                throw err;
-            }
+            const { ChatCohere } = require('@langchain/cohere');
             return new ChatCohere({
                 apiKey: process.env.COHERE_API_KEY,
                 model: 'command-a-03-2025',
@@ -68,11 +55,7 @@ const createModelForProvider = (provider) => {
         }
         case 'gemini':
         default: {
-            if (!process.env.GEMINI_API_KEY) {
-                const err = new Error('GEMINI_API_KEY is missing in environment');
-                err.statusCode = 400;
-                throw err;
-            }
+            const { ChatGoogleGenerativeAI } = require('@langchain/google-genai');
             return new ChatGoogleGenerativeAI('gemini-2.0-flash', {
                 apiKey: process.env.GEMINI_API_KEY,
                 temperature: 0.2
@@ -82,7 +65,9 @@ const createModelForProvider = (provider) => {
 };
 
 const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
-    // We will give up to 200 lines of logs
+
+    const { PromptTemplate } = require('@langchain/core/prompts');
+
     const logsToAnalyze = Array.isArray(logs) ? logs.slice(-200).join('\n') : logs.split('\n').slice(-200).join('\n');
 
     const promptText = `You are a senior DevOps engineer. Analyze this deployment log and: 1) identify the root cause, 2) provide a step-by-step fix, 3) flag any security issues. 
@@ -97,12 +82,12 @@ const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
     {logs}`;
 
     const promptTemplate = PromptTemplate.fromTemplate(promptText);
-    
+
     const model = createModelForProvider(provider);
 
     const chain = promptTemplate.pipe(model);
     const response = await chain.invoke({ logs: logsToAnalyze });
-    
+
     // Parse the JSON output from the model
     let parsedResult;
     try {
@@ -126,6 +111,35 @@ const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
     return parsedResult;
 };
 
+const analyzeWithFallback = async (logs) => {
+    const providers = ['gemini', 'cohere', 'mistral'];
+
+    for (const provider of providers) {
+        try {
+            console.log(` Requesting AI Provider: [${provider.toUpperCase()}]...`);
+
+            const result = await analyzeLogsWithAI(logs, provider);
+            console.log(`✅ Success! Analysis completed by [${provider.toUpperCase()}].`);
+            return result;
+
+        } catch (error) {
+            console.log(`⚠️ [${provider.toUpperCase()}] Failed: ${error.message.substring(0, 50)}...`);
+            console.log(`🔄 Auto-switching to the next available AI...`);
+        }
+    }
+
+    console.log(` All AI Providers failed.`);
+    return {
+        rootCause: "Our AI systems are currently facing exceptionally high traffic and are rate-limited.",
+        stepByStepFix: [
+            "Please review the raw terminal logs provided above manually.",
+            "Try hitting the 'Analyze Again' button in a few minutes."
+        ],
+        securityFlags: []
+    };
+};
+
+
 module.exports = {
-    analyzeLogsWithAI
+    analyzeLogsWithAI: analyzeWithFallback
 };

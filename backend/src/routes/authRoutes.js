@@ -2,7 +2,7 @@
 const express = require('express');
 const passport = require('passport');
 const { body, validationResult } = require('express-validator');
-const { registerUser, authSuccess, logout } = require('../controllers/authController');
+const { registerUser, authSuccess, logout, oauthSuccess } = require('../controllers/authController');
 
 // Validation middleware generator
 const validate = (req, res, next) => {
@@ -34,38 +34,38 @@ const router = express.Router();
 router.post('/register', registerValidation, registerUser);
 
 // Sahi tareeka: Ek hi baar route define karna hai
-router.post('/login', 
+router.post('/login',
     loginValidation,
-    passport.authenticate('local', { session: false }), 
-    authSuccess 
+    passport.authenticate('local', { session: false }),
+    authSuccess
 );
 
 // ==========================================
 // 2. GITHUB ROUTES
 // ==========================================
 // User browser se yahan aayega -> GitHub ka page khulega
-router.get('/github', 
-    passport.authenticate('github', { scope: ['user:email', 'repo'] }) 
+router.get('/github',
+    passport.authenticate('github', { scope: ['user:email', 'repo'] })
 );
 
 // GitHub login ke baad yahan wapas bhejega
-router.get('/github/callback', 
+router.get('/github/callback',
     passport.authenticate('github', { failureRedirect: '/api/auth/login-failed' }),
-    authSuccess // Agar success hua toh ye function JWT bhej dega
+    oauthSuccess // 🌟 YAHAN CHANGE KIYA
 );
 
 // ==========================================
 // 3. GOOGLE ROUTES
 // ==========================================
 // User browser se yahan aayega -> Google ka page khulega
-router.get('/google', 
-    passport.authenticate('google', { scope: ['profile', 'email'] }) 
+router.get('/google',
+    passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
 // Google login ke baad yahan wapas bhejega
-router.get('/google/callback', 
+router.get('/google/callback',
     passport.authenticate('google', { failureRedirect: '/api/auth/login-failed' }),
-    authSuccess
+    oauthSuccess // 🌟 YAHAN BHI CHANGE KIYA
 );
 
 // ==========================================

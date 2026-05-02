@@ -2,7 +2,55 @@
 const asyncHandler = require('../middlewares/asyncHandler');
 const Project = require('../models/Project');
 const Deployment = require('../models/Deployment');
-const { executeDeployment, stopDeployment } = require('../services/deploymentService');
+const { executeDeployment, stopDeployment, executeRollback } = require('../services/deploymentService');
+
+
+exports.rollbackDeployment = asyncHandler(async (req, res) => {
+    const { id: projectId, version } = req.params;
+
+    // 1. Project dhundo aur Ownership verify karo
+    const project = await Project.findOne({ _id: projectId, owner: req.user.id });
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    // 2. Purana Deployment dhundo jisme rollback karna hai
+    const targetOldDeployment = await Deployment.findOne({
+        projectId,
+        version: parseInt(version)
+    });
+
+    if (!targetOldDeployment) {
+        return res.status(404).json({ message: `Version ${version} not found for this project.` });
+    }
+
+    // 3. Current active deployment ko stop karo
+    if (project.activeDeploymentId) {
+        await stopDeployment(project.activeDeploymentId);
+    }
+
+    // 4. Ek NAYA deployment document banao tracking ke liye
+    const lastDeployment = await Deployment.findOne({ projectId }).sort({ version: -1 });
+    const newVersion = lastDeployment ? lastDeployment.version + 1 : 1;
+
+    const newRollbackDeployment = await Deployment.create({
+        projectId,
+        version: newVersion,
+        userId: req.user.id, // 🌟 MISSING FIELD FIX: Current user ki ID
+        branch: targetOldDeployment.branch || 'main', // 🌟 MISSING FIELD FIX: Purane wale ki branch copy ki
+        status: 'rolling_back', // 🌟 Ab mongoose ispe nahi chillaeyga
+        logs: [`[INFO] Initiating rollback to version ${version}...`]
+    });
+
+    // 5. Background mein Rollback Engine chala do
+    const io = req.app.get('io'); // Agar socket.io app me set kiya hai
+    executeRollback(newRollbackDeployment._id, targetOldDeployment._id, io);
+
+    res.status(202).json({
+        success: true,
+        message: `Rollback to version ${version} initiated successfully.`,
+        deploymentId: newRollbackDeployment._id,
+        newVersion: newVersion
+    });
+});
 
 // @desc    Trigger a new deployment
 // @route   POST /api/deployments
@@ -29,7 +77,7 @@ exports.triggerDeployment = asyncHandler(async (req, res) => {
         startedAt: new Date()
     });
 
-    const io = req.app.get('io'); 
+    const io = req.app.get('io');
 
     // Engine ko ab Project ID nahi, Deployment ID bhejenge
     executeDeployment(deployment._id, io).catch(console.error);
