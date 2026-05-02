@@ -1,6 +1,7 @@
 // app.js
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const session = require('express-session');
 const passport = require('passport');
 const helmet = require('helmet');
@@ -62,7 +63,7 @@ app.use('/api/deployments', deploymentRoutes);
 app.use('/api/projects', envRoutes);
 
 // --- BASIC ROUTE ---
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.send('DeployPilot API is running perfectly!');
 });
 
@@ -83,6 +84,13 @@ app.post('/api/test-ai', async (req, res) => {
         console.error("AI Error:", error);
         res.status(500).json({ success: false, error: error.message });
     }
+});
+
+// Serve frontend build from backend/dist when available
+const frontendDistPath = path.resolve(__dirname, '../dist');
+app.use(express.static(frontendDistPath));
+app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 
 // --- ERROR HANDLERS ---
