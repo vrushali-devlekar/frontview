@@ -1,15 +1,28 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import Sidebar from "../dashboard/Sidebar.jsx";
 import TopNav from "../dashboard/TopNav.jsx";
-import { Pen, ChevronDown, Trash2, ChevronRight, User, Palette, Globe, Calendar, Building2, UserCircle, Settings as SettingsIcon, Check } from 'lucide-react';
+import {
+  Pen,
+  ChevronDown,
+  Trash2,
+  ChevronRight,
+  User,
+  Palette,
+  Globe,
+  Calendar,
+  Building2,
+  UserCircle,
+  Settings as SettingsIcon,
+  Check,
+} from "lucide-react";
 import heroBg from "../../assets/new-top.png";
 
 // Import avatars
-import pf1 from "../../assets/pf1.jpeg";
-import pf2 from "../../assets/pf2.jpeg";
+import pf1 from "../../assets/p1.jpeg";
+import pf2 from "../../assets/p2.jpeg";
 import pf3 from "../../assets/pf3.jpeg";
 import pf4 from "../../assets/pf4.jpeg";
-import pf5 from "../../assets/pf5.jpeg";
+import pf5 from "../../assets/p5.jpeg";
 // Fallback array (handling pf6 missing gracefully)
 const AVATARS = [pf1, pf2, pf3, pf4, pf5];
 
@@ -33,29 +46,51 @@ export default function Settings() {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0b0f14] text-white" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif' }}>
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
-      <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}>
-
+    <div
+      className="flex h-screen overflow-hidden bg-[#0b0f14] text-white"
+      style={{
+        fontFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+      }}
+    >
+      <Sidebar
+        isCollapsed={isCollapsed}
+        toggleSidebar={() => setIsCollapsed(!isCollapsed)}
+      />
+      <div
+        className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}
+      >
         {/* HERO */}
-        <div className="relative shrink-0 min-h-[120px] bg-cover bg-center flex flex-col justify-between border-b border-white/10" style={{ backgroundImage: `url(${heroBg})` }}>
+        <div
+          className="relative shrink-0 min-h-[120px] bg-cover bg-center flex flex-col justify-between border-b border-white/10"
+          style={{ backgroundImage: `url(${heroBg})` }}
+        >
           <div className="absolute inset-0 bg-black/55 backdrop-blur-[1px]" />
           <TopNav />
           <div className="relative z-10 px-4 pb-3">
-            <h1 className="text-xl md:text-2xl leading-relaxed" style={{ fontFamily: "'Press Start 2P', cursive" }}>Settings</h1>
-            <p className="text-[7px] md:text-[9px] text-slate-300 mt-2 leading-loose uppercase" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+            <h1
+              className="text-xl md:text-2xl leading-relaxed"
+              style={{ fontFamily: "'Press Start 2P', cursive" }}
+            >
+              Settings
+            </h1>
+            <p
+              className="text-[7px] md:text-[9px] text-slate-300 mt-2 leading-loose uppercase"
+              style={{ fontFamily: "'Press Start 2P', cursive" }}
+            >
               Manage your account, preferences and workspace settings.
             </p>
           </div>
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 flex flex-col p-2 md:p-3 overflow-y-auto bg-[#0b0f14]" style={{ scrollbarWidth: 'none' }}>
+        <div
+          className="flex-1 flex flex-col p-2 md:p-3 overflow-y-auto bg-[#0b0f14]"
+          style={{ scrollbarWidth: "none" }}
+        >
           <div className="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:h-full lg:min-h-0">
-
             {/* ── LEFT COLUMN ── */}
             <div className="lg:col-span-2 flex flex-col gap-4 min-h-0">
-
               {/* Profile Block */}
               <div className="bg-[#11151c] border border-white/10 rounded-xl flex flex-col flex-1 min-h-0">
                 {/* Tabs */}
@@ -73,24 +108,37 @@ export default function Settings() {
 
                 {activeTab === "Profile" && (
                   <div className="p-4 lg:p-5 flex flex-col flex-1 min-h-0">
-                    <h3 className="text-lg font-medium text-slate-200 mb-1 shrink-0">Profile Information</h3>
-                    <p className="text-[10px] text-slate-400 mb-4 shrink-0">Update your personal information and how others see you on Velora.</p>
+                    <h3 className="text-lg font-medium text-slate-200 mb-1 shrink-0">
+                      Profile Information
+                    </h3>
+                    <p className="text-[10px] text-slate-400 mb-4 shrink-0">
+                      Update your personal information and how others see you on
+                      Velora.
+                    </p>
 
                     <div className="flex flex-col md:flex-row gap-6 items-start flex-1 min-h-0">
-
                       {/* Avatar Picker Section */}
-                      <div className="flex flex-col items-center gap-2 shrink-0 relative" ref={pickerRef}>
-                        <span className="text-[10px] text-slate-400 w-full text-left">Avatar</span>
+                      <div
+                        className="flex flex-col items-center gap-2 shrink-0 relative"
+                        ref={pickerRef}
+                      >
+                        <span className="text-[10px] text-slate-400 w-full text-left">
+                          Avatar
+                        </span>
                         <div className="relative">
                           <img
                             src={selectedAvatar}
                             alt="avatar"
                             className="w-16 h-16 md:w-20 md:h-20 rounded-full border border-white/10 bg-white/5 object-cover cursor-pointer"
-                            onClick={() => setIsAvatarPickerOpen(!isAvatarPickerOpen)}
+                            onClick={() =>
+                              setIsAvatarPickerOpen(!isAvatarPickerOpen)
+                            }
                           />
                           <button
                             className="absolute bottom-0 right-0 w-6 h-6 bg-[#1a1f26] border border-white/10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer"
-                            onClick={() => setIsAvatarPickerOpen(!isAvatarPickerOpen)}
+                            onClick={() =>
+                              setIsAvatarPickerOpen(!isAvatarPickerOpen)
+                            }
                           >
                             <Pen size={10} className="text-slate-300" />
                           </button>
@@ -106,9 +154,13 @@ export default function Settings() {
                                   setSelectedAvatar(avatar);
                                   setIsAvatarPickerOpen(false);
                                 }}
-                                className={`w-12 h-12 rounded-full cursor-pointer border-2 transition-all ${selectedAvatar === avatar ? 'border-green-500 scale-105' : 'border-transparent hover:border-slate-500'}`}
+                                className={`w-12 h-12 rounded-full cursor-pointer border-2 transition-all ${selectedAvatar === avatar ? "border-green-500 scale-105" : "border-transparent hover:border-slate-500"}`}
                               >
-                                <img src={avatar} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover rounded-full" />
+                                <img
+                                  src={avatar}
+                                  alt={`Avatar ${idx + 1}`}
+                                  className="w-full h-full object-cover rounded-full"
+                                />
                               </div>
                             ))}
                           </div>
@@ -119,7 +171,9 @@ export default function Settings() {
                       <div className="flex-1 flex flex-col gap-3 w-full min-h-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0">
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10px] text-slate-300">Full Name</label>
+                            <label className="text-[10px] text-slate-300">
+                              Full Name
+                            </label>
                             <input
                               type="text"
                               defaultValue="Sheryian"
@@ -127,7 +181,9 @@ export default function Settings() {
                             />
                           </div>
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10px] text-slate-300">Username</label>
+                            <label className="text-[10px] text-slate-300">
+                              Username
+                            </label>
                             <input
                               type="text"
                               defaultValue="@sheryian"
@@ -137,19 +193,25 @@ export default function Settings() {
                         </div>
 
                         <div className="flex flex-col gap-1 shrink-0">
-                          <label className="text-[10px] text-slate-300">Bio</label>
+                          <label className="text-[10px] text-slate-300">
+                            Bio
+                          </label>
                           <div className="relative">
                             <textarea
                               rows={2}
                               defaultValue="Full-stack developer who loves building and deploying products that make an impact."
                               className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 outline-none focus:border-white/30 transition-colors resize-none"
                             />
-                            <span className="absolute bottom-2 right-2 text-[9px] text-slate-500">67/160</span>
+                            <span className="absolute bottom-2 right-2 text-[9px] text-slate-500">
+                              67/160
+                            </span>
                           </div>
                         </div>
 
                         <div className="flex flex-col gap-1 shrink-0">
-                          <label className="text-[10px] text-slate-300">Email Address</label>
+                          <label className="text-[10px] text-slate-300">
+                            Email Address
+                          </label>
                           <div className="flex items-center gap-2">
                             <input
                               type="email"
@@ -171,9 +233,15 @@ export default function Settings() {
                 )}
                 {activeTab === "Account" && (
                   <div className="p-4 lg:p-5">
-                    <h3 className="text-lg font-medium text-slate-200 mb-1">Account Settings</h3>
-                    <p className="text-[10px] text-slate-400 mb-6">Manage your account security and connections.</p>
-                    <p className="text-xs text-slate-500 italic">Settings coming soon.</p>
+                    <h3 className="text-lg font-medium text-slate-200 mb-1">
+                      Account Settings
+                    </h3>
+                    <p className="text-[10px] text-slate-400 mb-6">
+                      Manage your account security and connections.
+                    </p>
+                    <p className="text-xs text-slate-500 italic">
+                      Settings coming soon.
+                    </p>
                   </div>
                 )}
               </div>
@@ -181,49 +249,74 @@ export default function Settings() {
               {/* Preferences Block */}
               {activeTab === "Profile" && (
                 <div className="bg-[#11151c] border border-white/10 rounded-xl p-4 lg:p-5 shrink-0">
-                  <h3 className="text-lg font-medium text-slate-200 mb-1">Preferences</h3>
-                  <p className="text-[10px] text-slate-400 mb-3">Customize your experience on Velora.</p>
+                  <h3 className="text-lg font-medium text-slate-200 mb-1">
+                    Preferences
+                  </h3>
+                  <p className="text-[10px] text-slate-400 mb-3">
+                    Customize your experience on Velora.
+                  </p>
 
                   <div className="flex flex-col gap-1">
                     {/* Theme */}
                     <div className="flex items-center justify-between py-1.5">
                       <div className="flex items-start gap-2">
-                        <div className="mt-0.5"><Palette size={14} className="text-slate-400" /></div>
+                        <div className="mt-0.5">
+                          <Palette size={14} className="text-slate-400" />
+                        </div>
                         <div>
-                          <p className="text-xs text-slate-200 font-medium">Theme</p>
-                          <p className="text-[9px] text-slate-500">Choose your preferred theme.</p>
+                          <p className="text-xs text-slate-200 font-medium">
+                            Theme
+                          </p>
+                          <p className="text-[9px] text-slate-500">
+                            Choose your preferred theme.
+                          </p>
                         </div>
                       </div>
                       <button className="flex items-center justify-between w-24 px-2 py-1 border border-white/10 bg-white/5 rounded-lg text-[11px] text-slate-300 hover:border-white/20 transition-colors">
-                        Dark <ChevronDown size={12} className="text-slate-500" />
+                        Dark{" "}
+                        <ChevronDown size={12} className="text-slate-500" />
                       </button>
                     </div>
 
                     {/* Language */}
                     <div className="flex items-center justify-between py-1.5 border-t border-white/5">
                       <div className="flex items-start gap-2">
-                        <div className="mt-0.5"><Globe size={14} className="text-slate-400" /></div>
+                        <div className="mt-0.5">
+                          <Globe size={14} className="text-slate-400" />
+                        </div>
                         <div>
-                          <p className="text-xs text-slate-200 font-medium">Language</p>
-                          <p className="text-[9px] text-slate-500">Select your preferred language.</p>
+                          <p className="text-xs text-slate-200 font-medium">
+                            Language
+                          </p>
+                          <p className="text-[9px] text-slate-500">
+                            Select your preferred language.
+                          </p>
                         </div>
                       </div>
                       <button className="flex items-center justify-between w-24 px-2 py-1 border border-white/10 bg-white/5 rounded-lg text-[11px] text-slate-300 hover:border-white/20 transition-colors">
-                        English <ChevronDown size={12} className="text-slate-500" />
+                        English{" "}
+                        <ChevronDown size={12} className="text-slate-500" />
                       </button>
                     </div>
 
                     {/* Date & Time */}
                     <div className="flex items-center justify-between py-1.5 border-t border-white/5">
                       <div className="flex items-start gap-2">
-                        <div className="mt-0.5"><Calendar size={14} className="text-slate-400" /></div>
+                        <div className="mt-0.5">
+                          <Calendar size={14} className="text-slate-400" />
+                        </div>
                         <div>
-                          <p className="text-xs text-slate-200 font-medium">Date & Time Format</p>
-                          <p className="text-[9px] text-slate-500">Choose how dates and times are displayed.</p>
+                          <p className="text-xs text-slate-200 font-medium">
+                            Date & Time Format
+                          </p>
+                          <p className="text-[9px] text-slate-500">
+                            Choose how dates and times are displayed.
+                          </p>
                         </div>
                       </div>
                       <button className="flex items-center justify-between w-32 px-2 py-1 border border-white/10 bg-white/5 rounded-lg text-[11px] text-slate-300 hover:border-white/20 transition-colors">
-                        Apr 26, 2026 • 24h <ChevronDown size={12} className="text-slate-500" />
+                        Apr 26, 2026 • 24h{" "}
+                        <ChevronDown size={12} className="text-slate-500" />
                       </button>
                     </div>
                   </div>
@@ -233,10 +326,11 @@ export default function Settings() {
 
             {/* ── RIGHT COLUMN ── */}
             <div className="col-span-1 flex flex-col gap-4 min-h-0">
-
               {/* Account Overview */}
               <div className="bg-[#11151c] border border-white/10 rounded-xl p-4 shrink-0">
-                <h3 className="text-sm font-medium text-slate-200 mb-4">Account Overview</h3>
+                <h3 className="text-sm font-medium text-slate-200 mb-4">
+                  Account Overview
+                </h3>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <img
@@ -245,27 +339,36 @@ export default function Settings() {
                       className="w-8 h-8 rounded-full border border-white/10 bg-white/5 object-cover"
                     />
                     <div>
-                      <p className="text-xs text-slate-200 font-medium">Sheryian</p>
+                      <p className="text-xs text-slate-200 font-medium">
+                        Sheryian
+                      </p>
                       <p className="text-[9px] text-slate-400">Developer</p>
                     </div>
                   </div>
                   <span className="flex items-center gap-1.5 px-1.5 py-0.5 rounded border border-green-500/20 bg-green-500/10 text-green-400 text-[9px] font-medium">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400" /> Active
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-400" />{" "}
+                    Active
                   </span>
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-slate-400">
-                      <User size={12} /> <span className="text-[10px]">Member since</span>
+                      <User size={12} />{" "}
+                      <span className="text-[10px]">Member since</span>
                     </div>
-                    <span className="text-[10px] text-slate-300">Apr 20, 2026</span>
+                    <span className="text-[10px] text-slate-300">
+                      Apr 20, 2026
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-slate-400">
-                      <UserCircle size={12} /> <span className="text-[10px]">User ID</span>
+                      <UserCircle size={12} />{" "}
+                      <span className="text-[10px]">User ID</span>
                     </div>
-                    <span className="text-[10px] text-slate-300 font-mono">usr_8f3a7c2d</span>
+                    <span className="text-[10px] text-slate-300 font-mono">
+                      usr_8f3a7c2d
+                    </span>
                   </div>
                   {/* Removed Role option here as requested */}
                 </div>
@@ -273,17 +376,25 @@ export default function Settings() {
 
               {/* Workspace */}
               <div className="bg-[#11151c] border border-white/10 rounded-xl p-4 shrink-0">
-                <h3 className="text-sm font-medium text-slate-200 mb-4">Workspace</h3>
+                <h3 className="text-sm font-medium text-slate-200 mb-4">
+                  Workspace
+                </h3>
                 <div className="flex items-start gap-2 mb-4">
                   <div className="w-8 h-8 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center shrink-0">
                     <Building2 size={14} className="text-slate-400" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-xs text-slate-200 font-medium truncate">Default Workspace</p>
-                      <span className="px-1 py-0.5 rounded border border-yellow-500/20 bg-yellow-500/10 text-yellow-400 text-[8px] shrink-0">Owner</span>
+                      <p className="text-xs text-slate-200 font-medium truncate">
+                        Default Workspace
+                      </p>
+                      <span className="px-1 py-0.5 rounded border border-yellow-500/20 bg-yellow-500/10 text-yellow-400 text-[8px] shrink-0">
+                        Owner
+                      </span>
                     </div>
-                    <p className="text-[9px] text-slate-400">This is your primary workspace.</p>
+                    <p className="text-[9px] text-slate-400">
+                      This is your primary workspace.
+                    </p>
                   </div>
                 </div>
                 <button className="w-full flex items-center justify-between px-2.5 py-1.5 border border-white/10 rounded-lg text-xs text-slate-300 hover:bg-white/5 transition-colors">
@@ -293,19 +404,23 @@ export default function Settings() {
 
               {/* Danger Zone */}
               <div className="bg-[#11151c] border border-white/10 rounded-xl p-4 flex-1 flex flex-col min-h-0">
-                <h3 className="text-sm font-medium text-red-400 mb-1 shrink-0">Danger Zone</h3>
-                <p className="text-[9px] text-slate-500 mb-auto shrink-0">Irreversible and permanent actions.</p>
+                <h3 className="text-sm font-medium text-red-400 mb-1 shrink-0">
+                  Danger Zone
+                </h3>
+                <p className="text-[9px] text-slate-500 mb-auto shrink-0">
+                  Irreversible and permanent actions.
+                </p>
                 <button className="w-full flex items-center justify-between px-2.5 py-1.5 border border-red-500/30 rounded-lg text-xs text-red-400 hover:bg-red-500/10 transition-colors shrink-0 mt-4">
-                  <span className="flex items-center gap-1.5"><Trash2 size={12} /> Delete Account</span>
+                  <span className="flex items-center gap-1.5">
+                    <Trash2 size={12} /> Delete Account
+                  </span>
                   <ChevronRight size={12} className="text-red-500/50" />
                 </button>
               </div>
-
             </div>
-
           </div>
-       </div>
-     </div>
-   </div>
+        </div>
+      </div>
+    </div>
   );
 }

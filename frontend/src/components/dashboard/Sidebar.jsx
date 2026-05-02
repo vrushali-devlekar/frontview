@@ -12,7 +12,7 @@ import {
   LogOut,
   Menu,
 } from "lucide-react";
-import pf1 from "../../assets/pf1.jpeg";
+import pf1 from "../../assets/p1.jpeg";
 
 const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => (
   <NavLink

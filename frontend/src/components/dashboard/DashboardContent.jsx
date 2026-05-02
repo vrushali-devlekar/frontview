@@ -32,89 +32,146 @@ const StatusBadge = ({ status }) => {
 export default function Dashboard() {
   const [isCollapsed, setIsCollapsed] = useState(true);
 
-  const myProjects = [
-    {
-      name: "VALORA_FRONTEND",
-      framework: "React",
-      status: "RUNNING",
-      url: "valora-front.vercel.app",
-      lastDeploy: "10m ago",
-      version: "v4.0.1"
-    },
-    {
-      name: "PAYMENT_MICROSERVICE",
-      framework: "Node.js",
-      status: "FAILED",
-      url: "api.payments.com",
-      lastDeploy: "2h ago",
-      version: "v2.1.0"
-    },
-    {
-      name: "AUTH_GATEWAY",
-      framework: "Express",
-      status: "BUILDING",
-      url: "auth.valora.io",
-      lastDeploy: "Just now",
-      version: "v1.0.5"
-    }
+  const stats = [
+    { title: "Projects", value: "12", icon: Folder },
+    { title: "Deploys", value: "28", icon: Rocket },
+    { title: "Failures", value: "2", icon: AlertCircle },
+    { title: "Uptime", value: "99.98%", icon: ShieldCheck },
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#050505] text-white uppercase tracking-wide" style={{ fontFamily: "'Space Mono', monospace" }}>
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
+    <div
+      className="flex h-screen overflow-hidden bg-[#0b0f14] text-white"
+      style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif' }}
+    >
 
-      <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}>
+      <Sidebar
+        isCollapsed={isCollapsed}
+        toggleSidebar={() => setIsCollapsed(!isCollapsed)}
+      />
 
-        {/* HEADER SECTION */}
-        <div className="relative min-h-[140px] bg-cover bg-center flex flex-col justify-between border-b border-[#222]" style={{ backgroundImage: `url(${heroBg})` }}>
-          <div className="absolute inset-0 bg-[#050505]/80 backdrop-blur-sm" />
+      <div
+        className={`flex flex-col flex-1 overflow-hidden transition-all duration-300
+        ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}
+      >
+
+        {/* HERO */}
+        <div
+          className="relative min-h-[160px] md:min-h-[180px] bg-cover bg-center flex flex-col justify-between border-b border-white/10"
+          style={{ backgroundImage: `url(${heroBg})` }}
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
+
           <TopNav />
-          <div className="relative z-10 px-6 pb-4 flex justify-between items-end">
-            <div>
-              <h1 className="text-xl md:text-2xl text-[#FFCC00] font-bold tracking-widest" style={{ fontFamily: "'Press Start 2P', cursive" }}>OVERVIEW</h1>
-              <p className="text-[10px] text-[#888] mt-1">YOUR PERSONAL DEPLOYMENT FLEET</p>
-            </div>
 
-            {/* 🌟 THEME FIX: Exact Landing Page Style Button */}
-            <button
-              className="bg-[#FFCC00] text-black px-5 py-3 text-[10px] font-bold transition-transform active:translate-y-1 active:shadow-none flex items-center gap-2"
-              style={{
-                fontFamily: "'Press Start 2P', cursive",
-                boxShadow: "4px 4px 0px 0px #CC9900" // Hard shadow for 3D retro effect
-              }}
-            >
-              <Rocket size={14} strokeWidth={3} /> IMPORT_REPO
-            </button>
+          <div
+            className="relative z-10 px-4 md:px-6 pb-4 font-normal tracking-tighter"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+          >
+            <h1 className="text-sm md:text-base leading-relaxed">
+              Good evening, Sheryian 🚀
+            </h1>
+            <p className="text-[9px] md:text-[10px] text-slate-300 mt-2 leading-loose tracking-tighter">
+              Here's what's happening with your projects today.
+            </p>
           </div>
         </div>
 
-        {/* MAIN CONTENT */}
-        <div className="flex-1 p-6 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+        {/* CONTENT */}
+        <div className="flex-1 p-3 md:p-4 flex flex-col gap-3 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+
+          {/* STATS */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {stats.map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={i}
+                  className="bg-[#11151c] border border-white/10 rounded-lg p-3 flex justify-between items-center"
+                >
+                  <div>
+                    <p className="text-[9px] text-slate-400">
+                      {item.title}
+                    </p>
+                    <h2 className="text-base md:text-lg mt-1 font-medium">
+                      {item.value}
+                    </h2>
+                  </div>
 
           <h2 className="text-sm text-[#888] mb-4 flex items-center gap-2 border-b border-[#222] pb-2 font-bold">
             <Folder size={14} /> ACTIVE_PROJECTS ({myProjects.length})
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {myProjects.map((project, i) => (
-              <div key={i} className="bg-[#0a0a0a] border-2 border-[#222] hover:border-[#FFCC00] transition-colors flex flex-col relative group" style={{ boxShadow: "4px 4px 0px 0px rgba(255, 204, 0, 0.1)" }}>
+          {/* MIDDLE */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 overflow-hidden items-start">
 
-                <div className="p-4 border-b border-[#111]">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-sm font-bold text-[#FFCC00] truncate pr-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: '10px', lineHeight: '1.5' }}>
-                      {project.name}
-                    </h3>
-                    <StatusBadge status={project.status} />
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] text-[#666]">
-                    <Cpu size={12} /> {project.framework} • {project.version}
-                  </div>
-                </div>
+            {/* RECENT DEPLOYMENTS */}
+            <div className="md:col-span-2 bg-[#11151c] border border-white/10 rounded-lg p-3 flex flex-col">
 
-                <div className="p-4 flex-1">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-[10px] text-[#555]">LAST_DEPLOY:</span>
-                    <span className="text-[10px] text-[#AAA]">{project.lastDeploy}</span>
+              <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
+                <h2 className="text-xl text-slate-300">
+                  Recent Deployments
+                </h2>
+                <span className="text-xs text-slate-400 cursor-pointer">
+                  View all →
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  { name: "Auth Service", status: "SUCCESS", time: "3m" },
+                  { name: "Frontend", status: "SUCCESS", time: "15m" },
+                  { name: "Payments", status: "FAILED", time: "1h" },
+                  { name: "Data Pipeline", status: "RUNNING", time: "1h" },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-white/5"
+                  >
+                    <span className="text-sm text-slate-200">
+                      {item.name}
+                    </span>
+
+                    <div className="flex items-center gap-3">
+                      <StatusBadge status={item.status} />
+                      <span className="text-xs text-slate-500">
+                        {item.time}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* TECH STACK */}
+            <div className="bg-[#11151c] border border-white/10 rounded-lg p-3 flex flex-col">
+
+              <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
+                <h2 className="text-xl text-slate-300">
+                  Tech Stack
+                </h2>
+                <span className="text-xs text-slate-400 cursor-pointer">
+                  View all →
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { name: "React", color: "bg-blue-400" },
+                  { name: "Node", color: "bg-green-400" },
+                  { name: "Mongo", color: "bg-green-500" },
+                  { name: "Redis", color: "bg-red-400" },
+                  { name: "Docker", color: "bg-blue-300" },
+                  { name: "AWS", color: "bg-yellow-400" },
+                ].map((tech, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 bg-white/5 rounded px-2 py-1.5"
+                  >
+                    <div className={`w-2.5 h-2.5 rounded-full ${tech.color}`} />
+                    <span className="text-xs text-slate-200">
+                      {tech.name}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] text-[#555]">DOMAIN:</span>
@@ -124,22 +181,20 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* 🌟 THEME FIX: Action Bar styling updated to match */}
-                <div className="grid grid-cols-4 border-t-2 border-[#111] bg-[#050505]">
-                  <button className="p-3 text-[#555] hover:text-[#00FFCC] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors" title="View Logs (Phase 5)">
-                    <Terminal size={14} />
-                  </button>
-                  <button className="p-3 text-[#555] hover:text-[#FFCC00] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors" title="Env Vars (Phase 6)">
-                    <Settings size={14} />
-                  </button>
-                  <button className="p-3 text-[#555] hover:text-[#FFCC00] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors" title="Rollback (Phase 7)">
-                    <History size={14} />
-                  </button>
-
-                  <button className={`p-3 flex justify-center transition-all ${project.status === 'FAILED' ? 'text-[#050505] bg-[#FFCC00] hover:bg-yellow-400' : 'text-[#555] hover:text-[#FFCC00] hover:bg-[#111]'}`} title="Ask AI (Phase 8)">
-                    <BrainCircuit size={14} className={project.status === 'FAILED' ? 'animate-pulse' : ''} />
-                  </button>
-                </div>
+          {/* ACTIONS */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[
+              "New Project",
+              "Deploy",
+              "Rollback",
+              "Logs",
+              "AI",
+            ].map((action, i) => (
+              <div
+                key={i}
+                className="bg-[#11151c] border border-white/10 rounded-lg py-3 text-sm text-center hover:bg-white/5 cursor-pointer"
+              >
+                {action}
               </div>
             ))}
           </div>

@@ -2,7 +2,6 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import Landing from "../pages/Landing";
 import Login from "../auth/Login";
 import Register from "../auth/Register";
-import AuthSuccess from "../auth/AuthSuccess";
 import DashboardContent from "../components/dashboard/DashboardContent.jsx";
 import Applications from "../components/ActiveLinks/Applications.jsx";
 import Environments from "../components/ActiveLinks/Environments.jsx";
@@ -23,14 +22,10 @@ export const router = createBrowserRouter([
     path: "/register",
     element: <Register />,
   },
-  {
-    path: "/auth/success",
-    element: <AuthSuccess />,
-  },
-  {
-    path: "/dashboard",
-    element: <DashboardContent />
-  },
+  // {
+  //   path: "/dashboard",
+  //   element: <DashboardContent />
+  // },
   {
     path: "/deploy",
     element: <DeploymentsPage />

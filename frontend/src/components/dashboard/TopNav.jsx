@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Bell, User, Settings, FileText } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import pf1 from "../../assets/pf1.jpeg";
+import pf1 from "../../assets/p1.jpeg";
 
 const TopNav = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
