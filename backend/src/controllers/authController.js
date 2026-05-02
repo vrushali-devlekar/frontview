@@ -55,7 +55,7 @@ exports.authSuccess = (req, res) => {
         res.status(401);
         throw new Error('Authentication Failed');
     }
-    res.cookie('token',generateToken(req.user._id))
+    res.cookie('token', generateToken(req.user._id))
     // Passport ne user ko verify kar diya hai, ab hum apna JWT token bhejenge
     res.status(200).json({
         success: true,
@@ -68,6 +68,25 @@ exports.authSuccess = (req, res) => {
         },
         token: generateToken(req.user._id) // Backend ticket
     });
+};
+
+// ==========================================
+// 2.5 OAUTH SPECIFIC SUCCESS CALLBACK (For Github/Google)
+// ==========================================
+exports.oauthSuccess = (req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    if (!req.user) {
+        // Agar fail ho jaye toh frontend ke login page par error ke sath bhejo
+        return res.redirect(`${frontendUrl}/login?error=AuthenticationFailed`);
+    }
+
+    // Token generate karo
+    const token = generateToken(req.user._id);
+
+    // 🌟 PROFESSIONAL SDE FIX: JSON dikhane ki jagah seedha React App par redirect maaro 
+    // Token ko URL me pass kar rahe hain taaki React use catch kar sake
+    res.redirect(`${frontendUrl}/auth/success?token=${token}`);
 };
 
 // ==========================================

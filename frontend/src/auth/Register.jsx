@@ -3,32 +3,6 @@ import { Link } from "react-router-dom";
 import val from "../assets/login.png";
 
 const Register = () => {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({ username: "", email: "", password: "" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const response = await register(formData);
-      if (response.data.success) {
-        navigate("/dashboard");
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="h-screen overflow-hidden bg-[#050505] text-[#d1d1d1] font-['Minecraftia',monospace] flex flex-col lg:flex-row">
       {/* LEFT SIDE: Image only */}
@@ -97,7 +71,6 @@ const Register = () => {
                   </span>
                   <input
                     type="text"
-                    name="username"
                     placeholder="SteveCraft"
                     className="w-full bg-transparent border border-white/10 rounded-xl p-3 pl-11 text-sm focus:outline-none focus:border-[#558760] transition-colors placeholder:text-gray-600"
                   />

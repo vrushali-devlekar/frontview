@@ -18,7 +18,7 @@ const deploymentSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['queued', 'building', 'running', 'failed', 'stopped'],
+        enum: ['queued', 'building', 'running', 'failed', 'stopped', 'rolling_back'],
         default: 'queued'
     },
     commitHash: { type: String },
@@ -46,7 +46,7 @@ const deploymentSchema = new mongoose.Schema({
 });
 
 // Virtual Property for URL
-deploymentSchema.virtual('url').get(function() {
+deploymentSchema.virtual('url').get(function () {
     if (this.port) {
         return `http://localhost:${this.port}`;
     }
@@ -59,17 +59,17 @@ deploymentSchema.index({ projectId: 1, status: 1 });
 deploymentSchema.index({ userId: 1, status: 1 });
 
 // Pre-save hook for auto-incrementing version
-deploymentSchema.pre('save', async function() {
+deploymentSchema.pre('save', async function () {
     // Agar naya deployment ban raha hai tabhi version badhao
     if (this.isNew) {
         const lastDeployment = await this.constructor.findOne({ projectId: this.projectId })
             .sort({ version: -1 });
-        
+
         if (lastDeployment) {
             this.version = lastDeployment.version + 1;
         }
     }
-    
+
 });
 
 const Deployment = mongoose.model('Deployment', deploymentSchema);

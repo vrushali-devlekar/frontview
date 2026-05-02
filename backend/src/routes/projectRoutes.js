@@ -1,14 +1,15 @@
 // routes/projectRoutes.js
 const express = require('express');
 const router = express.Router();
-const { 
-    getUserRepos, 
-    createProject, 
-    getUserProjects, 
-    getProjectById, 
-    deleteProject 
+const {
+    getUserRepos,
+    createProject,
+    getUserProjects,
+    getProjectById,
+    deleteProject
 } = require('../controllers/projectController');
 const { protect } = require('../middlewares/authMiddleware');
+const { rollbackDeployment } = require('../controllers/deploymentController');
 
 // Sabhi routes protected hain (JWT Token zaroori hai)
 router.use(protect);
@@ -24,5 +25,7 @@ router.route('/')
 router.route('/:id')
     .get(getProjectById)
     .delete(deleteProject);
+
+router.post('/:id/rollback/:version', protect, rollbackDeployment);
 
 module.exports = router;

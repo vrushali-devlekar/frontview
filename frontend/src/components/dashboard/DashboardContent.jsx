@@ -3,22 +3,27 @@ import Sidebar from "./Sidebar";
 import TopNav from "./TopNav";
 import {
   Rocket,
-  AlertCircle,
-  ShieldCheck,
   Folder,
+  Terminal,
+  ExternalLink,
+  Cpu,
+  BrainCircuit,
+  History,
+  Settings
 } from "lucide-react";
 
 import heroBg from "../../assets/new-top.png";
 
 const StatusBadge = ({ status }) => {
   const styles = {
-    SUCCESS: "bg-green-500/10 text-green-400 border border-green-500/20",
-    FAILED: "bg-red-500/10 text-red-400 border border-red-500/20",
-    RUNNING: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
+    RUNNING: "text-[#00FFCC] border-[#00FFCC]/30 bg-[#00FFCC]/10",
+    FAILED: "text-[#FF3333] border-[#FF3333]/30 bg-[#FF3333]/10",
+    BUILDING: "text-[#FFCC00] border-[#FFCC00]/30 bg-[#FFCC00]/10",
   };
 
   return (
-    <span className={`text-[10px] px-2 py-[2px] rounded ${styles[status]}`}>
+    <span className={`text-[9px] px-2 py-1 border font-mono tracking-widest flex items-center gap-1 ${styles[status]}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${status === 'RUNNING' ? 'bg-[#00FFCC]' : status === 'FAILED' ? 'bg-[#FF3333]' : 'bg-[#FFCC00] animate-pulse'}`}></span>
       {status}
     </span>
   );
@@ -93,13 +98,9 @@ export default function Dashboard() {
                     </h2>
                   </div>
 
-                  <div className="p-2 rounded bg-white/5">
-                    <Icon size={16} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <h2 className="text-sm text-[#888] mb-4 flex items-center gap-2 border-b border-[#222] pb-2 font-bold">
+            <Folder size={14} /> ACTIVE_PROJECTS ({myProjects.length})
+          </h2>
 
           {/* MIDDLE */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 overflow-hidden items-start">
@@ -172,10 +173,13 @@ export default function Dashboard() {
                       {tech.name}
                     </span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-[#555]">DOMAIN:</span>
+                    <a href={`https://${project.url}`} target="_blank" className="text-[10px] text-[#00FFCC] hover:underline flex items-center gap-1 font-bold">
+                      {project.url} <ExternalLink size={10} />
+                    </a>
+                  </div>
+                </div>
 
           {/* ACTIONS */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -194,6 +198,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+
         </div>
       </div>
     </div>

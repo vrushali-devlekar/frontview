@@ -3,27 +3,29 @@ import { Link, useNavigate } from "react-router-dom";
 import loginImg from "../assets/login.png";
 
 const Login = () => {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const response = await login(formData);
-      if (response.data.success) {
+      const response = await login({ email, password });
+      if (response.data && response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        // User login theek se ho gaya! Redirecting to dashboard or main
         navigate("/dashboard");
+      } else {
+        setError("Invalid credentials. Please try again.");
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Please try again.");
+      console.error(err);
+      setError(err.response?.data?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -98,7 +100,8 @@ const Login = () => {
                   </span>
                   <input
                     type="email"
-                    name="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     className="w-full bg-transparent border border-white/10 rounded-xl p-3 pl-11 text-sm focus:outline-none focus:border-[#558760] transition-colors placeholder:text-gray-600"
                   />

@@ -41,18 +41,18 @@ html {
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--color-velora-bg);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--color-velora-sidebar);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-velora-card);
 }
 
-/* Custom Minecraft-style green secondary button */
-/* .btn-secondary {
-  @apply bg-[#10B981] text-black border-b-4 border-r-4 border-[#065f46] active:translate-y-1 active:border-0;
-} */
+

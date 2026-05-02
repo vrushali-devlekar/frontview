@@ -51,8 +51,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     <>
       {/* Mobile Backdrop */}
       <div
-        className={`md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${!isCollapsed ? "opacity-100 visible" : "opacity-0 invisible"
-          }`}
+        className={`md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
+          !isCollapsed ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
         onClick={toggleSidebar}
       />
 

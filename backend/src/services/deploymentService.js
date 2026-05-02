@@ -27,7 +27,7 @@ const appendDeploymentLog = async (deploymentRecord, level, message) => {
     await deploymentRecord.save();
 };
 
-const executeDeployment = async (deploymentId, io) => { 
+const executeDeployment = async (deploymentId, io) => {
     let deploymentRecord = null;
     let assignedPort = null;
 
@@ -38,7 +38,7 @@ const executeDeployment = async (deploymentId, io) => {
 
         // 2. Project details nikalo
         const project = await Project.findById(deploymentRecord.projectId);
-        
+
         // Status update kar do ki build shuru ho gaya
         deploymentRecord.status = 'building';
         await deploymentRecord.save();
@@ -51,6 +51,29 @@ const executeDeployment = async (deploymentId, io) => {
             project.branch || 'main'
         );
         await appendDeploymentLog(deploymentRecord, 'info', `Repository cloned to ${targetPath}`);
+
+        // 🌟 MISSING SDE MAGIC: Decrypt & Inject Environment Variables
+        console.log(`🔒 Decrypting and injecting environment variables...`);
+        await appendDeploymentLog(deploymentRecord, 'info', 'Injecting environment variables...');
+
+        // Check karo ki project mein env vars hain ya nahi
+        if (project.envVars && project.envVars.length > 0) {
+            let envContent = '';
+            for (const env of project.envVars) {
+                // Gibberish ko wapas asli value mein badlo
+                const decryptedValue = decrypt(env.encryptedValue, env.iv);
+                envContent += `${env.key}="${decryptedValue}"\n`; // .env format (KEY="VALUE")
+            }
+
+            // Clone ki hui target path mein .env file banao
+            const envFilePath = path.join(targetPath, '.env');
+            await fs.writeFile(envFilePath, envContent);
+
+            console.log(`✅ .env file successfully created!`);
+            await appendDeploymentLog(deploymentRecord, 'info', '.env file successfully created');
+        } else {
+            console.log(`⚠️ No environment variables to inject.`);
+        }
 
         // 🌟 NEW: Auto-Detect Framework & Commands
         console.log(`🔍 Analyzing repository structure...`);
@@ -73,9 +96,9 @@ const executeDeployment = async (deploymentId, io) => {
                 console.log(`📦 Running ${frameworkInfo.installCmd} for ${deploymentRecord._id}...`);
                 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
-                const installProcess = spawn(npmCmd, ['install', '--legacy-peer-deps'], { 
+                const installProcess = spawn(npmCmd, ['install', '--legacy-peer-deps'], {
                     cwd: appPath,
-                    shell: true 
+                    shell: true
                 });
 
                 // 🌟 JADOO YAHAN HAI: Socket.io ko Install logs bhej do
@@ -98,13 +121,13 @@ const executeDeployment = async (deploymentId, io) => {
             await new Promise((resolve, reject) => {
                 console.log(`🔨 Building project: ${frameworkInfo.buildCmd}`);
                 const buildCmdString = frameworkInfo.buildCmd;
-                
+
                 // Cross-platform support for build command
                 const [bCmd, ...bArgs] = buildCmdString.split(' ');
                 const finalBuildCmd = (bCmd === 'npm' && process.platform === 'win32') ? 'npm.cmd' : bCmd;
 
                 const buildProcess = spawn(finalBuildCmd, bArgs, { cwd: appPath, shell: true });
-                
+
                 // 🌟 BUILD COMMAND KE LOGS BHI STREAM KARO
                 streamLogs(deploymentRecord._id.toString(), buildProcess, io);
 
@@ -146,7 +169,7 @@ const executeDeployment = async (deploymentId, io) => {
         deploymentRecord.status = 'running';
         deploymentRecord.port = assignedPort;
         await deploymentRecord.save();
-        
+
         // Project ka active deployment update kar do
         project.activeDeploymentId = deploymentRecord._id;
         await project.save();
@@ -156,10 +179,10 @@ const executeDeployment = async (deploymentId, io) => {
 
     } catch (error) {
         console.error(`❌ Deployment failed: ${error.message}`);
-        
+
         // Error aane par clean up karna zaroori hai
         if (assignedPort) releasePort(assignedPort);
-        
+
         if (deploymentRecord) {
             deploymentRecord.logs = deploymentRecord.logs || [];
             deploymentRecord.logs.push(
@@ -181,7 +204,7 @@ const executeDeployment = async (deploymentId, io) => {
 // Stop Deployment Function
 const stopDeployment = async (deploymentId) => {
     const processToKill = activeProcesses.get(deploymentId.toString());
-    
+
     if (processToKill) {
         processToKill.kill(); // Node.js ka command process rokne ke liye
         activeProcesses.delete(deploymentId.toString());
@@ -197,4 +220,68 @@ const stopDeployment = async (deploymentId) => {
     }
 };
 
-module.exports = { executeDeployment, stopDeployment };
+const executeRollback = async (newDeploymentId, oldDeploymentId, io) => {
+    let rollbackDeploymentRecord = null;
+    let assignedPort = null;
+
+    try {
+        rollbackDeploymentRecord = await Deployment.findById(newDeploymentId);
+        const oldDeploymentRecord = await Deployment.findById(oldDeploymentId);
+        const project = await Project.findById(rollbackDeploymentRecord.projectId);
+
+        await appendDeploymentLog(rollbackDeploymentRecord, 'info', `Rollback started. Target: Old Deployment ID ${oldDeploymentId}`);
+
+        // 🌟 HACKATHON MVP MAGIC: Build/Install skip karo!
+        // Seedha purane deployment ka path nikalo
+        // DHYAN DE: Yahan '/tmp/deploypilot' ko apne actual base path se replace kar lena jo cloneRepo use karta hai
+        const basePath = process.platform === 'win32' ? 'C:\\tmp\\deploypilot' : '/tmp/deploypilot';
+        const oldAppPath = path.join(basePath, oldDeploymentRecord._id.toString());
+
+        await appendDeploymentLog(rollbackDeploymentRecord, 'info', `Located old build directory: ${oldAppPath}`);
+
+        // Naya port assign karo
+        assignedPort = getAvailablePort();
+        await appendDeploymentLog(rollbackDeploymentRecord, 'info', `Assigning new port ${assignedPort} for rollback app`);
+
+        // Framework detect karke wapas start command nikalo
+        const frameworkInfo = await detectFramework(oldAppPath);
+        if (frameworkInfo.error) throw new Error(frameworkInfo.error);
+
+        const startCmdString = frameworkInfo.startCmd.replace('$PORT', assignedPort);
+        const [cmd, ...args] = startCmdString.split(' ');
+
+        // Start command chala do (Purane folder me!)
+        const startProcess = spawn(cmd, args, {
+            cwd: frameworkInfo.projectPath || oldAppPath,
+            env: { ...process.env, PORT: assignedPort },
+            shell: true
+        });
+
+        // Logs stream karo UI ke liye
+        streamLogs(rollbackDeploymentRecord._id.toString(), startProcess, io);
+        activeProcesses.set(rollbackDeploymentRecord._id.toString(), startProcess);
+
+        // Success update
+        rollbackDeploymentRecord.status = 'running';
+        rollbackDeploymentRecord.port = assignedPort;
+        await rollbackDeploymentRecord.save();
+
+        project.activeDeploymentId = rollbackDeploymentRecord._id;
+        await project.save();
+
+        await appendDeploymentLog(rollbackDeploymentRecord, 'info', `✅ Rollback Successful! Live at http://localhost:${assignedPort}`);
+
+    } catch (error) {
+        console.error(`❌ Rollback failed: ${error.message}`);
+        if (assignedPort) releasePort(assignedPort);
+
+        if (rollbackDeploymentRecord) {
+            rollbackDeploymentRecord.status = 'failed';
+            rollbackDeploymentRecord.errorMessage = error.message;
+            await appendDeploymentLog(rollbackDeploymentRecord, 'error', `Rollback failed: ${error.message}`);
+            await rollbackDeploymentRecord.save();
+        }
+    }
+};
+
+module.exports = { executeDeployment, stopDeployment, executeRollback };
