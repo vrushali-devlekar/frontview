@@ -1,4 +1,3 @@
-import React from "react";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 
 import Landing from "./pages/public/Landing";
@@ -11,7 +10,8 @@ import Overview from "./pages/project_view/Overview";
 import Metrics from "./pages/project_view/Metrics";
 import Settings from "./pages/project_view/Settings";
 import Environments from "./pages/project_view/Environments";
-import Account from "./pages/main_dashboard/Account";
+import DeploymentLogsPage from "./pages/project_view/Terminal";
+import NewProjectPage from "./pages/main_dashboard/NewProject";
 
 import "./App.css";
 
@@ -37,8 +37,16 @@ const router = createBrowserRouter([
     element: <Dashboard />
   },
   {
+    path: "/projects/new",
+    element: <NewProjectPage />
+  },
+  {
     path: "/deploy",
     element: <Deployments />
+  },
+  {
+    path: "/deploy/logs/:deploymentId",
+    element: <DeploymentLogsPage />
   },
   {
     path: "/applications",
@@ -55,10 +63,6 @@ const router = createBrowserRouter([
   {
     path: "/settings",
     element: <Settings />
-  },
-  {
-    path: "/account",
-    element: <Account />
   },
   {
     path: "*",

@@ -4,6 +4,38 @@ const Project = require('../models/Project');
 const Deployment = require('../models/Deployment');
 const { executeDeployment, stopDeployment, executeRollback } = require('../services/deploymentService');
 
+// @desc    List deployments for a project
+// @route   GET /api/deployments?projectId=
+exports.listDeploymentsForProject = asyncHandler(async (req, res) => {
+    const { projectId } = req.query;
+
+    if (!projectId) {
+        res.status(400);
+        throw new Error('projectId query parameter is required');
+    }
+
+    const project = await Project.findOne({
+        _id: projectId,
+        owner: req.user.id,
+        isDeleted: false
+    });
+
+    if (!project) {
+        res.status(404);
+        throw new Error('Project not found');
+    }
+
+    const deployments = await Deployment.find({ projectId: project._id })
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .select('-logs');
+
+    res.status(200).json({
+        success: true,
+        count: deployments.length,
+        data: deployments
+    });
+});
 
 exports.rollbackDeployment = asyncHandler(async (req, res) => {
     const { id: projectId, version } = req.params;
@@ -111,6 +143,20 @@ exports.getDeploymentStatus = asyncHandler(async (req, res) => {
 exports.stopActiveDeployment = asyncHandler(async (req, res) => {
     const deploymentId = req.params.id;
 
+    const deployment = await Deployment.findOne({ _id: deploymentId, userId: req.user.id });
+    if (!deployment) {
+        res.status(404);
+        throw new Error('Deployment not found');
+    }
+
+    // If already stopped/failed/rolling_back/queued, do not pretend we stopped a running process.
+    if (deployment.status !== 'running') {
+        return res.status(200).json({
+            success: true,
+            message: `Deployment is already ${deployment.status}`
+        });
+    }
+
     // Service function call karo jo process ko kill karega aur DB update karega
     await stopDeployment(deploymentId);
 
@@ -135,10 +181,11 @@ exports.analyzeLogs = asyncHandler(async (req, res) => {
         throw new Error('No logs found for this deployment');
     }
 
-    const provider = req.body.provider || 'gemini';
+    const provider = req.body.provider || 'mistral';
+    const question = req.body.question || '';
     const { analyzeLogsWithAI } = require('../services/logAnalysisService');
 
-    const analysisResult = await analyzeLogsWithAI(deployment.logs, provider);
+    const analysisResult = await analyzeLogsWithAI(deployment.logs, provider, question);
 
     res.status(200).json({
         success: true,

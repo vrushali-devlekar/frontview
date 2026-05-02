@@ -1,45 +1,93 @@
 import { execSync } from 'child_process';
+import fs from 'fs';
 import path from 'path';
 
-console.log("🚀 Starting Automatic Merge Conflict Resolution...");
+// This script removes conflict markers from files by keeping ONLY the incoming (theirs) code.
+// It works by parsing the file content directly — no git checkout needed.
 
-const commands = [
-  // 1. Keep our versions of the conflicted files
-  'git checkout --ours package-lock.json',
-  'git checkout --ours src/components/public/HeroSection.jsx',
-  'git checkout --ours src/index.css',
-  'git checkout --ours src/pages/main_dashboard/Dashboard.jsx',
-  'git checkout --ours src/pages/project_view/Settings.jsx',
+const srcDir = path.resolve('src');
 
-  // 2. Remove files that were modified/deleted in main but we intentionally deleted/moved them
-  'git rm src/pages/Landing.jsx',
-  'git rm src/auth/Login.jsx',
+function findConflictedFiles(dir) {
+  const results = [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory() && entry.name !== 'node_modules') {
+      results.push(...findConflictedFiles(fullPath));
+    } else if (entry.isFile() && (entry.name.endsWith('.jsx') || entry.name.endsWith('.js') || entry.name.endsWith('.json') || entry.name.endsWith('.css'))) {
+      try {
+        const content = fs.readFileSync(fullPath, 'utf-8');
+        if (content.includes('<<<<<<< HEAD')) {
+          results.push(fullPath);
+        }
+      } catch(e) {}
+    }
+  }
+  return results;
+}
 
-  // 3. Move newly added files from main (that were placed in the old 'Landing' folder) 
-  // into our new 'components/public' folder structure
-  'git mv src/pages/Landing/HowItWorks.jsx src/components/public/HowItWorks.jsx || echo "Already moved"',
-  'git mv src/pages/Landing/TeamSection.jsx src/components/public/TeamSection.jsx || echo "Already moved"',
-  'git mv src/pages/Landing/featureGrid.jsx src/components/public/featureGrid.jsx || echo "Already moved"',
+function resolveConflictsKeepTheirs(content) {
+  // This regex matches conflict blocks and keeps only the "theirs" (incoming) section
+  const conflictRegex = /<<<<<<< HEAD[\s\S]*?=======\n([\s\S]*?)>>>>>>>[^\n]*\n?/g;
+  return content.replace(conflictRegex, '$1');
+}
 
-  // 4. Clean up any empty directories
-  'git clean -fd src/pages/Landing',
-  'git clean -fd src/auth',
+console.log("🔍 Scanning for files with conflict markers in src/...\n");
 
-  // 5. Stage everything and commit
-  'git add .',
-  'git commit -m "Merge main: accepted local UI changes and resolved folder restructuring conflicts"'
-];
+const conflictedFiles = findConflictedFiles(srcDir);
 
-for (const cmd of commands) {
+// Also check package-lock.json at root
+const lockFile = path.resolve('package-lock.json');
+try {
+  const lockContent = fs.readFileSync(lockFile, 'utf-8');
+  if (lockContent.includes('<<<<<<< HEAD')) {
+    conflictedFiles.push(lockFile);
+  }
+} catch(e) {}
+
+if (conflictedFiles.length === 0) {
+  console.log("✅ No conflict markers found! Everything is clean.");
+  process.exit(0);
+}
+
+console.log(`Found ${conflictedFiles.length} files with conflict markers:\n`);
+
+for (const filePath of conflictedFiles) {
   try {
-    console.log(`\n> Executing: ${cmd}`);
-    // Run the command. Ignoring errors for git clean/mv as they might already be handled
-    const output = execSync(cmd, { stdio: 'pipe', encoding: 'utf-8' });
-    if (output) console.log(output.trim());
-  } catch (error) {
-    console.warn(`⚠️ Warning on command: ${cmd}`);
-    console.warn(error.stderr ? error.stderr.trim() : error.message);
+    const original = fs.readFileSync(filePath, 'utf-8');
+    const resolved = resolveConflictsKeepTheirs(original);
+    
+    if (resolved !== original) {
+      fs.writeFileSync(filePath, resolved, 'utf-8');
+      const relativePath = path.relative(process.cwd(), filePath);
+      console.log(`  ✅ Resolved: ${relativePath}`);
+    }
+  } catch (err) {
+    console.warn(`  ⚠️ Failed: ${filePath} — ${err.message}`);
   }
 }
 
-console.log("\n✅ Merge conflicts resolved successfully! You can now run `npm run dev`.");
+// Stage all changes
+console.log("\n📦 Staging all resolved files...");
+try {
+  execSync('git add .', { stdio: 'pipe', cwd: path.resolve('..') });
+  console.log("  Done.");
+} catch(e) {
+  // Try from current dir
+  try { execSync('git add .', { stdio: 'pipe' }); } catch(e2) {}
+}
+
+// Amend the previous (broken) merge commit instead of creating a new one
+console.log("📝 Amending previous commit with clean files...");
+try {
+  execSync('git commit --amend -m "Merge abhi-integration: accepted all incoming changes (clean)"', { stdio: 'pipe', cwd: path.resolve('..') });
+  console.log("  Done.");
+} catch(e) {
+  try { 
+    execSync('git commit -m "fix: resolve remaining conflict markers"', { stdio: 'pipe', cwd: path.resolve('..') }); 
+  } catch(e2) {
+    console.log("  Commit skipped (may need manual commit).");
+  }
+}
+
+console.log("\n✅ All conflict markers removed! Run `npm run dev` to verify.");

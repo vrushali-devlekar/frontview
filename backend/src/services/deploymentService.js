@@ -2,6 +2,7 @@
 const { spawn } = require('child_process');
 const Project = require('../models/Project');
 const Deployment = require('../models/Deployment');
+const User = require('../models/User');
 const { cloneRepo } = require('./fsManager');
 const { getAvailablePort, releasePort } = require('../utils/portManager');
 const { detectFramework } = require('../utils/frameworkDetector');
@@ -45,10 +46,12 @@ const executeDeployment = async (deploymentId, io) => {
         await appendDeploymentLog(deploymentRecord, 'info', 'Deployment started');
 
         // 3. GitHub se Repo Clone karo
+        const user = await User.findById(deploymentRecord.userId).select('+githubAccessToken');
         const targetPath = await cloneRepo(
             project.repoUrl,
             deploymentRecord._id.toString(),
-            project.branch || 'main'
+            project.branch || 'main',
+            user?.githubAccessToken || null
         );
         await appendDeploymentLog(deploymentRecord, 'info', `Repository cloned to ${targetPath}`);
 
@@ -164,6 +167,39 @@ const executeDeployment = async (deploymentId, io) => {
         // Terminal ke liye local logs taaki VS Code me bhi dikhe
         startProcess.stdout.on('data', (data) => console.log(`[APP ${assignedPort}]: ${data}`));
         startProcess.stderr.on('data', (data) => console.error(`[APP ERR]: ${data}`));
+
+        // If app process exits by itself, mark final status clearly.
+        startProcess.on('close', async (code, signal) => {
+            try {
+                const latest = await Deployment.findById(deploymentRecord._id);
+                if (!latest) return;
+
+                // Already handled manually/earlier
+                if (['stopped', 'failed'].includes(latest.status)) {
+                    activeProcesses.delete(deploymentRecord._id.toString());
+                    return;
+                }
+
+                activeProcesses.delete(deploymentRecord._id.toString());
+                if (latest.port) {
+                    releasePort(latest.port);
+                }
+
+                if (code === 0) {
+                    latest.status = 'stopped';
+                    latest.completedAt = new Date();
+                    await appendDeploymentLog(latest, 'info', `Process exited normally (code 0${signal ? `, signal ${signal}` : ''})`);
+                } else {
+                    latest.status = 'failed';
+                    latest.errorMessage = `Process exited unexpectedly (code ${code}${signal ? `, signal ${signal}` : ''})`;
+                    latest.completedAt = new Date();
+                    await appendDeploymentLog(latest, 'error', latest.errorMessage);
+                }
+                await latest.save();
+            } catch (closeErr) {
+                console.error(`Failed to persist process close state: ${closeErr.message}`);
+            }
+        });
 
         // 6. Agar process bina kisi error ke start ho gaya, toh DB update kar do
         deploymentRecord.status = 'running';
