@@ -9,7 +9,9 @@ import {
   Cpu,
   BrainCircuit,
   History,
-  Settings
+  Settings,
+  AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 
 import heroBg from "../../assets/new-top.png";
@@ -31,6 +33,8 @@ const StatusBadge = ({ status }) => {
 
 export default function Dashboard() {
   const [isCollapsed, setIsCollapsed] = useState(true);
+
+  const myProjects = [{ id: 1, name: "Demo", url: "app.example.com" }];
 
   const stats = [
     { title: "Projects", value: "12", icon: Folder },
@@ -97,6 +101,11 @@ export default function Dashboard() {
                       {item.value}
                     </h2>
                   </div>
+                  <Icon className="w-8 h-8 text-slate-500 opacity-50" strokeWidth={1.5} />
+                </div>
+              );
+            })}
+          </div>
 
           <h2 className="text-sm text-[#888] mb-4 flex items-center gap-2 border-b border-[#222] pb-2 font-bold">
             <Folder size={14} /> ACTIVE_PROJECTS ({myProjects.length})
@@ -173,13 +182,10 @@ export default function Dashboard() {
                       {tech.name}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-[#555]">DOMAIN:</span>
-                    <a href={`https://${project.url}`} target="_blank" className="text-[10px] text-[#00FFCC] hover:underline flex items-center gap-1 font-bold">
-                      {project.url} <ExternalLink size={10} />
-                    </a>
-                  </div>
-                </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* ACTIONS */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">

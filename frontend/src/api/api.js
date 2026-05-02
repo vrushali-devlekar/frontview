@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
+/** Full URL for browser redirect (Passport OAuth). */
+export const githubAuthUrl = `${API_BASE_URL}/auth/github`;
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,

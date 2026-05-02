@@ -8,6 +8,7 @@ import Environments from "../components/ActiveLinks/Environments.jsx";
 import DeploymentsPage from "../components/ActiveLinks/DeploymentsPage.jsx";
 import Settings from "../components/ActiveLinks/Settings.jsx";
 import Metrics from "../components/ActiveLinks/Metrics.jsx";
+import DeploymentLogsPage from "../components/ActiveLinks/DeploymentLogsPage.jsx";
 
 export const router = createBrowserRouter([
   {
@@ -22,10 +23,10 @@ export const router = createBrowserRouter([
     path: "/register",
     element: <Register />,
   },
-  // {
-  //   path: "/dashboard",
-  //   element: <DashboardContent />
-  // },
+  {
+    path: "/dashboard",
+    element: <DashboardContent />
+  },
   {
     path: "/deploy",
     element: <DeploymentsPage />
@@ -45,6 +46,10 @@ export const router = createBrowserRouter([
   {
     path: "/settings",
     element: <Settings />
+  },
+  {
+    path:'deployments',
+    element: <DeploymentLogsPage />
   },
   {
     path: "*",
