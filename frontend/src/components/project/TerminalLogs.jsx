@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { RefreshCw, ShieldCheck } from "lucide-react";
+import { RefreshCw, ShieldCheck, ArrowDown } from "lucide-react";
 import { io as socketIO } from "socket.io-client";
 import { getDeployment, SOCKET_ORIGIN } from "../../api/api";
 
@@ -27,6 +27,24 @@ function normalizeSocketLine(payload) {
   };
 }
 
+let sharedSocket = null;
+
+const getSharedSocket = () => {
+  if (!sharedSocket) {
+    sharedSocket = socketIO(SOCKET_ORIGIN, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+      autoConnect: true,
+    });
+  }
+  return sharedSocket;
+};
+
 export default function TerminalLogs({
   deploymentId,
   onErrorDetect,
@@ -44,66 +62,6 @@ export default function TerminalLogs({
   };
 
   useEffect(() => {
-    // MOCK IMPLEMENTATION FOR UI DEMONSTRATION
-    // Remove this block when backend WebSockets are ready
-    // ==========================================
-    let currentIndex = 0;
-    const mockLogStream = [
-      { type: 'info', time: new Date().toLocaleTimeString(), message: `Starting deployment pipeline ${deploymentId}...` },
-      { type: 'info', time: new Date().toLocaleTimeString(), message: 'Cloning repository from GitHub...' },
-      { type: 'info', time: new Date().toLocaleTimeString(), message: 'Resolving dependencies...' },
-      { type: 'info', time: new Date().toLocaleTimeString(), message: 'Building application...' },
-      { type: 'warn', time: new Date().toLocaleTimeString(), message: 'Warning: Deprecated dependency "marked" found.' },
-      { type: 'error', time: new Date().toLocaleTimeString(), message: 'ERR! Build failed: Module not found "crypto"' }, // Error line to trigger AI
-    ];
-
-    const interval = setInterval(() => {
-      if (currentIndex < mockLogStream.length) {
-        const newLog = mockLogStream[currentIndex];
-        setLogs(prev => [...prev, newLog]);
-        
-        // Error Detection Logic
-        if (newLog.type === 'error' || newLog.message.includes('ERR!') || newLog.message.includes('Crash')) {
-          // Send the last few logs to the parent for AI analysis
-          onErrorDetect([...logs, newLog].slice(-20)); 
-          setIsStreaming(false);
-          clearInterval(interval);
-        }
-        
-        currentIndex++;
-      } else {
-        setIsStreaming(false);
-        if (onComplete) onComplete();
-        clearInterval(interval);
-      }
-    }, 800);
-
-    return () => {
-      // socket.disconnect(); // Memory leak prevention
-      clearInterval(interval);
-    };
-  }, [deploymentId, onErrorDetect, onComplete]);
-
-  return (
-    <div className="flex-1 flex flex-col h-full">
-      {/* Header Info */}
-      <div className="flex items-center justify-between pb-4 border-b-2 border-[#222] mb-4 shrink-0">
-        <div className="flex gap-2">
-          <div className="w-3 h-3 border-2 border-valora-cyan" />
-          <div className="w-3 h-3 border-2 border-valora-yellow" />
-          <div className="w-3 h-3 border-2 border-[#555]" />
-        </div>
-        <div className="flex items-center gap-4">
-          <p className="text-[10px] font-pixel text-[#888] tracking-widest uppercase">DEPLOY_PILOT_SECURE_SHELL</p>
-          {isStreaming ? (
-            <span className="flex items-center gap-2 text-valora-yellow text-[9px] font-bold tracking-widest px-2 py-1 border border-valora-yellow bg-valora-yellow/10 uppercase">
-              <RefreshCw size={10} className="animate-spin" /> STREAMING
-            </span>
-          ) : (
-             <span className="flex items-center gap-2 text-[#555] text-[9px] font-bold tracking-widest px-2 py-1 border border-[#555] bg-[#111] uppercase">
-               <ShieldCheck size={10} /> DISCONNECTED
-             </span>
-=======
     logsRef.current = logs;
   }, [logs]);
 
@@ -135,25 +93,28 @@ export default function TerminalLogs({
 
     let cancelled = false;
 
-    const socket = socketIO(SOCKET_ORIGIN, {
-      withCredentials: true,
-      transports: ["websocket", "polling"],
-    });
+    const socket = getSharedSocket();
+    
+    if (!socket.connected) {
+      socket.connect();
+    }
 
     socket.emit("join:deployment", deploymentId);
 
-    socket.on("log:line", (payload) => {
+    const handleLogLine = (payload) => {
       appendAndMaybeSignalError(normalizeSocketLine(payload));
-    });
+    };
 
-    socket.on("log:complete", () => {
+    const handleLogComplete = () => {
       setIsStreaming(false);
       if (onComplete) onComplete();
-    });
+    };
 
-    socket.on("connect_error", () => {
-      /* keep UI alive; polling may retry */
-    });
+    socket.on("log:line", handleLogLine);
+    socket.on("log:complete", handleLogComplete);
+
+    const handleConnectError = () => {};
+    socket.on("connect_error", handleConnectError);
 
     void (async () => {
       await Promise.resolve();
@@ -191,72 +152,109 @@ export default function TerminalLogs({
     return () => {
       cancelled = true;
       socket.emit("leave:deployment", deploymentId);
-      socket.disconnect();
+      socket.off("log:line", handleLogLine);
+      socket.off("log:complete", handleLogComplete);
+      socket.off("connect_error", handleConnectError);
     };
   }, [deploymentId, appendAndMaybeSignalError, onComplete, onStatusChange]);
 
+  const getLogColor = (type) => {
+    switch (type) {
+      case "error": return "text-[#E55B5B]";
+      case "warn": return "text-[#D4A84B]";
+      case "success": return "text-[#6EE7B7]";
+      default: return "text-[#c8c8c8]";
+    }
+  };
+
+  const getLogPrefix = (type) => {
+    switch (type) {
+      case "error": return "ERR";
+      case "warn": return "WRN";
+      case "success": return "OK ";
+      default: return "LOG";
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full min-h-0">
-      <div className="flex items-center justify-between pb-4 border-b-2 border-[#222] mb-4 shrink-0">
-        <div className="flex gap-2">
-          <div className="w-3 h-3 border-2 border-[#00FFCC]" />
-          <div className="w-3 h-3 border-2 border-[#FFCC00]" />
-          <div className="w-3 h-3 border-2 border-[#555]" />
+      {/* Terminal Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-[#1a1a1a] mb-3 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-[#E55B5B]/60" />
+            <div className="w-3 h-3 rounded-full bg-[#D4A84B]/60" />
+            <div className="w-3 h-3 rounded-full bg-[#6EE7B7]/60" />
+          </div>
+          <span className="text-xs text-[#555]" style={{ fontFamily: "'Inter', sans-serif" }}>
+            Terminal — Build Logs
+          </span>
         </div>
-        <div className="flex items-center gap-4">
-          <p className="text-[10px] font-mono text-[#888] tracking-widest uppercase">
-            DEPLOY_PILOT_SECURE_SHELL
-          </p>
+        <div className="flex items-center gap-3">
           {loadError && (
-            <span className="text-[9px] text-red-400 max-w-[200px] truncate normal-case">
+            <span className="text-xs text-[#E55B5B] max-w-[200px] truncate">
               {loadError}
             </span>
           )}
           {isStreaming ? (
-            <span className="flex items-center gap-2 text-[#FFCC00] text-[9px] font-bold tracking-widest px-2 py-1 border border-[#FFCC00] bg-[#FFCC00]/10 uppercase">
-              <RefreshCw size={10} className="animate-spin" /> STREAMING
+            <span className="flex items-center gap-2 text-[#6EE7B7] text-xs font-medium px-3 py-1 rounded-full border border-[#6EE7B7]/20 bg-[#6EE7B7]/5">
+              <RefreshCw size={11} className="animate-spin" /> Live
             </span>
           ) : (
-            <span className="flex items-center gap-2 text-[#555] text-[9px] font-bold tracking-widest px-2 py-1 border border-[#555] bg-[#111] uppercase">
-              <ShieldCheck size={10} /> IDLE
+            <span className="flex items-center gap-2 text-[#555] text-xs font-medium px-3 py-1 rounded-full border border-[#222] bg-[#111]">
+              <ShieldCheck size={11} /> Complete
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto font-mono text-[10px] tracking-widest leading-loose pr-4 custom-scrollbar min-h-0">
+      {/* Log Lines */}
+      <div className="flex-1 overflow-y-auto pr-2 min-h-0 bg-[#080808] rounded-lg border border-[#1a1a1a] p-4" style={{ scrollbarWidth: 'thin' }}>
         {logs.map((log, index) => (
           <div
             key={`${index}-${log.time}`}
-            className="flex gap-4 mb-2 hover:bg-[#111] px-2 py-1 transition-colors group"
+            className="flex gap-3 mb-1.5 py-1 px-2 rounded hover:bg-[#0f0f0f] transition-colors group font-mono"
           >
-            <span className="text-[#555] min-w-[70px] opacity-50 group-hover:opacity-100 transition-opacity">
-              [{log.time}]
+            {/* Line Number */}
+            <span className="text-[11px] text-[#333] min-w-[28px] text-right select-none tabular-nums">
+              {index + 1}
             </span>
-            <span
-              className={`flex-1 ${
-                log.type === "error"
-                  ? "text-red-500 font-bold"
-                  : log.type === "warn"
-                    ? "text-[#FFCC00]"
-                    : log.type === "success"
-                      ? "text-[#00FFCC]"
-                      : "text-[#ccc]"
-              }`}
-            >
+
+            {/* Timestamp */}
+            <span className="text-[12px] text-[#444] min-w-[70px] opacity-60 group-hover:opacity-100 transition-opacity tabular-nums">
+              {log.time}
+            </span>
+            
+            {/* Type badge */}
+            <span className={`text-[10px] min-w-[28px] font-bold tracking-wider ${getLogColor(log.type)} opacity-70`}>
+              {getLogPrefix(log.type)}
+            </span>
+
+            {/* Message */}
+            <span className={`flex-1 text-[13px] leading-relaxed ${getLogColor(log.type)} ${log.type === 'error' ? 'font-semibold' : ''}`}>
               {log.message}
             </span>
           </div>
         ))}
 
         {isStreaming && (
-          <div className="flex gap-4 px-2 py-1">
-            <span className="text-[#555] min-w-[70px] opacity-50">[--:--:--]</span>
-            <span className="text-[#00FFCC] font-bold animate-pulse">_</span>
+          <div className="flex gap-3 px-2 py-1">
+            <span className="text-[11px] text-[#333] min-w-[28px] text-right">{logs.length + 1}</span>
+            <span className="text-[12px] text-[#444] min-w-[70px]">--:--:--</span>
+            <span className="text-[10px] min-w-[28px] text-[#6EE7B7]">...</span>
+            <span className="inline-block w-2 h-4 bg-[#6EE7B7] ai-cursor-blink rounded-sm"></span>
           </div>
         )}
 
         <div ref={messagesEndRef} />
+      </div>
+
+      {/* Footer stats */}
+      <div className="pt-2 mt-2 border-t border-[#1a1a1a] flex justify-between items-center shrink-0">
+        <span className="text-[11px] text-[#444]">{logs.length} lines</span>
+        <button onClick={scrollToBottom} className="text-[11px] text-[#555] hover:text-white flex items-center gap-1 transition-colors">
+          <ArrowDown size={10} /> Scroll to bottom
+        </button>
       </div>
     </div>
   );

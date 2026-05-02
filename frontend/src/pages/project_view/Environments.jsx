@@ -15,234 +15,129 @@ import {
 
 import heroBg from "../../assets/new-top.png";
 import CyberButton from "../../components/ui/CyberButton";
-import StatusBadge from "../../components/ui/StatusBadge";
-import InputField from "../../components/ui/InputField";
 
-const EnvTag = ({ label, color }) => (
-  <span className={`text-[7px] px-1.5 py-[2px] border font-bold tracking-widest ${color}`}>
-    {label}
-  </span>
-);
-
-const tagColors = {
-  PROD: "text-valora-cyan border-valora-cyan bg-valora-cyan/10",
-  STAGING: "text-valora-yellow border-valora-yellow bg-valora-yellow/10",
-  DEV: "text-blue-400 border-blue-400 bg-blue-400/10",
-  PREVIEW: "text-purple-400 border-purple-400 bg-purple-400/10",
+const StatusBadge = ({ status }) => {
+  const styles = {
+    ACTIVE: "text-[#00FFCC] border-[#00FFCC]/30 bg-[#00FFCC]/10",
+    INACTIVE: "text-[#FFCC00] border-[#FFCC00]/30 bg-[#FFCC00]/10",
+    ARCHIVED: "text-[#888] border-[#888]/30 bg-[#888]/10",
+  };
+  const normalized = status.toUpperCase();
+  return (
+    <span className={`text-[9px] px-2 py-0.5 border font-mono tracking-widest flex items-center gap-1 ${styles[normalized] || styles.INACTIVE}`}>
+      <span className={`w-1 h-1 rounded-full ${normalized === 'ACTIVE' ? 'bg-[#00FFCC]' : normalized === 'INACTIVE' ? 'bg-[#FFCC00]' : 'bg-[#555]'}`}></span>
+      {normalized}
+    </span>
+  );
 };
-
-const EnvIcon = ({ color }) => (
-  <div className={`w-8 h-8 flex items-center justify-center shrink-0 border-2 ${color}`}>
-    <Layers size={14} className="text-white" />
-  </div>
-);
-
-const EnvRow = ({ env }) => (
-  <tr className="border-b border-[#222] hover:bg-[#111] transition-colors group">
-    <td className="px-4 py-3">
-      <div className="flex items-center gap-3">
-        <EnvIcon color={env.iconColor} />
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold text-white uppercase tracking-widest">{env.name}</span>
-            <EnvTag label={env.tag} color={tagColors[env.tag]} />
-          </div>
-          <span className="text-[8px] text-[#555] tracking-widest uppercase">{env.slug}</span>
-        </div>
-      </div>
-    </td>
-    <td className="px-4 py-3">
-      <p className="text-[9px] text-[#ccc] truncate max-w-[100px] uppercase tracking-widest">{env.project}</p>
-      <div className="flex items-center gap-1 text-[8px] text-valora-yellow mt-1">
-        <GitBranch size={9} /> {env.branch}
-      </div>
-    </td>
-    <td className="px-4 py-3">
-      <p className="text-[10px] text-white font-bold">{env.variables}</p>
-      <p className="text-[8px] text-[#555] tracking-widest uppercase">variables</p>
-    </td>
-    <td className="px-4 py-3">
-      <p className="text-[9px] text-[#ccc] uppercase tracking-widest">{env.timeAgo}</p>
-      <p className="text-[8px] text-[#555] tracking-widest uppercase">{env.date}</p>
-    </td>
-    <td className="px-4 py-3">
-      <div className="flex items-center gap-2">
-        <div className="w-5 h-5 bg-[#333] border border-[#555] flex items-center justify-center text-white text-[7px] font-bold shrink-0">
-          {env.updatedBy.slice(0, 2).toUpperCase()}
-        </div>
-        <span className="text-[9px] text-[#ccc] uppercase tracking-widest">{env.updatedBy}</span>
-      </div>
-    </td>
-    <td className="px-4 py-3">
-      <StatusBadge status={env.status} type={env.status === "Active" ? "success" : env.status === "Inactive" ? "warning" : "neutral"} />
-    </td>
-    <td className="px-4 py-3 text-right">
-      <button className="text-[#555] hover:text-valora-yellow transition-colors opacity-0 group-hover:opacity-100">
-        <MoreVertical size={14} />
-      </button>
-    </td>
-  </tr>
-);
 
 export default function Environments() {
   const { isCollapsed, toggleSidebar } = useSidebar();
-  const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [projectFilter, setProjectFilter] = useState("All Projects");
 
   const environments = [
-    { id: 1, name: "Production", tag: "PROD", slug: "production", project: "User Auth Service", branch: "main", variables: 12, timeAgo: "2m ago", date: "Apr 26, 2026", updatedBy: "Sheryian", status: "Active", iconColor: "border-valora-cyan bg-[#0a0a0a]" },
-    { id: 2, name: "Staging", tag: "STAGING", slug: "staging", project: "User Auth Service", branch: "develop", variables: 8, timeAgo: "15m ago", date: "Apr 26, 2026", updatedBy: "Sheryian", status: "Active", iconColor: "border-valora-yellow bg-[#0a0a0a]" },
-    { id: 3, name: "Development", tag: "DEV", slug: "development", project: "Frontend Web", branch: "main", variables: 10, timeAgo: "1h ago", date: "Apr 26, 2026", updatedBy: "Sheryian", status: "Active", iconColor: "border-[#444] bg-[#0a0a0a]" },
-    { id: 4, name: "Preview", tag: "PREVIEW", slug: "preview", project: "Payment Service", branch: "feature/checkout", variables: 6, timeAgo: "3h ago", date: "Apr 26, 2026", updatedBy: "Sheryian", status: "Inactive", iconColor: "border-[#444] bg-[#0a0a0a]" },
+    { id: 1, name: "PRODUCTION_CLUSTER", tag: "PROD", project: "AUTH_SERVICE_CORE", branch: "main", variables: 12, status: "Active" },
+    { id: 2, name: "STAGING_STAGING_v2", tag: "STAGING", project: "AUTH_SERVICE_CORE", branch: "develop", variables: 8, status: "Active" },
+    { id: 3, name: "DEV_INSTANCE_1", tag: "DEV", project: "FRONTEND_DASHBOARD", branch: "main", variables: 10, status: "Active" },
+    { id: 4, name: "PREVIEW_PR_144", tag: "PREVIEW", project: "PAYMENT_GATEWAY", branch: "feat/checkout", variables: 6, status: "Inactive" },
   ];
 
-  const filtered = environments.filter((e) => {
-    const matchSearch = e.name.toLowerCase().includes(searchQuery.toLowerCase()) || e.project.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchProject = projectFilter === "All Projects" || e.project === projectFilter;
-    const matchTab = activeTab === "all" || (activeTab === "archived" && e.status === "Archived");
-    return matchSearch && matchProject && matchTab;
-  });
-
-  const totalVars = environments.reduce((s, e) => s + e.variables, 0);
-  const uniqueProjects = [...new Set(environments.map((e) => e.project))];
-
   return (
-    <div className="flex h-screen overflow-hidden bg-valora-bg text-white font-mono select-none">
+    <div className="flex h-screen overflow-hidden bg-[#050505] text-white font-mono uppercase tracking-wide">
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+      
       <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}>
-
-        {/* HERO */}
-        <div className="relative shrink-0 min-h-[120px] md:min-h-[140px] bg-cover bg-center flex flex-col justify-between border-b-2 border-valora-border" style={{ backgroundImage: `url(${heroBg})` }}>
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px]" />
+        
+        {/* HEADER SECTION */}
+        <div className="relative min-h-[140px] bg-cover bg-center flex flex-col justify-between border-b border-[#222]" style={{ backgroundImage: `url(${heroBg})` }}>
+          <div className="absolute inset-0 bg-[#050505]/80 backdrop-blur-sm" />
           <TopNav />
-          <div className="relative z-10 px-6 pb-4">
-            <h1 className="text-xl md:text-2xl text-valora-cyan font-pixel uppercase tracking-widest">ENVIRONMENTS</h1>
-            <p className="text-[9px] text-[#888] mt-2 tracking-widest uppercase font-bold">
-              MANAGE SECURE CONFIGURATIONS ACROSS ALL ACTIVE MODULES.
-            </p>
+          <div className="relative z-10 px-6 pb-4 flex justify-between items-end">
+            <div>
+              <h1 className="text-xl md:text-2xl text-[#FFCC00] font-bold tracking-widest font-pixel">ENV_VAULT</h1>
+              <p className="text-[10px] text-[#888] mt-1 tracking-widest">SECURE INFRASTRUCTURE CONFIGURATIONS</p>
+            </div>
+            <CyberButton variant="primary">
+                <Plus size={14} className="mr-2" /> NEW_ENVIRONMENT
+            </CyberButton>
           </div>
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 flex flex-col p-4 overflow-y-auto bg-valora-bg" style={{ scrollbarWidth: 'none' }}>
-          <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-4">
-
-            {/* LEFT (MAIN TABLE) */}
-            <div className="flex flex-col gap-4 min-h-0 overflow-hidden">
-              <div className="bg-valora-card border-2 border-valora-border flex flex-col flex-1 min-h-0 overflow-hidden relative">
-                 <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-valora-cyan"></div>
-                 <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[#333]"></div>
-                
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b-2 border-[#222] shrink-0">
-                  <div className="flex items-center gap-2">
-                    {[{ id: "all", label: "ALL_ENVIRONMENTS" }, { id: "archived", label: "ARCHIVED" }].map((t) => (
-                      <button key={t.id} onClick={() => setActiveTab(t.id)} className={`px-4 py-2 text-[10px] uppercase font-bold tracking-widest transition-colors border-2 ${activeTab === t.id ? "border-valora-cyan text-valora-cyan bg-valora-cyan/10" : "border-transparent text-[#666] hover:text-white"}`}>
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666]" />
-                      <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="SEARCH..." className="bg-[#050505] border-2 border-[#333] text-[9px] text-white placeholder-[#555] pl-8 pr-3 py-2 w-48 outline-none focus:border-valora-cyan transition-colors uppercase tracking-widest" />
-                    </div>
-                    <div className="relative">
-                      <select value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} className="bg-[#050505] border-2 border-[#333] text-[9px] text-white pl-3 pr-8 py-2 outline-none cursor-pointer appearance-none uppercase tracking-widest">
-                        <option value="All Projects" className="bg-[#111]">ALL PROJECTS</option>
-                        {uniqueProjects.map((p) => <option key={p} value={p} className="bg-[#111] uppercase">{p}</option>)}
-                      </select>
-                      <ChevronDown size={10} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666] pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-                  <table className="w-full">
-                    <thead className="sticky top-0 bg-[#0a0a0a] z-10">
-                      <tr className="border-b-2 border-[#222]">
-                        {["SYS_ENVIRONMENT", "PROJECT_ID", "VARIABLES", "LAST_SYNC", "SYNC_AUTHOR", "SYS_STATUS", ""].map((h) => (
-                          <th key={h} className="px-4 py-3 text-left text-[9px] text-[#666] font-bold tracking-widest uppercase">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtered.length === 0 ? (
-                        <tr><td colSpan={7} className="py-12 text-center text-[#555] text-[10px] font-pixel">NO_ENVIRONMENTS_FOUND</td></tr>
-                      ) : (
-                        filtered.map((env) => <EnvRow key={env.id} env={env} />)
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="px-4 py-3 border-t-2 border-[#222] shrink-0 bg-[#0a0a0a]">
-                  <span className="text-[9px] text-[#555] tracking-widest uppercase">SYS_PAGINATION: {filtered.length} / {environments.length} ACTIVE_MODULES</span>
-                </div>
-              </div>
-
-              {/* BOTTOM INFO STRIP */}
-              <div className="bg-valora-card border-2 border-valora-border p-4 flex flex-col sm:flex-row items-center gap-4 shrink-0 relative">
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="w-10 h-10 border-2 border-valora-cyan flex items-center justify-center shrink-0">
-                    <Check size={16} className="text-valora-cyan" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-pixel text-valora-cyan uppercase">AES-256 SECURED</p>
-                    <p className="text-[9px] text-[#666] mt-1 tracking-widest uppercase">ALL VARIABLES ARE ENCRYPTED AT REST AND IN TRANSIT.</p>
-                  </div>
-                </div>
-                <div className="hidden sm:block w-px h-10 bg-[#333]" />
-                <div className="text-center px-4">
-                  <p className="text-[9px] text-[#666] mb-1 tracking-widest uppercase">TOTAL_VARS</p>
-                  <p className="text-xl font-pixel text-white leading-none">{totalVars}</p>
-                </div>
-                <div className="hidden sm:block w-px h-10 bg-[#333]" />
-                <div className="text-center px-4">
-                  <p className="text-[9px] text-[#666] mb-1 tracking-widest uppercase">PROJECTS_USING</p>
-                  <p className="text-xl font-pixel text-white leading-none">{uniqueProjects.length}</p>
-                </div>
-              </div>
+        <div className="flex-1 p-6 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+          
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-[#222]">
+            <h2 className="text-sm text-[#888] flex items-center gap-2 font-bold">
+              <Layers size={14} /> ACTIVE_ENVIRONMENTS ({environments.length})
+            </h2>
+            
+            <div className="relative w-full md:w-64">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+                <input 
+                    type="text"
+                    placeholder="FILTER_ENVIRONMENTS..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-[#0a0a0a] border border-[#222] text-[10px] py-2 pl-10 pr-4 focus:border-[#FFCC00] outline-none transition-colors"
+                />
             </div>
-
-            {/* RIGHT PANEL */}
-            <div className="flex flex-col gap-4 min-h-0">
-              <div className="bg-valora-card border-2 border-valora-border p-6 shrink-0 relative">
-                <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-valora-yellow"></div>
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-[12px] font-pixel text-valora-yellow uppercase tracking-tight">SYS_MANUAL</h3>
-                  <Layers size={16} className="text-[#555]" />
-                </div>
-                <p className="text-[10px] text-[#888] leading-relaxed mb-6 tracking-widest uppercase">
-                  MANAGE DIFFERENT SETS OF ENVIRONMENT VARIABLES FOR YOUR APPLICATIONS.
-                </p>
-                <ul className="space-y-3 mb-6">
-                  {["SECURELY STORE & ENCRYPT", "SCOPE VARIABLES TO PROJECTS", "SWITCH ENVIRONMENTS EASILY", "USE IN BUILD & RUNTIME"].map((item) => (
-                    <li key={item} className="flex items-center gap-3">
-                      <div className="w-1.5 h-1.5 bg-valora-cyan shrink-0"></div>
-                      <span className="text-[9px] text-[#aaa] tracking-widest">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <CyberButton variant="primary" className="w-full">
-                  <Plus size={14} className="mr-2" /> CREATE_ENVIRONMENT
-                </CyberButton>
-              </div>
-
-              <div className="bg-[#050505] border-2 border-[#222] p-6 shrink-0 flex-1 flex flex-col justify-between hover:border-[#444] transition-colors">
-                <div>
-                  <h3 className="text-[10px] font-bold text-[#888] mb-2 tracking-widest uppercase">OPERATOR_ASSISTANCE</h3>
-                  <p className="text-[9px] text-[#555] leading-relaxed tracking-widest uppercase">
-                    LEARN HOW ENVIRONMENTS WORK AND BEST PRACTICES FOR SECRET MANAGEMENT.
-                  </p>
-                </div>
-                <button className="flex items-center justify-between mt-6 text-[9px] text-valora-cyan hover:text-[#fff] transition-colors uppercase tracking-widest font-bold">
-                  VIEW_DOCUMENTATION
-                  <ExternalLink size={12} />
-                </button>
-              </div>
-            </div>
-
           </div>
+
+          <div className="bg-[#0a0a0a] border-2 border-[#222]">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-[9px]">
+                        <thead>
+                            <tr className="bg-[#111] text-[#666] tracking-widest uppercase">
+                                <th className="p-4 font-bold">ENV_NAME</th>
+                                <th className="p-4 font-bold">ASSOCIATED_PROJECT</th>
+                                <th className="p-4 font-bold">BRANCH</th>
+                                <th className="p-4 font-bold">VARS_COUNT</th>
+                                <th className="p-4 font-bold">STATUS</th>
+                                <th className="p-4 font-bold">ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {environments.map((env) => (
+                                <tr key={env.id} className="border-b border-[#111] hover:bg-[#050505] group">
+                                    <td className="p-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-white font-bold mb-1">{env.name}</span>
+                                            <span className="text-[8px] text-[#444]">{env.tag}</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-[#888]">{env.project}</td>
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-1 text-valora-yellow">
+                                            <GitBranch size={10} /> {env.branch}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-white font-bold">{env.variables}</td>
+                                    <td className="p-4">
+                                        <StatusBadge status={env.status} />
+                                    </td>
+                                    <td className="p-4">
+                                        <button className="p-2 text-[#444] hover:text-[#FFCC00] transition-colors">
+                                            <MoreVertical size={14} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+          </div>
+
+          {/* SECURITY FOOTER */}
+          <div className="mt-8 p-6 bg-[#0a0a0a] border border-[#222] flex items-center gap-6">
+              <div className="w-12 h-12 border-2 border-[#00FFCC] flex items-center justify-center shrink-0">
+                  <Check size={20} className="text-[#00FFCC]" />
+              </div>
+              <div>
+                  <h3 className="text-xs font-pixel text-[#00FFCC] mb-1">ENCRYPTED_VAULT_ENABLED</h3>
+                  <p className="text-[9px] text-[#555] tracking-widest leading-relaxed">ALL ENVIRONMENT VARIABLES ARE AES-256 ENCRYPTED BEFORE STORAGE. ACCESS IS RESTRICTED TO AUTHORIZED OPERATORS ONLY.</p>
+              </div>
+          </div>
+
         </div>
       </div>
     </div>

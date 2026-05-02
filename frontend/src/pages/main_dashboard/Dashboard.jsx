@@ -19,9 +19,9 @@ import { getProjects } from "../../api/api";
 
 const StatusBadge = ({ status }) => {
   const styles = {
-    RUNNING: "text-[#00FFCC] border-[#00FFCC]/30 bg-[#00FFCC]/10",
-    FAILED: "text-[#FF3333] border-[#FF3333]/30 bg-[#FF3333]/10",
-    BUILDING: "text-[#FFCC00] border-[#FFCC00]/30 bg-[#FFCC00]/10",
+    RUNNING: "text-[#6EE7B7] border-[#6EE7B7]/30 bg-[#6EE7B7]/10",
+    FAILED: "text-[#E55B5B] border-[#E55B5B]/30 bg-[#E55B5B]/10",
+    BUILDING: "text-[#D4A84B] border-[#D4A84B]/30 bg-[#D4A84B]/10",
   };
 
   return (
@@ -31,10 +31,10 @@ const StatusBadge = ({ status }) => {
       <span
         className={`w-1.5 h-1.5 rounded-full ${
           status === "RUNNING"
-            ? "bg-[#00FFCC]"
+            ? "bg-[#6EE7B7]"
             : status === "FAILED"
-              ? "bg-[#FF3333]"
-              : "bg-[#FFCC00] animate-pulse"
+              ? "bg-[#E55B5B]"
+              : "bg-[#D4A84B] animate-pulse"
         }`}
       ></span>
       {status}
@@ -101,7 +101,7 @@ export default function Dashboard() {
           <div className="relative z-10 px-6 pb-4 flex justify-between items-end">
             <div>
               <h1
-                className="text-xl md:text-2xl text-[#FFCC00] font-bold tracking-widest"
+                className="text-xl md:text-2xl text-[#D4A84B] font-bold tracking-widest"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 OVERVIEW
@@ -120,7 +120,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate("/projects/new")}
-                className="bg-[#0a0a0a] text-[#FFCC00] border-2 border-[#FFCC00] px-5 py-3 text-[10px] font-bold transition-transform active:translate-y-1 flex items-center gap-2 font-mono"
+                className="bg-[#0a0a0a] text-[#D4A84B] border-2 border-[#D4A84B] px-5 py-3 text-[10px] font-bold transition-transform active:translate-y-1 flex items-center gap-2 font-mono"
                 style={{ fontFamily: "'Press Start 2P', cursive" }}
               >
                 <Rocket size={14} strokeWidth={3} /> IMPORT_REPO
@@ -128,7 +128,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate("/applications")}
-                className="bg-[#FFCC00] text-black px-5 py-3 text-[10px] font-bold transition-transform active:translate-y-1 active:shadow-none flex items-center gap-2"
+                className="bg-[#D4A84B] text-black px-5 py-3 text-[10px] font-bold transition-transform active:translate-y-1 active:shadow-none flex items-center gap-2"
                 style={{
                   fontFamily: "'Press Start 2P', cursive",
                   boxShadow: "4px 4px 0px 0px #CC9900",
@@ -155,7 +155,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate("/projects/new")}
-                className="text-[#00FFCC] hover:underline font-bold"
+                className="text-[#6EE7B7] hover:underline font-bold"
               >
                 Import a GitHub repo
               </button>{" "}
@@ -167,13 +167,13 @@ export default function Dashboard() {
             {myProjects.map((project) => (
               <div
                 key={project.id}
-                className="bg-[#0a0a0a] border-2 border-[#222] hover:border-[#FFCC00] transition-colors flex flex-col relative group"
+                className="bg-[#0a0a0a] border-2 border-[#222] hover:border-[#D4A84B] transition-colors flex flex-col relative group"
                 style={{ boxShadow: "4px 4px 0px 0px rgba(255, 204, 0, 0.1)" }}
               >
                 <div className="p-4 border-b border-[#111]">
                   <div className="flex justify-between items-start mb-2">
                     <h3
-                      className="text-sm font-bold text-[#FFCC00] truncate pr-2"
+                      className="text-sm font-bold text-[#D4A84B] truncate pr-2"
                       style={{
                         fontFamily: "'Press Start 2P', cursive",
                         fontSize: "10px",
@@ -206,7 +206,7 @@ export default function Dashboard() {
                       }
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[10px] text-[#00FFCC] hover:underline flex items-center gap-1 font-bold truncate max-w-[60%]"
+                      className="text-[10px] text-[#6EE7B7] hover:underline flex items-center gap-1 font-bold truncate max-w-[60%]"
                     >
                       {project.url} <ExternalLink size={10} />
                     </a>
@@ -221,7 +221,7 @@ export default function Dashboard() {
                         `/deploy?projectId=${encodeURIComponent(project.id)}`
                       )
                     }
-                    className="p-3 text-[#555] hover:text-[#00FFCC] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors"
+                    className="p-3 text-[#555] hover:text-[#6EE7B7] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors"
                     title="Deployments & logs"
                   >
                     <Terminal size={14} />
@@ -229,7 +229,7 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => navigate("/environments")}
-                    className="p-3 text-[#555] hover:text-[#FFCC00] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors"
+                    className="p-3 text-[#555] hover:text-[#D4A84B] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors"
                     title="Environments"
                   >
                     <Settings size={14} />
@@ -241,7 +241,7 @@ export default function Dashboard() {
                         `/deploy?projectId=${encodeURIComponent(project.id)}`
                       )
                     }
-                    className="p-3 text-[#555] hover:text-[#FFCC00] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors"
+                    className="p-3 text-[#555] hover:text-[#D4A84B] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors"
                     title="Deployments"
                   >
                     <History size={14} />
@@ -256,8 +256,8 @@ export default function Dashboard() {
                     }
                     className={`p-3 flex justify-center transition-all ${
                       project.status === "FAILED"
-                        ? "text-[#050505] bg-[#FFCC00] hover:bg-yellow-400"
-                        : "text-[#555] hover:text-[#FFCC00] hover:bg-[#111]"
+                        ? "text-[#050505] bg-[#D4A84B] hover:bg-yellow-400"
+                        : "text-[#555] hover:text-[#D4A84B] hover:bg-[#111]"
                     }`}
                     title="Open project (AI analyze from deployment logs)"
                   >

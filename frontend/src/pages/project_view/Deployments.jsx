@@ -157,7 +157,7 @@ export default function DeploymentsPage() {
 
   return (
     <div
-      className="flex h-screen overflow-hidden bg-[#050505] text-white uppercase tracking-wide"
+      className="flex h-screen overflow-hidden bg-[#060606] text-white uppercase tracking-wide"
       style={{ fontFamily: "'Space Mono', monospace" }}
     >
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
@@ -171,59 +171,27 @@ export default function DeploymentsPage() {
           className="relative min-h-[140px] bg-cover bg-center flex flex-col justify-between border-b border-[#222]"
           style={{ backgroundImage: `url(${heroBg})` }}
         >
-          <div className="absolute inset-0 bg-[#050505]/80 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-[#060606]/80 backdrop-blur-sm" />
           <TopNav />
-          <div className="relative z-10 px-6 pb-4 flex justify-between items-end flex-wrap gap-4">
+          <div className="relative z-10 px-6 pb-4 flex justify-between items-end">
             <div>
-              <h1
-                className="text-xl md:text-2xl text-[#FFCC00] font-bold tracking-widest"
-                style={{ fontFamily: "'Press Start 2P', cursive" }}
-              >
+              <h1 className="text-xl md:text-2xl text-[#D4A84B] font-bold tracking-widest" style={{ fontFamily: "'Press Start 2P', cursive" }}>
                 DEPLOYMENTS
               </h1>
-              <div className="flex items-center gap-4 mt-2 flex-wrap">
-                <p className="text-[10px] text-[#888] flex items-center gap-1">
-                  <Github size={12} /> {projectName || "SELECT_PROJECT"}
-                </p>
-                {projects.length > 0 && (
-                  <select
-                    value={projectId}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      if (next) {
-                        navigate(
-                          `/deploy?projectId=${encodeURIComponent(String(next))}`
-                        );
-                      }
-                    }}
-                    className="bg-[#0a0a0a] border border-[#333] text-[#ccc] text-[10px] font-mono px-2 py-1 outline-none"
-                  >
-                    {projects.map((p) => (
-                      <option key={p._id} value={p._id} className="bg-[#0a0a0a]">
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {projectId && (
-                  <span className="text-[9px] text-[#00FFCC] bg-[#00FFCC]/10 border border-[#00FFCC]/30 px-2 py-0.5 font-mono truncate max-w-[200px]">
-                    {projectId}
-                  </span>
-                )}
-              </div>
+              <p className="text-md text-[#888] mt-1 tracking-widest">BUILD PIPELINE & LOGS</p>
             </div>
-
+            
             <button
               type="button"
               disabled={!projectId || triggering}
               onClick={handleTriggerBuild}
-              className="bg-[#FFCC00] text-black px-5 py-3 text-[10px] font-bold transition-transform active:translate-y-1 active:shadow-none flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-[#D4A84B] text-black px-8 py-4 text-sm font-bold transition-transform active:translate-y-1 active:shadow-none flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 fontFamily: "'Press Start 2P', cursive",
-                boxShadow: "4px 4px 0px 0px #CC9900",
+                boxShadow: "4px 4px 0px 0px #A3823A",
               }}
             >
-              <Rocket size={14} strokeWidth={3} />{" "}
+              <Rocket size={16} strokeWidth={3} />{" "}
               {triggering ? "STARTING..." : "TRIGGER_BUILD"}
             </button>
           </div>
@@ -234,15 +202,15 @@ export default function DeploymentsPage() {
           style={{ scrollbarWidth: "none" }}
         >
           {!projectId && (
-            <div className="bg-[#0a0a0a] border-2 border-[#222] p-6 text-[11px] text-[#888] max-w-xl">
+            <div className="bg-[#0a0a0a] border-2 border-[#222] p-6 text-sm text-[#888] max-w-xl">
               <p className="mb-4 normal-case">
-                Add <span className="text-[#FFCC00]">?projectId=</span> to the
+                Add <span className="text-[#D4A84B]">?projectId=</span> to the
                 URL, or open a project from the dashboard.
               </p>
               <button
                 type="button"
                 onClick={pickFirstProject}
-                className="text-[10px] border border-[#00FFCC] text-[#00FFCC] px-4 py-2 hover:bg-[#00FFCC]/10"
+                className="text-xs border border-[#D4A84B] text-[#D4A84B] px-4 py-2 hover:bg-[#D4A84B]/10"
               >
                 USE_FIRST_PROJECT
               </button>
@@ -250,24 +218,24 @@ export default function DeploymentsPage() {
           )}
 
           {projectId && error && (
-            <p className="text-red-400 text-[11px] mb-4 normal-case">{error}</p>
+            <p className="text-red-400 text-sm mb-4 normal-case">{error}</p>
           )}
 
           {projectId && (
             <>
               <div className="flex justify-between items-center mb-4 border-b border-[#222] pb-2">
-                <h2 className="text-sm text-[#888] flex items-center gap-2 font-bold">
-                  <History size={14} /> VERSION_HISTORY
+                <h2 className="text-base text-[#888] flex items-center gap-2 font-bold">
+                  <History size={16} /> VERSION_HISTORY
                 </h2>
-                <span className="text-[10px] text-[#555]">
+                <span className="text-xs text-[#555]">
                   TOTAL_BUILDS: {loading ? "…" : deployments.length}
                 </span>
               </div>
 
-              <div className="bg-[#0a0a0a] border-2 border-[#222] shadow-[4px_4px_0px_0px_rgba(255,204,0,0.05)]">
+              <div className="bg-[#0a0a0a] border-2 border-[#222]">
                 <div className="flex flex-col p-4">
                   {loading && (
-                    <p className="text-[10px] text-[#555]">LOADING...</p>
+                    <p className="text-sm text-[#555]">LOADING...</p>
                   )}
                   {!loading &&
                     deployments.map((dep) => (
@@ -292,7 +260,7 @@ export default function DeploymentsPage() {
                       />
                     ))}
                   {!loading && deployments.length === 0 && (
-                    <p className="text-[10px] text-[#555] normal-case">
+                    <p className="text-sm text-[#555] normal-case">
                       No deployments yet. Trigger a build.
                     </p>
                   )}

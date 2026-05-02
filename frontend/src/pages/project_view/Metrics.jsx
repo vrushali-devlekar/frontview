@@ -4,7 +4,6 @@ import Sidebar from "../../components/layout/Sidebar";
 import TopNav from "../../components/layout/TopNav";
 import {
   Calendar as CalendarIcon,
-  ChevronDown,
   RefreshCw,
   Rocket,
   ShieldCheck,
@@ -17,10 +16,12 @@ import {
   Layers,
   Database,
   Globe,
-  Box
+  Box,
+  Cpu
 } from "lucide-react";
 
 import heroBg from "../../assets/new-top.png";
+import CyberButton from "../../components/ui/CyberButton";
 
 const Sparkline = ({ data, color }) => {
   const min = Math.min(...data);
@@ -50,306 +51,162 @@ export default function Metrics() {
 
   const stats = [
     {
-      title: "Deployments",
+      title: "DEPLOYMENTS",
       value: "28",
       change: "+12%",
       isPositive: true,
-      vs: "vs last 7 days",
       icon: Rocket,
-      iconBg: "bg-green-500/10",
-      iconColor: "text-green-400",
+      iconColor: "text-[#00FFCC]",
       sparklineData: [2, 4, 3, 5, 4, 7, 6],
-      sparklineColor: "#4ade80"
+      sparklineColor: "#00FFCC"
     },
     {
-      title: "Success Rate",
+      title: "SUCCESS_RATE",
       value: "96.4%",
       change: "+3.2%",
       isPositive: true,
-      vs: "vs last 7 days",
       icon: ShieldCheck,
-      iconBg: "bg-green-500/10",
-      iconColor: "text-green-400",
+      iconColor: "text-[#00FFCC]",
       sparklineData: [90, 92, 91, 95, 94, 96, 97],
-      sparklineColor: "#4ade80"
+      sparklineColor: "#00FFCC"
     },
     {
-      title: "Avg. Deploy Time",
+      title: "AVG_DEPLOY_TIME",
       value: "2m 34s",
       change: "-10s",
       isPositive: false,
-      isYellow: true,
-      vs: "vs last 7 days",
       icon: Clock,
-      iconBg: "bg-yellow-500/10",
-      iconColor: "text-yellow-400",
+      iconColor: "text-[#FFCC00]",
       sparklineData: [3.5, 3.2, 3.0, 2.8, 2.9, 2.5, 2.4],
-      sparklineColor: "#facc15"
+      sparklineColor: "#FFCC00"
     },
     {
-      title: "Failed Deployments",
+      title: "FAILED_DEPLOYS",
       value: "2",
       change: "-33%",
       isPositive: false,
-      isRed: true,
-      vs: "vs last 7 days",
       icon: AlertCircle,
-      iconBg: "bg-red-500/10",
-      iconColor: "text-red-400",
+      iconColor: "text-[#FF3333]",
       sparklineData: [4, 3, 5, 2, 3, 1, 2],
-      sparklineColor: "#f87171"
+      sparklineColor: "#FF3333"
     }
   ];
-
-  const topProjects = [
-    { name: "User Auth Service", deploys: 12, max: 12, color: "bg-green-500", icon: Shield, iconBg: "bg-green-500/10", iconColor: "text-green-500" },
-    { name: "Frontend Web", deploys: 8, max: 12, color: "bg-blue-500", icon: Globe, iconBg: "bg-blue-500/10", iconColor: "text-blue-500" },
-    { name: "Payment Service", deploys: 4, max: 12, color: "bg-yellow-500", icon: Layers, iconBg: "bg-yellow-500/10", iconColor: "text-yellow-500" },
-    { name: "Data Ingest Service", deploys: 3, max: 12, color: "bg-green-500", icon: Database, iconBg: "bg-green-500/10", iconColor: "text-green-500" },
-    { name: "Notification Service", deploys: 1, max: 12, color: "bg-slate-500", icon: Box, iconBg: "bg-slate-500/10", iconColor: "text-slate-500" },
-  ];
-
-  const recentDeploys = [
-    { project: "User Auth Service", icon: Shield, iconBg: "bg-green-500/10", iconColor: "text-green-500", env: "production", status: "Success", user: "Sheryian", time: "2m ago", duration: "2m 18s" },
-    { project: "Frontend Web", icon: Globe, iconBg: "bg-purple-500/10", iconColor: "text-purple-500", env: "production", status: "Success", user: "Sheryian", time: "15m ago", duration: "1m 45s" },
-    { project: "Payment Service", icon: Layers, iconBg: "bg-yellow-500/10", iconColor: "text-yellow-500", env: "staging", status: "Failed", user: "Sheryian", time: "1h ago", duration: "-" },
-  ];
-
-  const calendarMonths = [
-    { name: 'May', weeks: 4 },
-    { name: 'Jun', weeks: 4 },
-    { name: 'Jul', weeks: 4 },
-    { name: 'Aug', weeks: 4 },
-    { name: 'Sep', weeks: 4 },
-    { name: 'Oct', weeks: 4 },
-    { name: 'Nov', weeks: 4 },
-    { name: 'Dec', weeks: 4 },
-    { name: 'Jan', weeks: 4 },
-    { name: 'Feb', weeks: 4 },
-    { name: 'Mar', weeks: 4 },
-    { name: 'Apr', weeks: 4 },
-    { name: 'May', weeks: 4 },
-  ];
-
-  const getCalendarColor = (value) => {
-    switch (value) {
-      case 4: return "bg-[#22c55e]";
-      case 3: return "bg-[#16a34a]";
-      case 2: return "bg-[#15803d]";
-      case 1: return "bg-[#14532d]";
-      case 0:
-      default: return "bg-white/5";
-    }
-  };
 
   return (
-    <div
-      className="flex h-screen overflow-hidden bg-[#0b0f14] text-white"
-      style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif' }}
-    >
-      <Sidebar
-        isCollapsed={isCollapsed}
-        toggleSidebar={toggleSidebar}
-      />
-
-      <div
-        className={`flex flex-col flex-1 overflow-hidden transition-all duration-300
-        ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}
-      >
-        {/* HERO */}
-        <div
-          className="relative shrink-0 min-h-[120px] md:min-h-[140px] bg-cover bg-center flex flex-col justify-between border-b border-white/10"
-          style={{ backgroundImage: `url(${heroBg})` }}
-        >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
-
+    <div className="flex h-screen overflow-hidden bg-[#050505] text-white font-mono uppercase tracking-wide">
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+      
+      <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}>
+        
+        {/* HEADER SECTION */}
+        <div className="relative min-h-[140px] bg-cover bg-center flex flex-col justify-between border-b border-[#222]" style={{ backgroundImage: `url(${heroBg})` }}>
+          <div className="absolute inset-0 bg-[#050505]/80 backdrop-blur-sm" />
           <TopNav />
-
-          <div className="relative z-10 px-4 pb-3">
-            <h1 className="text-xl md:text-2xl leading-relaxed" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-              Metrics
-            </h1>
-            <p className="text-[7px] md:text-[9px] text-slate-300 mt-2 leading-loose" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-              Real-time insights and performance overview across all projects.
-            </p>
+          <div className="relative z-10 px-6 pb-4">
+            <h1 className="text-xl md:text-2xl text-[#FFCC00] font-bold tracking-widest font-pixel">FLEET_METRICS</h1>
+            <p className="text-[10px] text-[#888] mt-1 tracking-widest">REAL-TIME INFRASTRUCTURE PERFORMANCE MONITORING</p>
           </div>
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 flex flex-col p-2 md:p-3 gap-2 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-
-          {/* FILTER BAR */}
-          <div className="shrink-0 flex justify-between items-center bg-[#11151c] border border-white/10 rounded-lg px-3 py-1.5 gap-3">
-            <div className="flex gap-2 w-full md:w-auto">
-              <button className="flex items-center justify-between px-3 py-1.5 bg-[#1a1e26] border border-white/10 rounded text-xs text-slate-300 hover:bg-white/5 transition-colors">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon size={12} className="text-slate-400" />
-                  <span>Apr 20 - Apr 26, 2026</span>
-                </div>
-                <ChevronDown size={12} className="ml-3 text-slate-400" />
-              </button>
-              <button className="flex items-center justify-between px-3 py-1.5 bg-[#1a1e26] border border-white/10 rounded text-xs text-slate-300 hover:bg-white/5 transition-colors">
-                <span>All Projects</span>
-                <ChevronDown size={12} className="ml-3 text-slate-400" />
-              </button>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                Auto refresh: On
-              </span>
-              <RefreshCw size={12} className="ml-2 cursor-pointer hover:text-white transition-colors" />
-            </div>
-          </div>
-
-          {/* STATS */}
-          <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-2">
-            {stats.map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <div key={i} className="bg-[#11151c] border border-white/10 rounded-lg p-2.5 flex flex-col justify-between">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className={`p-1 rounded ${item.iconBg}`}>
-                        <Icon size={12} className={item.iconColor} />
-                      </div>
-                      <p className="text-[10px] text-slate-400">{item.title}</p>
+        <div className="flex-1 p-6 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {stats.map((item, i) => (
+                <div key={i} className="bg-[#0a0a0a] border-2 border-[#222] p-4 flex flex-col justify-between hover:border-[#444] transition-all">
+                    <div className="flex items-center gap-2 mb-4">
+                        <item.icon size={14} className={item.iconColor} />
+                        <span className="text-[9px] text-[#666] tracking-widest">{item.title}</span>
                     </div>
-                  </div>
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <h2 className="text-lg font-semibold leading-none">{item.value}</h2>
-                      <div className="flex items-center text-[9px] gap-0.5 mt-1">
-                        {item.isPositive ? <ArrowUpRight size={10} className="text-green-400" /> : <ArrowDownRight size={10} className={item.isYellow ? "text-yellow-400" : "text-red-400"} />}
-                        <span className={item.isPositive ? "text-green-400" : (item.isYellow ? "text-yellow-400" : "text-red-400")}>
-                          {item.change}
-                        </span>
-                        <span className="text-slate-500 ml-0.5">{item.vs}</span>
-                      </div>
-                    </div>
-                    <div className="mb-0.5"><Sparkline data={item.sparklineData} color={item.sparklineColor} /></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* MIDDLE ROW */}
-          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-4 gap-2 overflow-y-auto lg:overflow-hidden">
-            {/* CALENDAR */}
-            <div className="lg:col-span-3 bg-[#11151c] border border-white/10 rounded-lg p-3 flex flex-col">
-              <div className="flex justify-between items-center mb-2 shrink-0">
-                <h3 className="text-xl text-slate-300">Deployment Frequency</h3>
-                <div className="flex items-center gap-1 text-[9px] text-slate-400">
-                  <span>Less</span>
-                  <div className="flex gap-0.5">
-                    <div className="w-2 h-2 rounded-sm bg-white/5"></div>
-                    <div className="w-2 h-2 rounded-sm bg-[#14532d]"></div>
-                    <div className="w-2 h-2 rounded-sm bg-[#15803d]"></div>
-                    <div className="w-2 h-2 rounded-sm bg-[#16a34a]"></div>
-                    <div className="w-2 h-2 rounded-sm bg-[#22c55e]"></div>
-                  </div>
-                  <span>More</span>
-                </div>
-              </div>
-              <div className="flex-1 min-h-0 flex items-center justify-center overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                <div className="flex gap-2">
-                  {calendarMonths.map((month, mIndex) => (
-                    <div key={mIndex} className="flex flex-col">
-                      <span className="text-[10px] text-slate-500 mb-1">{month.name}</span>
-                      <div className="flex gap-1">
-                        {Array.from({ length: month.weeks }).map((_, wIndex) => (
-                          <div key={wIndex} className="flex flex-col gap-1">
-                            {Array.from({ length: 7 }).map((_, dIndex) => {
-                              const value = Math.floor(Math.random() * 5);
-                              return <div key={dIndex} className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm ${getCalendarColor(value)}`} title={`Deploys: ${value}`}></div>
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* TOP PROJECTS */}
-            <div className="lg:col-span-1 bg-[#11151c] border border-white/10 rounded-lg p-3 flex flex-col">
-              <div className="flex justify-between items-center mb-2 shrink-0">
-                <h3 className="text-xl text-slate-300">Top Projects</h3>
-              </div>
-              <div className="flex-1 flex flex-col justify-between min-h-0">
-                {topProjects.map((project, i) => {
-                  const Icon = project.icon;
-                  const widthPercent = (project.deploys / project.max) * 100;
-                  return (
-                    <div key={i} className="flex flex-col gap-1 text-[10px]">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <Icon size={10} className={project.iconColor} />
-                          <span className="text-slate-300 truncate">{project.name}</span>
+                    <div className="flex justify-between items-end">
+                        <div>
+                            <div className="text-2xl font-pixel text-white mb-1">{item.value}</div>
+                            <div className={`text-[9px] flex items-center gap-1 ${item.isPositive ? 'text-[#00FFCC]' : 'text-[#FF3333]'}`}>
+                                {item.isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                                {item.change}
+                            </div>
                         </div>
-                        <span className="text-slate-400">{project.deploys}</span>
-                      </div>
-                      <div className="w-full bg-[#1a1e26] h-1 rounded-full overflow-hidden">
-                        <div className={`h-full ${project.color}`} style={{ width: `${widthPercent}%` }}></div>
-                      </div>
+                        <Sparkline data={item.sparklineData} color={item.sparklineColor} />
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                </div>
+            ))}
           </div>
 
-          {/* BOTTOM ROW */}
-          <div className="flex-1 min-h-0 bg-[#11151c] border border-white/10 rounded-lg p-3 flex flex-col">
-            <div className="flex justify-between items-center mb-2 shrink-0">
-              <h3 className="text-xl text-slate-300">Recent Deployment Activity</h3>
-              <button className="text-[10px] text-slate-400 flex items-center hover:text-white transition-colors">
-                View all <ChevronRight size={10} className="ml-0.5" />
-              </button>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
-              <table className="w-full text-left text-[10px]">
-                <thead className="text-slate-500 sticky top-0 bg-[#11151c] z-10">
-                  <tr>
-                    <th className="font-normal pb-1.5 pl-2">Project</th>
-                    <th className="font-normal pb-1.5">Environment</th>
-                    <th className="font-normal pb-1.5">Status</th>
-                    <th className="font-normal pb-1.5">Deployed By</th>
-                    <th className="font-normal pb-1.5">Time</th>
-                    <th className="font-normal pb-1.5">Duration</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentDeploys.map((deploy, i) => {
-                    const Icon = deploy.icon;
-                    return (
-                      <tr key={i} className="border-t border-white/5 hover:bg-white/5 transition-colors">
-                        <td className="py-1.5 pl-2 flex items-center gap-1.5 text-slate-200">
-                          <div className={`p-1 rounded bg-white/5`}><Icon size={10} className={deploy.iconColor} /></div>
-                          {deploy.project}
-                        </td>
-                        <td className="py-1.5 text-slate-400">
-                          <span className="px-1.5 py-0.5 rounded text-[9px] border border-white/10 bg-white/5">{deploy.env}</span>
-                        </td>
-                        <td className="py-1.5">
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded ${deploy.status === 'Success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                            {deploy.status}
-                          </span>
-                        </td>
-                        <td className="py-1.5 flex items-center gap-1.5 text-slate-300">
-                          <div className="w-4 h-4 rounded bg-amber-600 flex items-center justify-center text-[7px] font-bold">{deploy.user.charAt(0)}</div>
-                          {deploy.user}
-                        </td>
-                        <td className="py-1.5 text-slate-400">{deploy.time}</td>
-                        <td className="py-1.5 text-slate-400">{deploy.duration}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* FREQUENCY HEATMAP */}
+              <div className="lg:col-span-2 bg-[#0a0a0a] border-2 border-[#222] p-6">
+                  <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-[11px] font-pixel text-white">DEPLOYMENT_FREQUENCY</h2>
+                      <div className="flex items-center gap-2 text-[8px] text-[#444]">
+                          LESS <div className="flex gap-1"><div className="w-2 h-2 bg-[#111]" /><div className="w-2 h-2 bg-[#00FFCC]/20" /><div className="w-2 h-2 bg-[#00FFCC]/50" /><div className="w-2 h-2 bg-[#00FFCC]" /></div> MORE
+                      </div>
+                  </div>
+                  <div className="h-32 flex items-center justify-center border border-[#111] bg-[#050505]">
+                      <span className="text-[9px] text-[#444] font-pixel animate-pulse">GENERATING_HEATMAP_DATA...</span>
+                  </div>
+              </div>
+
+              {/* RESOURCE USAGE */}
+              <div className="bg-[#0a0a0a] border-2 border-[#222] p-6">
+                  <h2 className="text-[11px] font-pixel text-white mb-6">RESOURCE_ALLOCATION</h2>
+                  <div className="space-y-6">
+                      {[
+                          { label: 'CPU_CORE', val: '42%', color: 'bg-[#FFCC00]' },
+                          { label: 'MEMORY_USAGE', val: '68%', color: 'bg-[#00FFCC]' },
+                          { label: 'NETWORK_IO', val: '15%', color: 'bg-white' },
+                      ].map((bar, i) => (
+                          <div key={i}>
+                              <div className="flex justify-between text-[9px] mb-2">
+                                  <span className="text-[#666]">{bar.label}</span>
+                                  <span className="text-white">{bar.value}</span>
+                              </div>
+                              <div className="h-1 bg-[#111] rounded-full overflow-hidden">
+                                  <div className={`h-full ${bar.color}`} style={{ width: bar.val }}></div>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+
+          </div>
+
+          {/* RECENT ACTIVITY TABLE */}
+          <div className="mt-6 bg-[#0a0a0a] border-2 border-[#222]">
+                <div className="p-4 border-b border-[#222] flex justify-between items-center">
+                    <h2 className="text-[11px] font-pixel text-white">RECENT_ANALYTICS_EVENT</h2>
+                    <CyberButton variant="outline" className="text-[8px] py-1 px-3">EXPORT_CSV</CyberButton>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-[9px]">
+                        <thead>
+                            <tr className="bg-[#111] text-[#666] tracking-widest uppercase">
+                                <th className="p-4 font-bold">PROJECT_ID</th>
+                                <th className="p-4 font-bold">EVENT_TYPE</th>
+                                <th className="p-4 font-bold">TIMESTAMP</th>
+                                <th className="p-4 font-bold">STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {[
+                                { id: 'AUTH_SERVICE', type: 'BUILD_SUCCESS', time: '14:22:01', status: 'COMPLETED' },
+                                { id: 'PAYMENT_GW', type: 'RUNTIME_ERROR', time: '13:45:12', status: 'FAILED' },
+                                { id: 'WEB_DASHBOARD', type: 'CONFIG_SYNC', time: '12:10:55', status: 'COMPLETED' },
+                            ].map((row, i) => (
+                                <tr key={i} className="border-b border-[#111] hover:bg-[#050505]">
+                                    <td className="p-4 text-white font-bold">{row.id}</td>
+                                    <td className="p-4 text-[#888]">{row.type}</td>
+                                    <td className="p-4 text-[#666]">{row.time}</td>
+                                    <td className="p-4">
+                                        <span className={`px-2 py-0.5 border ${row.status === 'FAILED' ? 'text-[#FF3333] border-[#FF3333]/30 bg-[#FF3333]/10' : 'text-[#00FFCC] border-[#00FFCC]/30 bg-[#00FFCC]/10'}`}>
+                                            {row.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
           </div>
 
         </div>

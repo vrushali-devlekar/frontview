@@ -11,7 +11,9 @@ import {
   ChevronDown,
   LogOut,
   Menu,
-  User
+  User,
+  Users,
+  Cpu
 } from "lucide-react";
 import pf1 from "../../assets/p1.jpeg";
 
@@ -98,6 +100,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             <MenuItem icon={Grid}     label="Applications"  to="/applications"     isCollapsed={isCollapsed} />
             <MenuItem icon={Zap}      label="Deployments"   to="/deploy"      isCollapsed={isCollapsed} />
             <MenuItem icon={Layers}   label="Environments"  to="/environments"     isCollapsed={isCollapsed} />
+            <MenuItem icon={Users}    label="Members"       to="/members"          isCollapsed={isCollapsed} />
+            <MenuItem icon={Cpu}      label="Integrations"  to="/integrations"     isCollapsed={isCollapsed} />
             <MenuItem icon={BarChart2} label="Metrics"      to="/metrics"          isCollapsed={isCollapsed} />
             <MenuItem icon={Settings} label="Settings"      to="/settings"         isCollapsed={isCollapsed} />
           </div>
