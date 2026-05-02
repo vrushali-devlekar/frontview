@@ -181,7 +181,7 @@ exports.analyzeLogs = asyncHandler(async (req, res) => {
         throw new Error('No logs found for this deployment');
     }
 
-    const provider = req.body.provider || 'gemini';
+    const provider = req.body.provider || 'mistral';
     const question = req.body.question || '';
     const { analyzeLogsWithAI } = require('../services/logAnalysisService');
 

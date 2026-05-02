@@ -10,7 +10,7 @@ fs.mkdir(BASE_DIR, { recursive: true }).catch(() => {});
 
 
 // 1. Repo Clone karne ka function
-const cloneRepo = async (repoUrl, deploymentId, branch = 'main') => {
+const cloneRepo = async (repoUrl, deploymentId, branch = 'main', githubAccessToken = null) => {
     const targetPath = path.join(BASE_DIR, deploymentId);
 
     // Agar same ID ka folder pehle se hai (retry case), toh usko clean kar do
@@ -22,17 +22,34 @@ const cloneRepo = async (repoUrl, deploymentId, branch = 'main') => {
 
     return new Promise((resolve, reject) => {
         console.log(`🚀 Cloning repo into ${targetPath}...`);
-        
+        let stderrOutput = '';
+
+        let cloneUrl = repoUrl;
+        // Private GitHub repo clone support via OAuth token.
+        if (githubAccessToken && /^https:\/\/(www\.)?github\.com\//i.test(repoUrl)) {
+            cloneUrl = repoUrl.replace(
+                /^https:\/\/(www\.)?github\.com\//i,
+                `https://x-access-token:${encodeURIComponent(githubAccessToken)}@github.com/`
+            );
+        }
+
         // Child Process: "git clone --depth 1 --branch <branch> <URL> <Path>"
         // --depth 1 se cloning ultra-fast hoti hai kyunki sirf latest code aata hai, poori history nahi
-        const gitProcess = spawn('git', ['clone', '--depth', '1', '--branch', branch, repoUrl, targetPath]);
+        const gitProcess = spawn('git', ['clone', '--depth', '1', '--branch', branch, cloneUrl, targetPath]);
+
+        gitProcess.stderr.on('data', (data) => {
+            stderrOutput += data.toString();
+        });
 
         gitProcess.on('close', (code) => {
             if (code === 0) {
                 console.log(`✅ Cloning successful for ${deploymentId}`);
                 resolve(targetPath); // Folder ka path return kar do jahan code rakha hai
             } else {
-                reject(new Error(`Git clone failed with exit code ${code}`));
+                const sanitizedError = stderrOutput
+                    .replace(/x-access-token:[^@]+@/gi, 'x-access-token:***@')
+                    .trim();
+                reject(new Error(`Git clone failed with exit code ${code}${sanitizedError ? `: ${sanitizedError}` : ''}`));
             }
         });
     });

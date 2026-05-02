@@ -39,6 +39,9 @@ const createModelForProvider = (provider) => {
     switch (selected) {
         case 'mistral': {
             const { ChatMistralAI } = require('@langchain/mistralai');
+            if (!process.env.MISTRAL_API_KEY) {
+                throw new Error('Missing MISTRAL_API_KEY');
+            }
             return new ChatMistralAI({
                 apiKey: process.env.MISTRAL_API_KEY,
                 model: 'mistral-large-latest',
@@ -47,6 +50,9 @@ const createModelForProvider = (provider) => {
         }
         case 'cohere': {
             const { ChatCohere } = require('@langchain/cohere');
+            if (!process.env.COHERE_API_KEY) {
+                throw new Error('Missing COHERE_API_KEY');
+            }
             return new ChatCohere({
                 apiKey: process.env.COHERE_API_KEY,
                 model: 'command-a-03-2025',
@@ -56,7 +62,11 @@ const createModelForProvider = (provider) => {
         case 'gemini':
         default: {
             const { ChatGoogleGenerativeAI } = require('@langchain/google-genai');
-            return new ChatGoogleGenerativeAI('gemini-2.0-flash', {
+            if (!process.env.GEMINI_API_KEY) {
+                throw new Error('Missing GEMINI_API_KEY');
+            }
+            return new ChatGoogleGenerativeAI({
+                model: 'gemini-2.0-flash',
                 apiKey: process.env.GEMINI_API_KEY,
                 temperature: 0.2
             });
@@ -70,30 +80,42 @@ const analyzeLogsWithAI = async (logs, provider = 'gemini', question = '') => {
 
     const logsToAnalyze = Array.isArray(logs) ? logs.slice(-200).join('\n') : logs.split('\n').slice(-200).join('\n');
 
-    const followUp = (question && String(question).trim())
-        ? `\n\nUser question (follow-up):\n${String(question).trim()}\n\nAnswer the question using the logs, and keep the JSON format.`
-        : '';
+    const isFollowUp = Boolean(question && String(question).trim());
 
-    const promptText = `You are a senior DevOps engineer. Analyze this deployment log and: 1) identify the root cause, 2) provide a step-by-step fix, 3) flag any security issues.
-    Provide the response in the following structured JSON format:
-    {{
-        "rootCause": "string",
-        "stepByStepFix": ["string", "string"],
-        "securityFlags": ["string", "string"]
-    }}
+    const promptText = isFollowUp
+        ? `You are a senior DevOps engineer. Using the deployment logs below, answer the user's question clearly.
+Write in concise Markdown with headings and bullet points. Include exact commands/config where helpful.
 
-    Deployment Logs:
-    {logs}${followUp}`;
+User question:
+{question}
+
+Deployment Logs:
+{logs}`
+        : `You are a senior DevOps engineer. Analyze this deployment log and: 1) identify the root cause, 2) provide a step-by-step fix, 3) flag any security issues.
+Provide the response in the following structured JSON format:
+{{
+  "rootCause": "string",
+  "stepByStepFix": ["string"],
+  "securityFlags": ["string"]
+}}
+
+Deployment Logs:
+{logs}`;
 
     const promptTemplate = PromptTemplate.fromTemplate(promptText);
 
     const model = createModelForProvider(provider);
 
     const chain = promptTemplate.pipe(model);
-    const response = await chain.invoke({ logs: logsToAnalyze, followUp });
+    const response = await chain.invoke({ logs: logsToAnalyze, question: String(question || '').trim() });
 
-    // Parse the JSON output from the model
-    let parsedResult;
+    // Follow-ups should be readable chat output, not forced JSON.
+    if (isFollowUp) {
+        const markdown = normalizeModelContent(response.content) || '';
+        return { markdown };
+    }
+
+    // Parse the JSON output from the model (initial analysis)
     try {
         let content = normalizeModelContent(response.content);
 
@@ -101,18 +123,16 @@ const analyzeLogsWithAI = async (logs, provider = 'gemini', question = '') => {
             throw new Error('AI response was empty');
         }
         content = extractLikelyJson(content);
-        parsedResult = JSON.parse(content);
+        return JSON.parse(content);
     } catch (e) {
         console.error('Error parsing AI response:', e);
-        parsedResult = {
+        return {
             rootCause: 'Failed to parse AI response.',
             stepByStepFix: [],
             securityFlags: [],
             rawOutput: response.content
         };
     }
-
-    return parsedResult;
 };
 
 const analyzeWithFallback = async (logs, preferredProvider, question) => {
@@ -122,6 +142,7 @@ const analyzeWithFallback = async (logs, preferredProvider, question) => {
         ? [preferred, ...providers.filter(p => p !== preferred)]
         : providers;
 
+    const failures = [];
     for (const provider of ordered) {
         try {
             console.log(` Requesting AI Provider: [${provider.toUpperCase()}]...`);
@@ -133,17 +154,23 @@ const analyzeWithFallback = async (logs, preferredProvider, question) => {
         } catch (error) {
             console.log(`⚠️ [${provider.toUpperCase()}] Failed: ${error.message.substring(0, 50)}...`);
             console.log(`🔄 Auto-switching to the next available AI...`);
+            failures.push({
+                provider,
+                reason: error?.message || 'Unknown error'
+            });
         }
     }
 
     console.log(` All AI Providers failed.`);
     return {
-        rootCause: "Our AI systems are currently facing exceptionally high traffic and are rate-limited.",
+        rootCause: "All configured AI providers failed to respond.",
         stepByStepFix: [
-            "Please review the raw terminal logs provided above manually.",
-            "Try hitting the 'Analyze Again' button in a few minutes."
+            ...failures.map((f) => `${f.provider}: ${f.reason}`),
+            "Verify API keys and model access for the selected provider.",
+            "Retry analysis after resolving provider-specific errors."
         ],
-        securityFlags: []
+        securityFlags: [],
+        rawOutput: failures.map((f) => `[${f.provider}] ${f.reason}`).join('\n')
     };
 };
 

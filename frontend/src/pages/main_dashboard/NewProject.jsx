@@ -13,7 +13,7 @@ import {
   GitBranch,
 } from "lucide-react";
 import heroBg from "../../assets/new-top.png";
-import { createProject, getGithubRepos } from "../../api/api";
+import { addEnvVar, createProject, getGithubRepos } from "../../api/api";
 import { parseGithubRepoInput } from "../../utils/githubRepo";
 
 const GitHubIcon = ({ size = 14, className = "" }) => (
@@ -39,6 +39,7 @@ export default function NewProjectPage() {
   const [installCommand, setInstallCommand] = useState("npm install");
   const [startCommand, setStartCommand] = useState("npm start");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [envVars, setEnvVars] = useState([{ key: "", value: "" }]);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,6 +69,7 @@ export default function NewProjectPage() {
   const selectRepoFromGh = (repo) => {
     const cloneUrl = `https://github.com/${repo.owner}/${repo.name}.git`;
     setRepoInput(cloneUrl);
+    setBranch((repo.defaultBranch || "main").trim());
     setName((prev) => {
       if (prev.trim().length >= 3) return prev;
       const slug = `${repo.owner}-${repo.name}`.slice(0, 50);
@@ -100,6 +102,13 @@ export default function NewProjectPage() {
       });
       const id = data?.data?._id;
       if (id) {
+        // Save env vars (best-effort)
+        const pairs = envVars
+          .map((p) => ({ key: p.key.trim(), value: p.value }))
+          .filter((p) => p.key && p.value);
+        await Promise.all(
+          pairs.map((p) => addEnvVar(id, p.key, p.value).catch(() => null))
+        );
         navigate(`/deploy?projectId=${encodeURIComponent(id)}`);
         return;
       }
@@ -203,6 +212,7 @@ export default function NewProjectPage() {
                       >
                         {r.owner}/{r.name}
                         {r.isPrivate ? " · private" : ""}
+                        {r.defaultBranch ? ` · ${r.defaultBranch}` : ""}
                       </button>
                     ))}
                   </div>
@@ -264,6 +274,80 @@ export default function NewProjectPage() {
                     />
                   </div>
                 )}
+
+                {/* Env Vars */}
+                <div className="pt-4 border-t border-[#222]">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[10px] text-[#888] font-mono tracking-widest uppercase">
+                      ENV_VARS
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEnvVars((prev) => [...prev, { key: "", value: "" }])
+                      }
+                      className="text-[10px] font-mono border border-[#333] px-3 py-1 bg-[#050505] hover:bg-[#111] text-[#00FFCC]"
+                    >
+                      + ADD
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {envVars.map((row, idx) => (
+                      <div key={idx} className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <InputField
+                            label={idx === 0 ? "KEY" : ""}
+                            placeholder="DATABASE_URL"
+                            value={row.key}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setEnvVars((prev) => {
+                                const next = [...prev];
+                                next[idx] = { ...next[idx], key: v };
+                                return next;
+                              });
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <InputField
+                            label={idx === 0 ? "VALUE" : ""}
+                            placeholder="postgres://..."
+                            type="password"
+                            value={row.value}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setEnvVars((prev) => {
+                                const next = [...prev];
+                                next[idx] = { ...next[idx], value: v };
+                                return next;
+                              });
+                            }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEnvVars((prev) =>
+                              prev.length === 1
+                                ? [{ key: "", value: "" }]
+                                : prev.filter((_, i) => i !== idx)
+                            )
+                          }
+                          className="h-[42px] px-3 border border-[#333] bg-[#050505] hover:bg-[#111] text-[#888] text-[10px] font-mono"
+                          title="Remove env var"
+                        >
+                          DEL
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-[9px] text-[#555] font-mono mt-2 normal-case">
+                    Values are encrypted in the backend and never returned back.
+                  </p>
+                </div>
 
                 {error && (
                   <p

@@ -43,6 +43,8 @@ export const getGithubRepos = (search) =>
   api.get("/projects/repos", { params: search ? { search } : {} });
 
 export const createProject = (payload) => api.post("/projects", payload);
+export const addEnvVar = (projectId, key, value) =>
+  api.post(`/projects/${projectId}/env`, { key, value });
 
 // Deployments
 export const listDeployments = (projectId) =>

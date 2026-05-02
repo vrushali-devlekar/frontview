@@ -17,7 +17,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(true);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState("");
-  const [provider, setProvider] = useState("gemini");
+  const [provider, setProvider] = useState("mistral");
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
@@ -92,16 +92,29 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
         provider,
         question: text,
       });
-      const normalized = normalizeAnalysis(data?.data);
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}-a`,
-          role: "assistant",
-          kind: "analysis",
-          data: normalized,
-        },
-      ]);
+      const payload = data?.data;
+      if (payload && typeof payload === "object" && typeof payload.markdown === "string") {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-a`,
+            role: "assistant",
+            kind: "text",
+            text: payload.markdown,
+          },
+        ]);
+      } else {
+        const normalized = normalizeAnalysis(payload);
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-a`,
+            role: "assistant",
+            kind: "analysis",
+            data: normalized,
+          },
+        ]);
+      }
     } catch (e) {
       setChatMessages((prev) => [
         ...prev,
@@ -211,14 +224,14 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
               className="bg-[#050505] border border-[#333] text-[#ccc] text-[10px] font-mono px-2 py-1 outline-none"
               title="AI model provider"
             >
+              <option value="mistral" className="bg-[#050505]">
+                mistral (default)
+              </option>
               <option value="gemini" className="bg-[#050505]">
-                gemini (default)
+                gemini
               </option>
               <option value="cohere" className="bg-[#050505]">
                 cohere
-              </option>
-              <option value="mistral" className="bg-[#050505]">
-                mistral
               </option>
             </select>
             <button

@@ -113,7 +113,7 @@ export default function TerminalLogs({
         if (st && onStatusChange) onStatusChange(String(st).toLowerCase());
         if (
           st &&
-          ["failed", "stopped", "running", "rolling_back"].includes(
+          ["failed", "stopped", "rolling_back"].includes(
             String(st).toLowerCase()
           )
         ) {
