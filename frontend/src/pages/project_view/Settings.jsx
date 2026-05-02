@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import Sidebar from "../dashboard/Sidebar.jsx";
-import TopNav from "../dashboard/TopNav.jsx";
-import { Pen, ChevronDown, Trash2, ChevronRight, User, Palette, Globe, Calendar, Building2, UserCircle, Settings as SettingsIcon, Check } from 'lucide-react';
+import { useSidebar } from "../../hooks/useSidebar";
+import Sidebar from "../../components/layout/Sidebar";
+import TopNav from "../../components/layout/TopNav";
+import { Pen, ChevronDown, Trash2, ChevronRight, User, Palette, Globe, Calendar, Building2, UserCircle, Settings as SettingsIcon, Check, Lock } from 'lucide-react';
+import EnvTable from '../../components/project/EnvTable';
 import heroBg from "../../assets/new-top.png";
 
 // Import avatars
@@ -14,7 +16,7 @@ import pf5 from "../../assets/pf5.jpeg";
 const AVATARS = [pf1, pf2, pf3, pf4, pf5];
 
 export default function Settings() {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const { isCollapsed, toggleSidebar } = useSidebar();
   const [activeTab, setActiveTab] = useState("Profile");
 
   const [selectedAvatar, setSelectedAvatar] = useState(pf1);
@@ -34,7 +36,7 @@ export default function Settings() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0b0f14] text-white" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif' }}>
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
       <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}>
 
         {/* HERO */}
@@ -60,7 +62,7 @@ export default function Settings() {
               <div className="bg-[#11151c] border border-white/10 rounded-xl flex flex-col flex-1 min-h-0">
                 {/* Tabs */}
                 <div className="flex items-center gap-6 px-6 pt-3 border-b border-white/10 shrink-0">
-                  {["Profile", "Account"].map((tab) => (
+                  {["Profile", "Account", "Secrets"].map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
@@ -174,6 +176,11 @@ export default function Settings() {
                     <h3 className="text-lg font-medium text-slate-200 mb-1">Account Settings</h3>
                     <p className="text-[10px] text-slate-400 mb-6">Manage your account security and connections.</p>
                     <p className="text-xs text-slate-500 italic">Settings coming soon.</p>
+                  </div>
+                )}
+                {activeTab === "Secrets" && (
+                  <div className="flex flex-col flex-1 min-h-[400px]">
+                    <EnvTable />
                   </div>
                 )}
               </div>

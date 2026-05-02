@@ -1,8 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Press Start 2P", system-ui, sans-serif;
+  /* Added from your config */
+  --color-valora-bg: #050505;
+  --color-valora-border: #222222;
+  --color-valora-card: #0a0a0a;
+  --color-valora-yellow: #FFCC00;
+  --color-valora-cyan: #00FFCC;
+  --color-valora-red: #FF3333;
 
+  --font-mono: "Space Mono", monospace;
+  --font-pixel: "Press Start 2P", cursive;
+
+  /* Original Theme Vars */
+  --font-sans: "Press Start 2P", system-ui, sans-serif;
   --color-velora-bg: #091413;
   --color-velora-sidebar: #1e1e1d;
   --color-velora-card: #E0D8BE;
@@ -312,27 +323,22 @@ body {
 
 .log-entry.success {
   color: #10b981;
-  /* Emerald */
 }
 
 .log-entry.error {
   color: #ef4444;
-  /* Red */
 }
 
 .log-entry.warn {
   color: #f59e0b;
-  /* Yellow */
 }
 
 .log-entry.info {
   color: #3b82f6;
-  /* Blue */
 }
 
 .log-time {
   color: #64748b;
-  /* Slate */
   opacity: 0.7;
 }
 
@@ -369,7 +375,6 @@ button:active:not(:disabled) {
   transform: translateY(0);
 }
 
-/* Glow effect on hover */
 button.glow:hover {
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
 }
@@ -532,10 +537,7 @@ button.glow:hover {
 }
 
 .skeleton {
-  background: linear-gradient(90deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.2) 50%,
-      rgba(255, 255, 255, 0.1) 100%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 100%);
   background-size: 200% 100%;
   animation: gradientShift 2s infinite;
   border-radius: 0.5rem;
@@ -608,57 +610,3 @@ textarea:focus-visible {
 .page-exit {
   animation: fadeOut 0.2s ease-in, slideInDown 0.3s ease-in;
 }
-
-/* ───────────────────────────────────────────────────────── */
-/* 17. USAGE EXAMPLES IN JSX                                 */
-/* ───────────────────────────────────────────────────────── */
-
-/*
-
-// Example 1: Animated card list
-<div className="space-y-2">
-  {items.map((item, i) => (
-    <div 
-      key={i}
-      className="card animate-slideInUp"
-      style={{ animationDelay: `${i * 50}ms` }}
-    >
-      {item.name}
-    </div>
-  ))}
-</div>
-
-// Example 2: Status indicator
-<div className="flex items-center gap-2">
-  <div className="status-dot success" />
-  <span>Healthy</span>
-</div>
-
-// Example 3: Modal with animation
-<div className="modal-overlay">
-  <div className="modal-content">
-    <h2>Modal Title</h2>
-  </div>
-</div>
-
-// Example 4: Animated button
-<button className="glow animate-bounce">
-  Deploy Now
-</button>
-
-// Example 5: Staggered animation
-{logs.map((log, i) => (
-  <div 
-    key={i}
-    className="log-entry animate-slideInLeft"
-    style={{ animationDelay: `${i * 100}ms` }}
-  >
-    {log.message}
-  </div>
-))}
-
-*/
-
-/* ───────────────────────────────────────────────────────── */
-/* END OF ANIMATIONS & STYLING                               */
-/* ───────────────────────────────────────────────────────── */

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import Sidebar from "./Sidebar";
-import TopNav from "./TopNav";
+import { useSidebar } from "../../hooks/useSidebar";
+import Sidebar from "../../components/layout/Sidebar";
+import TopNav from "../../components/layout/TopNav";
 import {
   Rocket,
   Folder,
@@ -30,7 +31,7 @@ const StatusBadge = ({ status }) => {
 };
 
 export default function Dashboard() {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const { isCollapsed, toggleSidebar } = useSidebar();
 
   const myProjects = [
     {
@@ -61,7 +62,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#050505] text-white uppercase tracking-wide" style={{ fontFamily: "'Space Mono', monospace" }}>
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
       <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}>
 

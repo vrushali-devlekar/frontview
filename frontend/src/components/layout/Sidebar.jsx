@@ -18,10 +18,10 @@ const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
-      `flex items-center px-4 py-3 my-1 cursor-pointer rounded-lg transition-colors duration-200 ${
+      `flex items-center px-4 py-3 my-1 cursor-pointer transition-colors duration-200 border-l-2 font-mono uppercase tracking-widest text-[10px] ${
         isActive
-          ? "bg-[#3b3b38] text-white"
-          : "text-slate-400 hover:bg-[#2c2c2b] hover:text-white"
+          ? "bg-valora-card border-valora-yellow text-valora-yellow"
+          : "border-transparent text-[#888] hover:bg-[#111] hover:text-white hover:border-[#444]"
       }`
     }
   >
@@ -61,25 +61,24 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         className={`fixed left-0 top-0 flex flex-col h-screen
         ${isCollapsed ? "w-[72px] -translate-x-full md:translate-x-0" : "w-[260px] translate-x-0"}
         transition-all duration-300 ease-in-out
-        bg-[#0d1117] border-r border-white/10 z-50
-        shadow-[4px_0_30px_rgba(0,0,0,0.6)]`}
+        bg-valora-bg border-r-2 border-valora-border z-50
+        shadow-[4px_0_30px_rgba(0,0,0,0.8)]`}
       >
         {/* Logo */}
         <div
-          className="flex items-center p-5 cursor-pointer border-b border-[#2c2c2b]"
+          className="flex items-center p-5 cursor-pointer border-b-2 border-valora-border"
           onClick={toggleSidebar}
         >
-          <Rocket size={28} className="text-white" />
+          <div className="w-8 h-8 border-2 border-valora-yellow flex items-center justify-center shrink-0">
+            <div className="w-2 h-2 bg-valora-yellow"></div>
+          </div>
           {!isCollapsed && (
             <div className="ml-3 flex flex-col">
-              <h1
-                className="text-white text-[11px] font-normal tracking-tighter"
-                style={{ fontFamily: "'Press Start 2P', cursive" }}
-              >
+              <h1 className="text-valora-yellow text-[11px] font-pixel tracking-tighter uppercase">
                 VELORA
               </h1>
-              <p className="text-slate-500 text-[10px] tracking-widest mt-1">
-                DEPLOY. SCALE. DOMINATE.
+              <p className="text-valora-cyan text-[8px] tracking-widest mt-1 uppercase font-bold">
+                SYS_ONLINE
               </p>
             </div>
           )}
@@ -89,8 +88,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         <div className="flex-1 overflow-y-auto py-5">
           <div className="px-3 mb-4">
             {!isCollapsed && (
-              <div className="text-slate-500 text-xs px-4 mb-3 tracking-widest">
-                MAIN MENU
+              <div className="text-[#555] text-[10px] px-4 mb-3 tracking-widest font-mono uppercase">
+                SYS_MODULES
               </div>
             )}
 
