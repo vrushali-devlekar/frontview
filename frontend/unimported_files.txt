@@ -1,0 +1,57 @@
+
+       summary               unimported v1.31.0 (node)
+────────────────────────────────────────────────────────────────────────────────
+       entry file          : src/main.jsx
+
+       unresolved imports  : 1
+       unused dependencies : 4
+       unimported files    : 23
+
+
+─────┬──────────────────────────────────────────────────────────────────────────
+     │ 1 unresolved imports
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ ./pages/project_view/Settings at src/App.jsx
+─────┴──────────────────────────────────────────────────────────────────────────
+
+
+─────┬──────────────────────────────────────────────────────────────────────────
+     │ 4 unused dependencies
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ framer-motion
+   2 │ react-markdown
+   3 │ recharts
+   4 │ socket.io-client
+─────┴──────────────────────────────────────────────────────────────────────────
+
+
+─────┬──────────────────────────────────────────────────────────────────────────
+     │ 23 unimported files
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/components/ActiveLinks/Environments.jsx
+   2 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/components/project/AIModal.jsx
+   3 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/components/project/EnvTable.jsx
+   4 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/components/project/TerminalLogs.jsx
+   5 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/components/public/featureGrid.jsx
+   6 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/components/public/HowItWorks.jsx
+   7 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/components/public/TeamSection.jsx
+   8 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/components/ui/Loader.jsx
+   9 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/context/AuthContext.jsx
+  10 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/Demo.jsx
+  11 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/Home.jsx
+  12 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/main_dashboard/Account.jsx
+  13 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/main_dashboard/Integrations.jsx
+  14 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/main_dashboard/Members.jsx
+  15 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/main_dashboard/NewProject.jsx
+  16 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/project_view/Logs.jsx
+  17 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/project_view/Projects.jsx
+  18 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/project_view/Terminal.jsx
+  19 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/project_view/Webhooks.jsx
+  20 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/ProjectDetails.jsx
+  21 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/sidebar_footer/Settings.jsx
+  22 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/pages/sidebar_footer/Supports.jsx
+  23 │ /Users/divyankasrivastava/Desktop/cohort-dev/backend/Velora/Veloraa_deploy/frontend/src/routes/index.jsx
+─────┴──────────────────────────────────────────────────────────────────────────
+
+
+       Inspect the results and run npx unimported -u to update ignore lists
