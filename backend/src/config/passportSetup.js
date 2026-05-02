@@ -4,7 +4,6 @@ const LocalStrategy = require('passport-local').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
-require('dotenv').config();
 
 // User ki ID ko session mein pack karna
 passport.serializeUser((user, done) => {
@@ -21,9 +20,9 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
-// ==========================================
+
 // 1. LOCAL STRATEGY (Email & Password)
-// ==========================================
+
 passport.use(new LocalStrategy({ usernameField: 'email' }, 
     async (email, password, done) => {
         try {
