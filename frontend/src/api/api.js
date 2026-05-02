@@ -11,6 +11,7 @@ export const SOCKET_ORIGIN =
 
 /** Full URL for browser redirect (Passport OAuth). */
 export const githubAuthUrl = `${API_BASE_URL}/auth/github`;
+export const googleAuthUrl = `${API_BASE_URL}/auth/google`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
