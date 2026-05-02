@@ -11,6 +11,7 @@ import Overview from "./pages/project_view/Overview";
 import Metrics from "./pages/project_view/Metrics";
 import Settings from "./pages/project_view/Settings";
 import Environments from "./pages/project_view/Environments";
+import Account from "./pages/main_dashboard/Account";
 
 import "./App.css";
 
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
   {
     path: "/settings",
     element: <Settings />
+  },
+  {
+    path: "/account",
+    element: <Account />
   },
   {
     path: "*",

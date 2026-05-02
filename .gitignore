@@ -19,3 +19,7 @@ npm-debug.log*
 .vscode/
 .idea/
 .DS_Store
+
+# Helper scripts
+frontend/reorganize.js
+frontend/resolve-merge.js

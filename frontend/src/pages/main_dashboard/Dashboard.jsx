@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
 import TopNav from "../../components/layout/TopNav";
@@ -10,55 +10,70 @@ import {
   Cpu,
   BrainCircuit,
   History,
-  Settings
+  Settings,
+  RefreshCw,
+  AlertTriangle
 } from "lucide-react";
+import { getUserProjects } from "../../api/api";
 
 import heroBg from "../../assets/new-top.png";
 
 const StatusBadge = ({ status }) => {
+  const normalizedStatus = (status || "BUILDING").toUpperCase();
   const styles = {
     RUNNING: "text-[#00FFCC] border-[#00FFCC]/30 bg-[#00FFCC]/10",
     FAILED: "text-[#FF3333] border-[#FF3333]/30 bg-[#FF3333]/10",
     BUILDING: "text-[#FFCC00] border-[#FFCC00]/30 bg-[#FFCC00]/10",
+    SUCCESS: "text-[#00FFCC] border-[#00FFCC]/30 bg-[#00FFCC]/10",
+    QUEUED: "text-[#888] border-[#888]/30 bg-[#888]/10",
   };
 
   return (
-    <span className={`text-[9px] px-2 py-1 border font-mono tracking-widest flex items-center gap-1 ${styles[status]}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${status === 'RUNNING' ? 'bg-[#00FFCC]' : status === 'FAILED' ? 'bg-[#FF3333]' : 'bg-[#FFCC00] animate-pulse'}`}></span>
-      {status}
+    <span className={`text-[9px] px-2 py-1 border font-mono tracking-widest flex items-center gap-1 ${styles[normalizedStatus] || styles.BUILDING}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${normalizedStatus === 'RUNNING' || normalizedStatus === 'SUCCESS' ? 'bg-[#00FFCC]' : normalizedStatus === 'FAILED' ? 'bg-[#FF3333]' : 'bg-[#FFCC00] animate-pulse'}`}></span>
+      {normalizedStatus}
     </span>
   );
 };
 
 export default function Dashboard() {
   const { isCollapsed, toggleSidebar } = useSidebar();
+  const [myProjects, setMyProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const myProjects = [
-    {
-      name: "VALORA_FRONTEND",
-      framework: "React",
-      status: "RUNNING",
-      url: "valora-front.vercel.app",
-      lastDeploy: "10m ago",
-      version: "v4.0.1"
-    },
-    {
-      name: "PAYMENT_MICROSERVICE",
-      framework: "Node.js",
-      status: "FAILED",
-      url: "api.payments.com",
-      lastDeploy: "2h ago",
-      version: "v2.1.0"
-    },
-    {
-      name: "AUTH_GATEWAY",
-      framework: "Express",
-      status: "BUILDING",
-      url: "auth.valora.io",
-      lastDeploy: "Just now",
-      version: "v1.0.5"
+  const fetchProjects = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await getUserProjects();
+      const projects = res.data.data || [];
+      // Map backend data to the shape the UI expects
+      setMyProjects(projects.map(p => ({
+        _id: p._id,
+        name: p.name || p.repoName,
+        framework: p.installCommand?.includes('yarn') ? 'Yarn' : 'Node.js',
+        status: p.lastDeploymentStatus || 'BUILDING',
+        url: p.repoUrl ? p.repoUrl.replace('https://github.com/', '') : '—',
+        lastDeploy: p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : '—',
+        version: `v${p.deploymentCount || 0}`,
+        repoUrl: p.repoUrl,
+      })));
+    } catch (err) {
+      console.error('Failed to fetch projects:', err);
+      setError('Failed to connect to server. Showing demo data.');
+      // Fallback mock data so UI never looks empty
+      setMyProjects([
+        { name: "DEMO_PROJECT", framework: "React", status: "RUNNING", url: "demo.valora.app", lastDeploy: "Demo", version: "v0" },
+      ]);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#050505] text-white uppercase tracking-wide" style={{ fontFamily: "'Space Mono', monospace" }}>

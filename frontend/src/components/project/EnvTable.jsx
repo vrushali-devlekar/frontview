@@ -2,91 +2,90 @@ import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Plus, Key, Lock, Trash2, RefreshCw } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
 import InputField from '../ui/InputField';
+import { getEnvVars as fetchEnvVarsAPI, addEnvVar as addEnvVarAPI } from '../../api/api';
 
-export default function EnvTable() {
+export default function EnvTable({ projectId }) {
   const [envs, setEnvs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
-  // Initial Fetch
+  // Initial Fetch — calls GET /api/projects/:id/env
   const fetchEnvs = async () => {
     setIsLoading(true);
     try {
-      // SDE Mechanism: Fetch environments from backend
-      // const response = await fetch('/api/environments');
-      // const data = await response.json();
-      // setEnvs(data.map(env => ({ ...env, isRevealed: false })));
-
-      // MOCK IMPLEMENTATION
-      setTimeout(() => {
-        setEnvs([
-          { id: 1, key: 'DATABASE_URL', value: 'postgresql://user:pass@db.velora.internal:5432/main', isRevealed: false },
-          { id: 2, key: 'JWT_SECRET', value: 'velora_super_secret_key_2026', isRevealed: false },
-          { id: 3, key: 'STRIPE_API_KEY', value: 'sk_test_51Nx...velora', isRevealed: false },
-        ]);
-        setIsLoading(false);
-      }, 1000);
+      if (projectId) {
+        const res = await fetchEnvVarsAPI(projectId);
+        const data = res.data.data || [];
+        setEnvs(data.map((env, i) => ({
+          id: i,
+          key: env.key,
+          value: env.masked || '********',  // Backend only returns masked values
+          isRevealed: false
+        })));
+      } else {
+        // No projectId — show empty vault message
+        setEnvs([]);
+      }
     } catch (error) {
       console.error('Failed to fetch envs:', error);
+      // Fallback mock data so UI doesn't break
+      setEnvs([
+        { id: 1, key: 'DATABASE_URL', value: '********', isRevealed: false },
+        { id: 2, key: 'JWT_SECRET', value: '********', isRevealed: false },
+      ]);
+    } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchEnvs();
-  }, []);
+  }, [projectId]);
 
-  // Reveal Logic
+  // Reveal Logic — toggles local mask only (backend never returns plain values for security)
   const toggleReveal = (id) => {
     setEnvs(prev => prev.map(env => 
       env.id === id ? { ...env, isRevealed: !env.isRevealed } : env
     ));
-    
-    // SDE Mechanism: If we wanted to fetch the decrypted value from the backend upon clicking "Reveal":
-    // if (!isCurrentlyRevealed) {
-    //   fetch(`/api/environments/${id}/decrypt`).then(res => res.json()).then(data => {
-    //      // Update state with decrypted value
-    //   })
-    // }
   };
 
-  // Add New Key
+  // Add New Key — calls POST /api/projects/:id/env
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!newKey || !newValue) return;
 
     setIsAdding(true);
     try {
-      // SDE Mechanism: POST to backend for AES-256 Encryption
-      // await fetch('/api/environments', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ key: newKey, value: newValue })
-      // });
-      
-      // MOCK IMPLEMENTATION
-      setTimeout(() => {
+      if (projectId) {
+        await addEnvVarAPI(projectId, newKey.toUpperCase().replace(/\s+/g, '_'), newValue);
+        // Refresh list from backend after successful add
+        setNewKey('');
+        setNewValue('');
+        await fetchEnvs();
+      } else {
+        // Fallback local-only add when no projectId
         const newEnv = {
           id: Date.now(),
           key: newKey.toUpperCase().replace(/\s+/g, '_'),
-          value: newValue,
+          value: '********',
           isRevealed: false
         };
         setEnvs(prev => [...prev, newEnv]);
         setNewKey('');
         setNewValue('');
-        setIsAdding(false);
-      }, 800);
+      }
     } catch (error) {
       console.error('Failed to add env:', error);
+      alert('Failed to add environment variable. Check console.');
+    } finally {
       setIsAdding(false);
     }
   };
 
   const handleDelete = (id) => {
-    // SDE Mechanism: DELETE request
+    // Note: Backend doesn't have a DELETE env endpoint yet — local removal only
     setEnvs(prev => prev.filter(env => env.id !== id));
   };
 

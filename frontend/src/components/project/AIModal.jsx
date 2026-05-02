@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Activity, X, Terminal, Cpu } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
 import ReactMarkdown from 'react-markdown'; 
+import { analyzeDeploymentLogs } from '../../api/api';
 
-export default function AIModal({ errorLogs, isOpen, onClose }) {
+export default function AIModal({ errorLogs, isOpen, onClose, deploymentId }) {
   const [isLoading, setIsLoading] = useState(true);
   const [aiResponse, setAiResponse] = useState('');
 
@@ -16,48 +17,33 @@ export default function AIModal({ errorLogs, isOpen, onClose }) {
 
     const fetchAIAnalysis = async () => {
       try {
-        // SDE Mechanism: Send logs to Langchain AI route
-        // const response = await fetch('/api/ai/analyze', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ logs: errorLogs })
-        // });
-        // const data = await response.json();
-        // setAiResponse(data.markdownResponse);
-
-        // MOCK IMPLEMENTATION
-        setTimeout(() => {
-          setAiResponse(`
-### ⚠️ Root Cause Analysis
-The deployment failed because the Node.js application is missing a core module dependency. The log \`Module not found "crypto"\` indicates that a package is trying to use the built-in \`crypto\` module, but it's not polyfilled or available in this environment.
-
-### 🛠️ Recommended Fix
-You need to install the \`crypto-browserify\` fallback or update your build configuration.
-
-1. Install the polyfill:
-\`\`\`bash
-npm install crypto-browserify
-\`\`\`
-
-2. Update your Vite/Webpack config to define the fallback:
-\`\`\`javascript
-resolve: {
-  alias: {
-    crypto: 'crypto-browserify',
-  }
-}
-\`\`\`
-          `);
-          setIsLoading(false);
-        }, 3000);
+        if (deploymentId) {
+          // REAL API CALL — POST /api/deployments/:id/analyze-logs
+          const res = await analyzeDeploymentLogs(deploymentId, errorLogs);
+          const data = res.data.data || res.data;
+          // The backend returns { analysis, rootCause, suggestedFix } or a markdown string
+          if (typeof data === 'string') {
+            setAiResponse(data);
+          } else {
+            setAiResponse(
+              `### ⚠️ Root Cause\n${data.rootCause || data.analysis || 'Unknown'}\n\n### 🛠️ Suggested Fix\n${data.suggestedFix || 'No suggestion available.'}`
+            );
+          }
+        } else {
+          // MOCK fallback when no deploymentId (for demo/testing)
+          await new Promise(r => setTimeout(r, 2500));
+          setAiResponse(`### ⚠️ Root Cause Analysis\nThe deployment failed because the Node.js application is missing a core module dependency. The log \`Module not found "crypto"\` indicates that a package is trying to use the built-in \`crypto\` module, but it's not polyfilled.\n\n### 🛠️ Recommended Fix\nInstall the polyfill:\n\`\`\`bash\nnpm install crypto-browserify\n\`\`\``);
+        }
       } catch (error) {
-        setAiResponse('Failed to communicate with Velora AI Node. Please try again.');
+        console.error('AI Analysis failed:', error);
+        setAiResponse('### ❌ Connection Error\nFailed to communicate with Velora AI Node. The AI service may be offline or the deployment logs could not be found. Please try again.');
+      } finally {
         setIsLoading(false);
       }
     };
 
     fetchAIAnalysis();
-  }, [isOpen, errorLogs]);
+  }, [isOpen, errorLogs, deploymentId]);
 
   if (!isOpen) return null;
 

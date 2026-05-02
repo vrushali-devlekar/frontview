@@ -11,6 +11,7 @@ import {
   ChevronDown,
   LogOut,
   Menu,
+  User
 } from "lucide-react";
 import pf1 from "../../assets/p1.jpeg";
 
@@ -135,6 +136,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-colors text-left"
               >
                 <Home size={14} /> Home
+              </button>
+              <button 
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  navigate("/account");
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/5 hover:text-valora-cyan transition-colors text-left font-mono uppercase tracking-widest"
+              >
+                <User size={14} /> Profile
               </button>
               <button 
                 onClick={() => setIsDropdownOpen(false)}

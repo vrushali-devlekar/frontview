@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { History, GitBranch, ShieldCheck, AlertTriangle, RefreshCw } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
 import StatusBadge from '../ui/StatusBadge';
+import { rollbackDeployment } from '../../api/api';
 
-export default function DeployRow({ deployment, onRollback }) {
+export default function DeployRow({ deployment, onRollback, projectId }) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isRollingBack, setIsRollingBack] = useState(false);
 
@@ -19,17 +20,21 @@ export default function DeployRow({ deployment, onRollback }) {
     setIsRollingBack(true);
 
     try {
-      // SDE Mechanism: Trigger rollback to this specific version
-      // await fetch(`/api/deployments/rollback/${deployment.id}`, { method: 'POST' });
-      
-      // MOCK IMPLEMENTATION
-      setTimeout(() => {
-        setIsRollingBack(false);
-        if (onRollback) onRollback(deployment.id);
+      if (projectId && deployment.version) {
+        // REAL API CALL — POST /api/projects/:id/rollback/:version
+        const versionNum = deployment.version.replace('v', '');
+        const res = await rollbackDeployment(projectId, versionNum);
+        alert(`Rollback to ${deployment.version} initiated! New deployment ID: ${res.data.deploymentId}`);
+      } else {
+        // MOCK fallback
+        await new Promise(r => setTimeout(r, 1500));
         alert(`Rollback to ${deployment.version} initiated successfully!`);
-      }, 1500);
+      }
+      if (onRollback) onRollback(deployment.id);
     } catch (error) {
       console.error("Rollback failed", error);
+      alert('Rollback failed. Check console for details.');
+    } finally {
       setIsRollingBack(false);
     }
   };
