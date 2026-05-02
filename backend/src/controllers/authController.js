@@ -102,3 +102,72 @@ exports.logout = (req, res) => {
         res.status(200).json({ success: true, message: 'Logged out successfully' });
     });
 };
+
+// ==========================================
+// 4. GET CURRENT USER
+// ==========================================
+exports.getMe = asyncHandler(async (req, res) => {
+    if (!req.user) {
+        res.status(401);
+        throw new Error('Not authorized');
+    }
+
+    res.status(200).json({
+        success: true,
+        user: {
+            id: req.user._id,
+            username: req.user.username,
+            email: req.user.email,
+            avatar: req.user.avatarUrl
+        }
+    });
+});
+
+// ==========================================
+// 5. UPDATE CURRENT USER
+// ==========================================
+exports.updateMe = asyncHandler(async (req, res) => {
+    if (!req.user) {
+        res.status(401);
+        throw new Error('Not authorized');
+    }
+
+    const { username, email, avatarUrl } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    if (typeof username === 'string' && username.trim()) {
+        user.username = username.trim();
+    }
+
+    if (typeof email === 'string' && email.trim()) {
+        const normalizedEmail = email.trim().toLowerCase();
+        const existing = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } });
+        if (existing) {
+            res.status(400);
+            throw new Error('Email already in use');
+        }
+        user.email = normalizedEmail;
+    }
+
+    if (typeof avatarUrl === 'string' && avatarUrl.trim()) {
+        user.avatarUrl = avatarUrl.trim();
+    }
+
+    const updated = await user.save();
+
+    res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully',
+        user: {
+            id: updated._id,
+            username: updated.username,
+            email: updated.email,
+            avatar: updated.avatarUrl
+        }
+    });
+});
