@@ -1,9 +1,4 @@
-import React from "react";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  Navigate,
-} from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 
 import Landing from "./pages/public/Landing";
 import Login from "./pages/auth/Login";
@@ -15,9 +10,10 @@ import Overview from "./pages/project_view/Overview";
 import Metrics from "./pages/project_view/Metrics";
 import Settings from "./pages/project_view/Settings";
 import Environments from "./pages/project_view/Environments";
+import DeploymentLogsPage from "./pages/project_view/Terminal";
+import NewProjectPage from "./pages/main_dashboard/NewProject";
 
 import "./App.css";
-import Docs from "./pages/Extra/Docs";
 
 const router = createBrowserRouter([
   {
@@ -38,40 +34,40 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <Dashboard />,
+    element: <Dashboard />
+  },
+  {
+    path: "/projects/new",
+    element: <NewProjectPage />
   },
   {
     path: "/deploy",
-    element: <Deployments />,
+    element: <Deployments />
   },
   {
-    path: "/docs",
-    element: <Docs />,
-  },
-  {
-    path: "/documentation",
-    element: <Docs />,
+    path: "/deploy/logs/:deploymentId",
+    element: <DeploymentLogsPage />
   },
   {
     path: "/applications",
-    element: <Overview />,
+    element: <Overview />
   },
   {
     path: "/environments",
-    element: <Environments />,
+    element: <Environments />
   },
   {
     path: "/metrics",
-    element: <Metrics />,
+    element: <Metrics />
   },
   {
     path: "/settings",
-    element: <Settings />,
+    element: <Settings />
   },
   {
     path: "*",
     element: <Navigate to="/" />, // 404 handling - redirect to landing
-  },
+  }
 ]);
 
 const App = () => {

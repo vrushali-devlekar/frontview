@@ -64,13 +64,17 @@ const createModelForProvider = (provider) => {
     }
 };
 
-const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
+const analyzeLogsWithAI = async (logs, provider = 'gemini', question = '') => {
 
     const { PromptTemplate } = require('@langchain/core/prompts');
 
     const logsToAnalyze = Array.isArray(logs) ? logs.slice(-200).join('\n') : logs.split('\n').slice(-200).join('\n');
 
-    const promptText = `You are a senior DevOps engineer. Analyze this deployment log and: 1) identify the root cause, 2) provide a step-by-step fix, 3) flag any security issues. 
+    const followUp = (question && String(question).trim())
+        ? `\n\nUser question (follow-up):\n${String(question).trim()}\n\nAnswer the question using the logs, and keep the JSON format.`
+        : '';
+
+    const promptText = `You are a senior DevOps engineer. Analyze this deployment log and: 1) identify the root cause, 2) provide a step-by-step fix, 3) flag any security issues.
     Provide the response in the following structured JSON format:
     {{
         "rootCause": "string",
@@ -79,14 +83,14 @@ const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
     }}
 
     Deployment Logs:
-    {logs}`;
+    {logs}${followUp}`;
 
     const promptTemplate = PromptTemplate.fromTemplate(promptText);
 
     const model = createModelForProvider(provider);
 
     const chain = promptTemplate.pipe(model);
-    const response = await chain.invoke({ logs: logsToAnalyze });
+    const response = await chain.invoke({ logs: logsToAnalyze, followUp });
 
     // Parse the JSON output from the model
     let parsedResult;
@@ -111,14 +115,18 @@ const analyzeLogsWithAI = async (logs, provider = 'gemini') => {
     return parsedResult;
 };
 
-const analyzeWithFallback = async (logs) => {
+const analyzeWithFallback = async (logs, preferredProvider, question) => {
+    const preferred = preferredProvider ? String(preferredProvider).toLowerCase() : '';
     const providers = ['gemini', 'cohere', 'mistral'];
+    const ordered = preferred && providers.includes(preferred)
+        ? [preferred, ...providers.filter(p => p !== preferred)]
+        : providers;
 
-    for (const provider of providers) {
+    for (const provider of ordered) {
         try {
             console.log(` Requesting AI Provider: [${provider.toUpperCase()}]...`);
 
-            const result = await analyzeLogsWithAI(logs, provider);
+            const result = await analyzeLogsWithAI(logs, provider, question);
             console.log(`✅ Success! Analysis completed by [${provider.toUpperCase()}].`);
             return result;
 

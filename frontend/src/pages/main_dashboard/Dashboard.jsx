@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
 import TopNav from "../../components/layout/TopNav";
@@ -10,10 +11,11 @@ import {
   Cpu,
   BrainCircuit,
   History,
-  Settings
+  Settings,
 } from "lucide-react";
 
 import heroBg from "../../assets/new-top.png";
+import { getProjects } from "../../api/api";
 
 const StatusBadge = ({ status }) => {
   const styles = {
@@ -23,8 +25,18 @@ const StatusBadge = ({ status }) => {
   };
 
   return (
-    <span className={`text-[9px] px-2 py-1 border font-mono tracking-widest flex items-center gap-1 ${styles[status]}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${status === 'RUNNING' ? 'bg-[#00FFCC]' : status === 'FAILED' ? 'bg-[#FF3333]' : 'bg-[#FFCC00] animate-pulse'}`}></span>
+    <span
+      className={`text-[9px] px-2 py-1 border font-mono tracking-widest flex items-center gap-1 ${styles[status] || styles.BUILDING}`}
+    >
+      <span
+        className={`w-1.5 h-1.5 rounded-full ${
+          status === "RUNNING"
+            ? "bg-[#00FFCC]"
+            : status === "FAILED"
+              ? "bg-[#FF3333]"
+              : "bg-[#FFCC00] animate-pulse"
+        }`}
+      ></span>
       {status}
     </span>
   );
@@ -32,77 +44,142 @@ const StatusBadge = ({ status }) => {
 
 export default function Dashboard() {
   const { isCollapsed, toggleSidebar } = useSidebar();
+  const navigate = useNavigate();
+  const [myProjects, setMyProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const myProjects = [
-    {
-      name: "VALORA_FRONTEND",
-      framework: "React",
-      status: "RUNNING",
-      url: "valora-front.vercel.app",
-      lastDeploy: "10m ago",
-      version: "v4.0.1"
-    },
-    {
-      name: "PAYMENT_MICROSERVICE",
-      framework: "Node.js",
-      status: "FAILED",
-      url: "api.payments.com",
-      lastDeploy: "2h ago",
-      version: "v2.1.0"
-    },
-    {
-      name: "AUTH_GATEWAY",
-      framework: "Express",
-      status: "BUILDING",
-      url: "auth.valora.io",
-      lastDeploy: "Just now",
-      version: "v1.0.5"
-    }
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await getProjects();
+        if (cancelled) return;
+        const rows = (data?.data || []).map((p) => ({
+          id: p._id,
+          name: p.name,
+          framework: "—",
+          status: "RUNNING",
+          url: p.repoUrl?.replace(/^https?:\/\//, "") || "—",
+          lastDeploy: "—",
+          version: p.branch || "main",
+        }));
+        setMyProjects(rows);
+      } catch (e) {
+        if (!cancelled) {
+          setError(
+            e.response?.data?.message || e.message || "Failed to load projects"
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#050505] text-white uppercase tracking-wide" style={{ fontFamily: "'Space Mono', monospace" }}>
+    <div
+      className="flex h-screen overflow-hidden bg-[#050505] text-white uppercase tracking-wide"
+      style={{ fontFamily: "'Space Mono', monospace" }}
+    >
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-      <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}>
-
-        {/* HEADER SECTION */}
-        <div className="relative min-h-[140px] bg-cover bg-center flex flex-col justify-between border-b border-[#222]" style={{ backgroundImage: `url(${heroBg})` }}>
+      <div
+        className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${
+          isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"
+        }`}
+      >
+        <div
+          className="relative min-h-[140px] bg-cover bg-center flex flex-col justify-between border-b border-[#222]"
+          style={{ backgroundImage: `url(${heroBg})` }}
+        >
           <div className="absolute inset-0 bg-[#050505]/80 backdrop-blur-sm" />
           <TopNav />
           <div className="relative z-10 px-6 pb-4 flex justify-between items-end">
             <div>
-              <h1 className="text-xl md:text-2xl text-[#FFCC00] font-bold tracking-widest" style={{ fontFamily: "'Press Start 2P', cursive" }}>OVERVIEW</h1>
-              <p className="text-[10px] text-[#888] mt-1">YOUR PERSONAL DEPLOYMENT FLEET</p>
+              <h1
+                className="text-xl md:text-2xl text-[#FFCC00] font-bold tracking-widest"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                OVERVIEW
+              </h1>
+              <p className="text-[10px] text-[#888] mt-1">
+                YOUR PERSONAL DEPLOYMENT FLEET
+              </p>
+              {error && (
+                <p className="text-[10px] text-red-400 mt-2 normal-case">
+                  {error}
+                </p>
+              )}
             </div>
 
-            {/* 🌟 THEME FIX: Exact Landing Page Style Button */}
-            <button
-              className="bg-[#FFCC00] text-black px-5 py-3 text-[10px] font-bold transition-transform active:translate-y-1 active:shadow-none flex items-center gap-2"
-              style={{
-                fontFamily: "'Press Start 2P', cursive",
-                boxShadow: "4px 4px 0px 0px #CC9900" // Hard shadow for 3D retro effect
-              }}
-            >
-              <Rocket size={14} strokeWidth={3} /> IMPORT_REPO
-            </button>
+            <div className="flex flex-wrap gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => navigate("/projects/new")}
+                className="bg-[#0a0a0a] text-[#FFCC00] border-2 border-[#FFCC00] px-5 py-3 text-[10px] font-bold transition-transform active:translate-y-1 flex items-center gap-2 font-mono"
+                style={{ fontFamily: "'Press Start 2P', cursive" }}
+              >
+                <Rocket size={14} strokeWidth={3} /> IMPORT_REPO
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/applications")}
+                className="bg-[#FFCC00] text-black px-5 py-3 text-[10px] font-bold transition-transform active:translate-y-1 active:shadow-none flex items-center gap-2"
+                style={{
+                  fontFamily: "'Press Start 2P', cursive",
+                  boxShadow: "4px 4px 0px 0px #CC9900",
+                }}
+              >
+                <Rocket size={14} strokeWidth={3} /> PROJECTS
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* MAIN CONTENT */}
-        <div className="flex-1 p-6 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-
+        <div
+          className="flex-1 p-6 overflow-y-auto"
+          style={{ scrollbarWidth: "none" }}
+        >
           <h2 className="text-sm text-[#888] mb-4 flex items-center gap-2 border-b border-[#222] pb-2 font-bold">
-            <Folder size={14} /> ACTIVE_PROJECTS ({myProjects.length})
+            <Folder size={14} /> ACTIVE_PROJECTS (
+            {loading ? "…" : myProjects.length})
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {myProjects.map((project, i) => (
-              <div key={i} className="bg-[#0a0a0a] border-2 border-[#222] hover:border-[#FFCC00] transition-colors flex flex-col relative group" style={{ boxShadow: "4px 4px 0px 0px rgba(255, 204, 0, 0.1)" }}>
+          {!loading && myProjects.length === 0 && !error && (
+            <div className="mb-8 p-6 border-2 border-[#333] bg-[#0a0a0a] text-[11px] text-[#888] max-w-xl font-mono normal-case">
+              No projects yet.{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/projects/new")}
+                className="text-[#00FFCC] hover:underline font-bold"
+              >
+                Import a GitHub repo
+              </button>{" "}
+              to deploy.
+            </div>
+          )}
 
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {myProjects.map((project) => (
+              <div
+                key={project.id}
+                className="bg-[#0a0a0a] border-2 border-[#222] hover:border-[#FFCC00] transition-colors flex flex-col relative group"
+                style={{ boxShadow: "4px 4px 0px 0px rgba(255, 204, 0, 0.1)" }}
+              >
                 <div className="p-4 border-b border-[#111]">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-sm font-bold text-[#FFCC00] truncate pr-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: '10px', lineHeight: '1.5' }}>
+                    <h3
+                      className="text-sm font-bold text-[#FFCC00] truncate pr-2"
+                      style={{
+                        fontFamily: "'Press Start 2P', cursive",
+                        fontSize: "10px",
+                        lineHeight: "1.5",
+                      }}
+                    >
                       {project.name}
                     </h3>
                     <StatusBadge status={project.status} />
@@ -115,36 +192,86 @@ export default function Dashboard() {
                 <div className="p-4 flex-1">
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-[10px] text-[#555]">LAST_DEPLOY:</span>
-                    <span className="text-[10px] text-[#AAA]">{project.lastDeploy}</span>
+                    <span className="text-[10px] text-[#AAA]">
+                      {project.lastDeploy}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-[#555]">DOMAIN:</span>
-                    <a href={`https://${project.url}`} target="_blank" className="text-[10px] text-[#00FFCC] hover:underline flex items-center gap-1 font-bold">
+                    <span className="text-[10px] text-[#555]">REPO:</span>
+                    <a
+                      href={
+                        project.url.startsWith("http")
+                          ? project.url
+                          : `https://${project.url}`
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[10px] text-[#00FFCC] hover:underline flex items-center gap-1 font-bold truncate max-w-[60%]"
+                    >
                       {project.url} <ExternalLink size={10} />
                     </a>
                   </div>
                 </div>
 
-                {/* 🌟 THEME FIX: Action Bar styling updated to match */}
                 <div className="grid grid-cols-4 border-t-2 border-[#111] bg-[#050505]">
-                  <button className="p-3 text-[#555] hover:text-[#00FFCC] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors" title="View Logs (Phase 5)">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/deploy?projectId=${encodeURIComponent(project.id)}`
+                      )
+                    }
+                    className="p-3 text-[#555] hover:text-[#00FFCC] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors"
+                    title="Deployments & logs"
+                  >
                     <Terminal size={14} />
                   </button>
-                  <button className="p-3 text-[#555] hover:text-[#FFCC00] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors" title="Env Vars (Phase 6)">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/environments")}
+                    className="p-3 text-[#555] hover:text-[#FFCC00] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors"
+                    title="Environments"
+                  >
                     <Settings size={14} />
                   </button>
-                  <button className="p-3 text-[#555] hover:text-[#FFCC00] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors" title="Rollback (Phase 7)">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/deploy?projectId=${encodeURIComponent(project.id)}`
+                      )
+                    }
+                    className="p-3 text-[#555] hover:text-[#FFCC00] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors"
+                    title="Deployments"
+                  >
                     <History size={14} />
                   </button>
 
-                  <button className={`p-3 flex justify-center transition-all ${project.status === 'FAILED' ? 'text-[#050505] bg-[#FFCC00] hover:bg-yellow-400' : 'text-[#555] hover:text-[#FFCC00] hover:bg-[#111]'}`} title="Ask AI (Phase 8)">
-                    <BrainCircuit size={14} className={project.status === 'FAILED' ? 'animate-pulse' : ''} />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/deploy?projectId=${encodeURIComponent(project.id)}`
+                      )
+                    }
+                    className={`p-3 flex justify-center transition-all ${
+                      project.status === "FAILED"
+                        ? "text-[#050505] bg-[#FFCC00] hover:bg-yellow-400"
+                        : "text-[#555] hover:text-[#FFCC00] hover:bg-[#111]"
+                    }`}
+                    title="Open project (AI analyze from deployment logs)"
+                  >
+                    <BrainCircuit
+                      size={14}
+                      className={
+                        project.status === "FAILED" ? "animate-pulse" : ""
+                      }
+                    />
                   </button>
                 </div>
               </div>
             ))}
           </div>
-
         </div>
       </div>
     </div>

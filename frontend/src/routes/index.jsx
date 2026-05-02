@@ -1,58 +1,58 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
-import Landing from '../pages/Landing'
-import Login from '../auth/Login'
-import Register from '../auth/Register'
-import DashboardContent from '../components/dashboard/DashboardContent.jsx'
-import Applications from '../components/ActiveLinks/Applications.jsx'
-import Environments from '../components/ActiveLinks/Environments.jsx'
-import DeploymentsPage from '../components/ActiveLinks/DeploymentsPage.jsx'
-import Settings from '../components/ActiveLinks/Settings.jsx'
-import Metrics from '../components/ActiveLinks/Metrics.jsx'
-import DocsPage from '../pages/Extra/Docs.jsx'
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import Landing from "../pages/Landing";
+import Login from "../auth/Login";
+import Register from "../auth/Register";
+import DashboardContent from "../components/dashboard/DashboardContent.jsx";
+import Applications from "../components/ActiveLinks/Applications.jsx";
+import Environments from "../components/ActiveLinks/Environments.jsx";
+import DeploymentsPage from "../components/ActiveLinks/DeploymentsPage.jsx";
+import Settings from "../components/ActiveLinks/Settings.jsx";
+import Metrics from "../components/ActiveLinks/Metrics.jsx";
+import DeploymentLogsPage from "../components/ActiveLinks/DeploymentLogsPage.jsx";
 
 export const router = createBrowserRouter([
   {
-    path: '/',
-    element: <Landing /> // Public Landing Page
+    path: "/",
+    element: <Landing />, // Public Landing Page
   },
   {
-    path: '/documentation',
-    element: <DocsPage /> // Public Landing Page
+    path: "/login",
+    element: <Login />,
   },
   {
-    path: '/login',
-    element: <Login />
+    path: "/register",
+    element: <Register />,
   },
   {
-    path: '/register',
-    element: <Register />
-  },
-  {
-    path: '/dashboard',
+    path: "/dashboard",
     element: <DashboardContent />
   },
   {
-    path: '/deploy',
+    path: "/deploy",
     element: <DeploymentsPage />
   },
   {
-    path: '/applications',
+    path: "/applications",
     element: <Applications />
   },
   {
-    path: '/environments',
+    path: "/environments",
     element: <Environments />
   },
   {
-    path: '/metrics',
+    path: "/metrics",
     element: <Metrics />
   },
   {
-    path: '/settings',
+    path: "/settings",
     element: <Settings />
   },
   {
-    path: '*',
-    element: <Navigate to='/' /> // 404 handling - redirect to landing
+    path:'deployments',
+    element: <DeploymentLogsPage />
+  },
+  {
+    path: "*",
+    element: <Navigate to="/" />, // 404 handling - redirect to landing
   }
-])
+]);

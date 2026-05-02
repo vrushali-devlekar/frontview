@@ -26,19 +26,16 @@ const HeroSection = () => {
             Velora
           </div>
 
-          <div className="flex gap-4 md:gap-8 text-[10px] uppercase tracking-widest text-gray-400">
-            <span className="hover:text-[#facc15] transition cursor-pointer">
-              Product
-            </span>
-            <span className="hover:text-[#facc15] transition cursor-pointer">
-              Templates
-            </span>
-            <NavLink to="/docs" className="hover:text-[#facc15] transition">
-              Docs
-            </NavLink>
-            <span className="hover:text-[#facc15] transition cursor-pointer">
-              Pricing
-            </span>
+          <div className="hidden lg:flex gap-8 text-[10px] uppercase tracking-widest text-gray-400">
+            {["Product", "Templates", "Docs", "Pricing"].map((item) => (
+              <a
+                key={item}
+                href="#"
+                className="hover:text-[#facc15] transition"
+              >
+                {item}
+              </a>
+            ))}
           </div>
 
           <div className="flex items-center gap-4">
