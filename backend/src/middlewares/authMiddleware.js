@@ -21,14 +21,14 @@ const protect = asyncHandler(async (req, res, next) => {
             req.user = await User.findById(decoded.id).select('-password');
 
             // 4. Sab sahi hai, toh aage badhne do (next middleware/controller pe)
-            next();
+            return next();
         } catch (error) {
             console.error(error);
             res.status(401);
             throw new Error('Not authorized, token failed');
         }
     }
-    console.log("Received Headers:", req.headers);
+
     // Agar token hi nahi mila
     if (!token) {
         res.status(401);

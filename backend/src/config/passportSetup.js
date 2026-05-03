@@ -30,8 +30,9 @@ passport.deserializeUser(async (id, done) => {
 passport.use(new LocalStrategy({ usernameField: 'email' }, 
     async (email, password, done) => {
         try {
+            const normalizedEmail = String(email || '').trim().toLowerCase();
             // Email se user dhundo
-            const user = await User.findOne({ email });
+            const user = await User.findOne({ email: normalizedEmail });
             if (!user) {
                 return done(null, false, { message: 'That email is not registered' });
             }
@@ -83,7 +84,7 @@ passport.use(new GitHubStrategy({
     callbackURL: githubCallbackUrl
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        const email = resolveGithubEmail(profile);
+        const email = resolveGithubEmail(profile)?.trim().toLowerCase();
         if (!email) {
             return done(null, false, { message: 'GitHub did not provide an email. Allow email access or set a public email on GitHub.' });
         }
@@ -128,7 +129,7 @@ passport.use(new GoogleStrategy({
     callbackURL: googleCallbackUrl
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        const email = profile.emails?.[0]?.value;
+        const email = profile.emails?.[0]?.value?.trim().toLowerCase();
         if (!email) {
             return done(null, false, { message: 'Google did not provide an email address.' });
         }

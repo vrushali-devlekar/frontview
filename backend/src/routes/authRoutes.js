@@ -37,8 +37,20 @@ router.post('/register', registerValidation, registerUser);
 // Sahi tareeka: Ek hi baar route define karna hai
 router.post('/login',
     loginValidation,
-    passport.authenticate('local', { session: false }),
-    authSuccess
+    (req, res, next) => {
+        passport.authenticate('local', { session: false }, (err, user, info) => {
+            if (err) return next(err);
+            if (!user) {
+                return res.status(401).json({
+                    success: false,
+                    message: info?.message || 'Invalid email or password'
+                });
+            }
+
+            req.user = user;
+            return authSuccess(req, res, next);
+        })(req, res, next);
+    }
 );
 
 // ==========================================

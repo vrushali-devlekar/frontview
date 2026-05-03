@@ -1,20 +1,26 @@
 import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Zap } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Callback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    if (token) {
-      localStorage.setItem("token", token);
-      navigate("/dashboard", { replace: true });
-    } else {
-      navigate("/login?error=auth_failed", { replace: true });
-    }
-  }, [searchParams, navigate]);
+    const completeOAuth = async () => {
+      const token = searchParams.get("token");
+      if (token) {
+        await login(null, token);
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/login?error=auth_failed", { replace: true });
+      }
+    };
+
+    void completeOAuth();
+  }, [searchParams, navigate, login]);
 
   return (
     <div className="h-screen bg-[#09090b] flex flex-col items-center justify-center font-sans">

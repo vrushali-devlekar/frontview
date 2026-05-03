@@ -8,6 +8,19 @@ const {
     sessionCookieSecure
 } = require('../config/runtime');
 
+const serializeUser = (user) => ({
+    id: user._id || user.id,
+    name: user.username,
+    username: user.username,
+    email: user.email,
+    avatar: user.avatarUrl,
+    avatarUrl: user.avatarUrl,
+    authProvider: user.authProvider,
+    githubId: user.githubId || null,
+    googleId: user.googleId || null,
+    githubConnected: Boolean(user.githubId)
+});
+
 // Helper Function: JWT Token Generate karna
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -19,7 +32,9 @@ const generateToken = (id) => {
 // 1. LOCAL REGISTER (Naya Account Banana)
 // ==========================================
 exports.registerUser = asyncHandler(async (req, res) => {
-    const { username, email, password } = req.body;
+    const username = req.body.username?.trim();
+    const email = req.body.email?.trim().toLowerCase();
+    const password = req.body.password;
 
     if (!username || !email || !password) {
         res.status(400);
@@ -42,7 +57,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
     if (user) {
         res.status(201).json({
             success: true,
-            user: { id: user.id, username: user.username, email: user.email },
+            user: serializeUser(user),
             token: generateToken(user._id),
         });
     } else {
@@ -64,6 +79,7 @@ exports.authSuccess = (req, res) => {
 
     res.cookie('token', token, {
         secure: sessionCookieSecure,
+        httpOnly: true,
         sameSite: sessionCookieSameSite,
         maxAge: 30 * 24 * 60 * 60 * 1000
     });
@@ -72,12 +88,7 @@ exports.authSuccess = (req, res) => {
     res.status(200).json({
         success: true,
         message: `Logged in successfully via ${req.user.authProvider}`,
-        user: {
-            id: req.user._id,
-            username: req.user.username,
-            email: req.user.email,
-            avatar: req.user.avatarUrl
-        },
+        user: serializeUser(req.user),
         token // Backend ticket
     });
 };
@@ -124,12 +135,7 @@ exports.getMe = asyncHandler(async (req, res) => {
 
     res.status(200).json({
         success: true,
-        user: {
-            id: req.user._id,
-            username: req.user.username,
-            email: req.user.email,
-            avatar: req.user.avatarUrl
-        }
+        user: serializeUser(req.user)
     });
 });
 
@@ -173,11 +179,6 @@ exports.updateMe = asyncHandler(async (req, res) => {
     res.status(200).json({
         success: true,
         message: 'Profile updated successfully',
-        user: {
-            id: updated._id,
-            username: updated.username,
-            email: updated.email,
-            avatar: updated.avatarUrl
-        }
+        user: serializeUser(updated)
     });
 });

@@ -4,6 +4,7 @@ import { Zap } from "lucide-react";
 import api, { githubAuthUrl, googleAuthUrl } from "../../api/api";
 import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
+import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -12,6 +13,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     const urlError = searchParams.get("error");
@@ -28,7 +30,7 @@ const Login = () => {
     try {
       const response = await api.post("/auth/login", { email, password });
       if (response.data && response.data.token) {
-        localStorage.setItem("token", response.data.token);
+        await login(response.data.user || null, response.data.token);
         navigate("/dashboard");
       } else {
         setError("Invalid credentials. Please try again.");

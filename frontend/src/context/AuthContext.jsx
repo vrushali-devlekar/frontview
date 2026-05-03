@@ -1,51 +1,69 @@
-import { createContext, useState, useEffect, useContext } from 'react';
-import api from '../api/api';
+import { createContext, useState, useEffect, useContext } from 'react'
+import { getCurrentUser } from '../api/api'
 
-export const AuthContext = createContext();
+export const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        // App start hote hi check karo token hai ya nahi
-        const checkUser = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    // Tere backend ka route jo current user lata hai (e.g., /auth/me ya token verify)
-                    // Abhi ke liye hum bas token hone pe dummy user set kar rahe hain hackathon speed ke liye
-                    setUser({ name: "SHERYIAN_DEV", email: "sysadmin@valora.io", token });
-                } catch (error) {
-                    localStorage.removeItem('token');
-                }
-            }
-            setLoading(false);
-        };
-        checkUser();
-    }, []);
+  const refreshUser = async () => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      setUser(null)
+      return null
+    }
 
-    const login = (userData, token) => {
-        localStorage.setItem('token', token);
-        setUser(userData);
-    };
+    try {
+      const response = await getCurrentUser()
+      const backendUser = response?.data?.user || null
+      setUser(backendUser)
+      return backendUser
+    } catch (error) {
+      localStorage.removeItem('token')
+      setUser(null)
+      return null
+    }
+  }
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        setUser(null);
-    };
+  useEffect(() => {
+    const checkUser = async () => {
+      await refreshUser()
+      setLoading(false)
+    }
 
-    return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
-            {children}
-        </AuthContext.Provider>
-    );
-};
+    void checkUser()
+  }, [])
+
+  const login = async (userData, token) => {
+    if (token) {
+      localStorage.setItem('token', token)
+    }
+
+    if (userData) {
+      setUser(userData)
+      return userData
+    }
+
+    return refreshUser()
+  }
+
+  const logout = () => {
+    localStorage.removeItem('token')
+    setUser(null)
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, refreshUser, loading }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
 
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
-};
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}

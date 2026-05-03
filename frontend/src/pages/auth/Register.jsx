@@ -4,6 +4,7 @@ import { Zap } from "lucide-react";
 import api, { githubAuthUrl, googleAuthUrl } from "../../api/api";
 import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
+import { useAuth } from "../../context/AuthContext";
 
 const Register = () => {
   const [searchParams] = useSearchParams();
@@ -13,6 +14,7 @@ const Register = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     const urlError = searchParams.get("error");
@@ -29,7 +31,7 @@ const Register = () => {
     try {
       const response = await api.post("/auth/register", { username, email, password });
       if (response.data && response.data.token) {
-        localStorage.setItem("token", response.data.token);
+        await login(response.data.user || null, response.data.token);
         navigate("/dashboard");
       }
     } catch (err) {

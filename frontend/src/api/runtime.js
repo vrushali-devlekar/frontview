@@ -1,4 +1,4 @@
-const LOCAL_BACKEND_ORIGIN = 'http://localhost:4000';
+const LOCAL_BACKEND_ORIGIN = 'http://localhost:5000';
 
 const trimTrailingSlash = (value = '') => String(value).replace(/\/+$/, '');
 

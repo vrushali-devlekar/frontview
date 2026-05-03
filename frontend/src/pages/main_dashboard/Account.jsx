@@ -21,7 +21,7 @@ const GithubIcon = ({ size = 20, className = "" }) => (
 export default function Account() {
   const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
   const { user } = useAuth();
-  const [alias, setAlias] = useState(user?.name || "SHERYIANS_SDE");
+  const [alias, setAlias] = useState(user?.username || user?.name || "SHERYIANS_SDE");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState({ text: "", type: "" });
@@ -74,9 +74,9 @@ export default function Account() {
                   {/* Avatar row */}
                   <div className="flex items-center gap-5 mb-7 pb-6 border-b border-white/[0.06]">
                     <div className="w-16 h-16 rounded-2xl bg-[#111113] border border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden">
-                      {user?.githubAccessToken ? (
+                      {user?.githubConnected ? (
                         <img
-                          src={`https://avatars.githubusercontent.com/${user?.githubId || "github"}`}
+                          src={user?.avatarUrl || user?.avatar || `https://avatars.githubusercontent.com/${user?.githubId || "github"}`}
                           alt="Avatar"
                           className="w-full h-full object-cover"
                           onError={(e) => { e.target.src = "https://github.com/identicons/velora.png"; }}
@@ -86,7 +86,7 @@ export default function Account() {
                       )}
                     </div>
                     <div>
-                      <p className="text-[14px] font-bold text-white mb-1">{user?.name || "Operator"}</p>
+                      <p className="text-[14px] font-bold text-white mb-1">{user?.username || user?.name || "Operator"}</p>
                       <div className="flex items-center gap-1.5 text-[12px] text-[#52525b]">
                         <Mail size={12} className="text-[#3f3f46]" />
                         {user?.email || "sysadmin@velora.io"}
@@ -126,7 +126,7 @@ export default function Account() {
                           <p className="text-[11px] text-[#52525b] mt-0.5">Required for repo imports</p>
                         </div>
                       </div>
-                      {user?.githubAccessToken ? (
+                      {user?.githubConnected ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-[#22c55e] bg-[#22c55e]/10 border border-[#22c55e]/20">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" /> Connected
                         </span>
@@ -172,3 +172,6 @@ export default function Account() {
     </div>
   );
 }
+  React.useEffect(() => {
+    setAlias(user?.username || user?.name || "SHERYIANS_SDE");
+  }, [user]);

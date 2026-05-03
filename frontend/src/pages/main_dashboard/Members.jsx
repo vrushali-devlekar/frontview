@@ -19,11 +19,22 @@ export default function Members() {
   const [message, setMessage] = useState("");
 
   const [members, setMembers] = useState([
-    { id: 1, name: user?.name || "System Admin", email: user?.email || "sysadmin@velora.io", role: "OWNER", status: "ACTIVE" },
+    { id: 1, name: user?.username || user?.name || "System Admin", email: user?.email || "sysadmin@velora.io", role: "OWNER", status: "ACTIVE" },
     { id: 2, name: "Alex M",    email: "alex.m@velora.io",   role: "ADMIN",     status: "ACTIVE" },
     { id: 3, name: "Sam K",     email: "sam.k@velora.io",    role: "DEVELOPER", status: "OFFLINE" },
     { id: 4, name: "Jordan L",  email: "jordan.l@velora.io", role: "DEVELOPER", status: "ACTIVE" },
   ]);
+
+  React.useEffect(() => {
+    setMembers((prev) => [
+      {
+        ...prev[0],
+        name: user?.username || user?.name || "System Admin",
+        email: user?.email || "sysadmin@velora.io",
+      },
+      ...prev.slice(1),
+    ]);
+  }, [user]);
 
   const handleInvite = (e) => {
     e.preventDefault();
