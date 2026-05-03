@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 // IMPORTANT: Ensure this path is correct based on your folder structure
 import footerDecoration from "../../assets/footer-assets.png";
 
@@ -10,20 +9,20 @@ const footerLinks = {
 };
 
 const Logo = () => (
-  <Link to="/" className="flex items-center gap-2 group cursor-pointer">
+  <div className="flex items-center gap-2">
     <div className="w-6 h-6 flex items-center justify-center">
       {/* Updated Logo SVG to match the reference "V" shape */}
-      <svg viewBox="0 0 40 40" className="w-full h-full fill-[#a3e635] group-hover:scale-110 transition-transform">
+      <svg viewBox="0 0 40 40" className="w-full h-full fill-[#a3e635]">
         <path d="M20 5L5 15V25L20 35L35 25V15L20 5ZM18 28L10 20L12 18L18 24L28 14L30 16L18 28Z" />
       </svg>
     </div>
     <span
-      className="text-white font-bold tracking-widest uppercase group-hover:text-[#a3e635] transition-colors"
+      className="text-white font-bold tracking-widest uppercase"
       style={{ fontFamily: "'Space Mono', monospace", fontSize: "16px" }}
     >
       Velora
     </span>
-  </Link>
+  </div>
 );
 
 export default function Footer() {

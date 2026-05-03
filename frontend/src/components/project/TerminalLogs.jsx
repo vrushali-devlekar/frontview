@@ -177,17 +177,17 @@ export default function TerminalLogs({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full min-h-0 bg-[#0d0d0f] rounded-xl overflow-hidden">
+    <div className="flex-1 flex flex-col h-full min-h-0 bg-[#09090b] rounded-xl overflow-hidden">
       {/* Terminal Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#1e1e20] border-b border-white/[0.06] shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#111113] border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-[#ef4444]" />
             <div className="w-3 h-3 rounded-full bg-[#eab308]" />
             <div className="w-3 h-3 rounded-full bg-[#22c55e]" />
           </div>
-          <span className="text-[13px] font-black uppercase tracking-widest text-[#52525b]">
-            Build Console
+          <span className="text-[13px] font-medium text-[#71717a]">
+            Build Logs
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -197,19 +197,19 @@ export default function TerminalLogs({
             </span>
           )}
           {isStreaming ? (
-            <span className="flex items-center gap-1.5 text-[#3b82f6] text-[12px] font-black uppercase tracking-widest">
+            <span className="flex items-center gap-1.5 text-[#3b82f6] text-[12px] font-medium">
               <RefreshCw size={12} className="animate-spin" /> Live
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-[#22c55e] text-[12px] font-black uppercase tracking-widest">
-              <ShieldCheck size={12} /> Finished
+            <span className="flex items-center gap-1.5 text-[#71717a] text-[12px] font-medium">
+              <ShieldCheck size={12} /> Complete
             </span>
           )}
         </div>
       </div>
 
       {/* Log Lines */}
-      <div className="flex-1 overflow-y-auto px-2 py-4 min-h-0 bg-black/40" style={{ scrollbarWidth: 'thin' }}>
+      <div className="flex-1 overflow-y-auto px-2 py-4 min-h-0" style={{ scrollbarWidth: 'thin' }}>
         {logs.map((log, index) => (
           <div
             key={`${index}-${log.time}`}
@@ -221,17 +221,17 @@ export default function TerminalLogs({
             </span>
 
             {/* Timestamp */}
-            <span className="text-[12px] text-[#52525b] min-w-[70px] tabular-nums font-bold">
+            <span className="text-[12px] text-[#71717a] min-w-[70px] tabular-nums">
               {log.time}
             </span>
             
             {/* Type badge */}
-            <span className={`text-[12px] min-w-[32px] font-bold ${getLogColor(log.type)}`}>
+            <span className={`text-[12px] min-w-[32px] font-medium ${getLogColor(log.type)}`}>
               {getLogPrefix(log.type)}
             </span>
 
             {/* Message */}
-            <span className={`flex-1 text-[13px] leading-relaxed break-all ${getLogColor(log.type)} ${log.type === 'error' ? 'font-medium text-[#ef4444]' : 'text-[#a1a1aa]'}`}>
+            <span className={`flex-1 text-[13px] leading-relaxed break-all ${getLogColor(log.type)} ${log.type === 'error' ? 'font-medium text-[#ef4444]' : 'text-[#d4d4d8]'}`}>
               {log.message}
             </span>
           </div>
@@ -240,8 +240,8 @@ export default function TerminalLogs({
         {isStreaming && (
           <div className="flex gap-4 px-2 py-1 items-center">
             <span className="text-[12px] text-[#3f3f46] min-w-[32px] text-right">{logs.length + 1}</span>
-            <span className="text-[12px] text-[#52525b] min-w-[70px] font-bold">--:--:--</span>
-            <span className="text-[12px] min-w-[32px] text-[#3b82f6] font-bold">...</span>
+            <span className="text-[12px] text-[#71717a] min-w-[70px]">--:--:--</span>
+            <span className="text-[12px] min-w-[32px] text-[#3b82f6]">...</span>
             <span className="inline-block w-2 h-3.5 bg-[#3b82f6] animate-pulse rounded-sm"></span>
           </div>
         )}
@@ -250,10 +250,10 @@ export default function TerminalLogs({
       </div>
 
       {/* Footer stats */}
-      <div className="py-2 px-4 bg-[#1e1e20] border-t border-white/[0.06] flex justify-between items-center shrink-0">
-        <span className="text-[12px] text-[#52525b] font-black uppercase tracking-widest">{logs.length} output lines</span>
-        <button onClick={scrollToBottom} className="text-[12px] text-[#52525b] hover:text-white flex items-center gap-1.5 transition-colors font-black uppercase tracking-widest">
-          <ArrowDown size={12} /> Auto-scroll
+      <div className="py-2 px-4 bg-[#111113] border-t border-white/[0.06] flex justify-between items-center shrink-0">
+        <span className="text-[12px] text-[#71717a]">{logs.length} lines</span>
+        <button onClick={scrollToBottom} className="text-[12px] text-[#71717a] hover:text-white flex items-center gap-1.5 transition-colors">
+          <ArrowDown size={12} /> Scroll to bottom
         </button>
       </div>
     </div>

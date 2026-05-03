@@ -1,4 +1,4 @@
-import  { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import loginImg from "../assets/login.png";
 import { login, githubAuthUrl } from "../api/api";

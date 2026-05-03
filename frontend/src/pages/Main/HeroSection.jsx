@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import heroBg from '../../assets/mcrft-bg.png'
 
 export default function HeroSection () {
@@ -61,12 +60,9 @@ export default function HeroSection () {
             </div>
 
             <div className='flex flex-wrap gap-3'>
-              <Link 
-                to="/register"
-                className='px-5 py-2.5 bg-[#a3e635] text-black font-bold text-xs rounded hover:bg-[#bef264] transition-all font-mono'
-              >
+              <button className='px-5 py-2.5 bg-[#a3e635] text-black font-bold text-xs rounded hover:bg-[#bef264] transition-all font-mono'>
                 Get Started Free →
-              </Link>
+              </button>
               <button className='px-5 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold text-xs rounded font-mono'>
                 View Docs
               </button>
@@ -114,12 +110,9 @@ export default function HeroSection () {
                     )}
                   </div>
                   <div className='border border-dashed border-white/10 rounded p-4 flex flex-col items-center justify-center text-center'>
-                    <Link 
-                      to="/dashboard"
-                      className='px-2 py-1 bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/20 text-[8px] font-bold rounded uppercase'
-                    >
+                    <button className='px-2 py-1 bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/20 text-[8px] font-bold rounded uppercase'>
                       Choose Repo
-                    </Link>
+                    </button>
                   </div>
                 </div>
                 <div className='h-1 w-full bg-white/5 rounded-full overflow-hidden'>
