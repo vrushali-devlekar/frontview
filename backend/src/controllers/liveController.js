@@ -10,10 +10,43 @@ function buildTargetUrl(port, restPath = '', queryString = '') {
 
 function rewriteHtmlDocument(html, deploymentId) {
     const prefix = `/live/${deploymentId}`;
+    const normalizedPrefix = `${prefix}/`;
 
     return String(html)
-        .replace(/<head([^>]*)>/i, `<head$1><base href="${prefix}/">`)
-        .replace(/(["'])\/(?!\/)/g, `$1${prefix}/`);
+        .replace(/<head([^>]*)>/i, `<head$1><base href="${normalizedPrefix}">`)
+        // Rewrite only URL-bearing HTML attributes that start from root.
+        .replace(
+            /(\b(?:href|src|action|poster)=["'])\/(?!\/)/gi,
+            `$1${prefix}/`
+        )
+        // Rewrite srcset root-relative items: "/a.png 1x, /b.png 2x"
+        .replace(
+            /(\bsrcset=["'])([^"']*)(["'])/gi,
+            (_, start, value, end) => {
+                const rewritten = value.replace(/(^|,\s*)\/(?!\/)/g, `$1${prefix}/`);
+                return `${start}${rewritten}${end}`;
+            }
+        );
+}
+
+function rewriteUpstreamLocation(locationHeader, deploymentId) {
+    if (!locationHeader) return locationHeader;
+
+    const prefix = `/live/${deploymentId}`;
+    if (/^https?:\/\//i.test(locationHeader)) {
+        try {
+            const parsed = new URL(locationHeader);
+            return `${prefix}${parsed.pathname}${parsed.search}${parsed.hash}`;
+        } catch {
+            return locationHeader;
+        }
+    }
+
+    if (locationHeader.startsWith('/')) {
+        return `${prefix}${locationHeader}`;
+    }
+
+    return `${prefix}/${locationHeader}`;
 }
 
 exports.proxyLiveDeployment = asyncHandler(async (req, res) => {
@@ -56,6 +89,10 @@ exports.proxyLiveDeployment = asyncHandler(async (req, res) => {
     upstreamResponse.headers.forEach((value, key) => {
         if (key.toLowerCase() === 'content-length') return;
         if (key.toLowerCase() === 'content-security-policy') return;
+        if (key.toLowerCase() === 'location') {
+            res.setHeader(key, rewriteUpstreamLocation(value, deployment._id));
+            return;
+        }
         res.setHeader(key, value);
     });
 
