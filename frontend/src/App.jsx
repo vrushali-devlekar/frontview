@@ -1,4 +1,8 @@
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+} from "react-router-dom";
 
 import Landing from "./pages/public/Landing";
 import Login from "./pages/auth/Login";
@@ -16,6 +20,7 @@ import Account from "./pages/main_dashboard/Account";
 import Members from "./pages/main_dashboard/Members";
 import Integrations from "./pages/main_dashboard/Integrations";
 import Docs from "./pages/Extra/Docs";
+import { AuthProvider } from "./context/AuthContext";
 
 import "./App.css";
 
@@ -38,60 +43,64 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <Dashboard />
+    element: <Dashboard />,
   },
   {
     path: "/projects/new",
-    element: <NewProjectPage />
+    element: <NewProjectPage />,
   },
   {
     path: "/deploy",
-    element: <Deployments />
+    element: <Deployments />,
   },
   {
     path: "/deploy/logs/:deploymentId",
-    element: <DeploymentLogsPage />
+    element: <DeploymentLogsPage />,
   },
   {
     path: "/applications",
-    element: <Overview />
+    element: <Overview />,
   },
   {
     path: "/environments",
-    element: <Environments />
+    element: <Environments />,
   },
   {
     path: "/metrics",
-    element: <Metrics />
+    element: <Metrics />,
   },
   {
     path: "/settings",
-    element: <Settings />
+    element: <Settings />,
   },
   {
     path: "/account",
-    element: <Account />
+    element: <Account />,
   },
   {
     path: "/members",
-    element: <Members />
+    element: <Members />,
   },
   {
     path: "/integrations",
-    element: <Integrations />
+    element: <Integrations />,
   },
   {
     path: "/documentation",
-    element: <Docs />
+    element: <Docs />,
   },
   {
     path: "*",
     element: <Navigate to="/" />, // 404 handling - redirect to landing
-  }
+  },
 ]);
 
 const App = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 };
 
 export default App;

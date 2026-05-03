@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
@@ -25,7 +25,7 @@ import InputField from "../../components/ui/InputField";
 import EnvTable from "../../components/project/EnvTable";
 import { motion } from "framer-motion";
 import { getProject, updateProject, deleteProject, getProjects, getWorkspaceOverview } from "../../api/api";
-import { AlertBanner, Card, PageHeader } from "../../components/layout/PageLayout";
+import { AlertBanner } from "../../components/layout/PageLayout";
 
 export default function Settings() {
     const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
@@ -69,7 +69,7 @@ export default function Settings() {
                     setWorkspaceStats(overviewResponse.data?.data?.stats || null);
                     setActiveTab("WORKSPACE");
                 }
-            } catch (err) {
+            } catch {
                 setError("Failed to load details.");
             } finally {
                 setLoading(false);
@@ -143,8 +143,8 @@ export default function Settings() {
                 <TopNav />
 
                 {/* Page header */}
-                <div className="px-4 md:px-8 py-5 md:py-6 border-b border-white/[0.06] shrink-0">
-                    <div className="max-w-[1200px] mx-auto">
+                <div className="px-4 md:px-8 py-5 md:py-6 border-b border-white/6 shrink-0">
+                    <div className="max-w-300 mx-auto">
                         <div className="flex items-center gap-2 mb-1">
                              <h1 className="text-2xl font-bold tracking-tight text-white">
                                 {projectId ? "Project Settings" : "Workspace Settings"}
@@ -167,19 +167,19 @@ export default function Settings() {
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto max-w-[1200px] mx-auto w-full flex flex-col lg:flex-row px-4 md:px-8 lg:px-0">
+                <div className="flex-1 overflow-y-auto max-w-300 mx-auto w-full flex flex-col lg:flex-row px-4 md:px-8 lg:px-0">
 
                     {/* Tab sidebar */}
-                    <div className="w-full lg:w-64 shrink-0 py-4 lg:py-6 lg:pr-6 border-b lg:border-b-0 lg:border-r border-white/[0.06] flex flex-row lg:flex-col gap-2 lg:gap-0.5 overflow-x-auto lg:overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+                    <div className="w-full lg:w-64 shrink-0 py-4 lg:py-6 lg:pr-6 border-b lg:border-b-0 lg:border-r border-white/6 flex flex-row lg:flex-col gap-2 lg:gap-0.5 overflow-x-auto lg:overflow-y-auto" style={{ scrollbarWidth: "none" }}>
                         <p className="hidden lg:block text-[10px] font-bold text-[#3f3f46] uppercase tracking-widest mb-2 px-3">Sections</p>
                         {currentTabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex shrink-0 items-center gap-3 px-3 py-2.5 text-[13px] font-medium rounded-lg transition-colors text-left ${activeTab === tab.id
-                                        ? "bg-white/[0.08] text-white"
-                                        : "text-[#71717a] hover:text-white hover:bg-white/[0.04]"
-                                    } ${tab.id === "DANGER" ? "text-[#ef4444] hover:text-[#ef4444] hover:bg-[#ef4444]/[0.06] mt-auto" : ""}`}
+                                        ? "bg-white/8 text-white"
+                                        : "text-[#71717a] hover:text-white hover:bg-white/4"
+                                    } ${tab.id === "DANGER" ? "text-[#ef4444] hover:text-[#ef4444] hover:bg-[#ef4444]/6 mt-auto" : ""}`}
                             >
                                 <tab.icon size={15} className={tab.id === "DANGER" && activeTab !== "DANGER" ? "text-[#ef4444]" : ""} />
                                 {tab.label}
@@ -189,7 +189,7 @@ export default function Settings() {
                         {projectId && (
                             <button
                                 onClick={() => navigate("/settings")}
-                                className="flex shrink-0 items-center gap-3 px-3 py-2.5 text-[12px] font-bold text-[#71717a] hover:text-white lg:mt-4 lg:border-t lg:border-white/[0.04] lg:pt-6"
+                                className="flex shrink-0 items-center gap-3 px-3 py-2.5 text-[12px] font-bold text-[#71717a] hover:text-white lg:mt-4 lg:border-t lg:border-white/4 lg:pt-6"
                             >
                                 <ChevronRight size={14} className="rotate-180" />
                                 Back to Workspace
@@ -199,7 +199,7 @@ export default function Settings() {
 
                     {/* Tab content */}
                     <div className="flex-1 overflow-y-auto py-6 lg:pl-8 min-w-0" style={{ scrollbarWidth: "none" }}>
-                        <div className="max-w-[760px]">
+                        <div className="max-w-190">
                             {error && <AlertBanner type="error">{error}</AlertBanner>}
                             {successMsg && <AlertBanner type="success">{successMsg}</AlertBanner>}
 
@@ -231,8 +231,8 @@ export default function Settings() {
                                                 </div>
                                             </div>
 
-                                            <div className="bg-[#111113] border border-white/[0.06] rounded-xl overflow-hidden shadow-elevation-1">
-                                                <div className="px-6 py-5 border-b border-white/[0.06] flex items-center justify-between">
+                                            <div className="bg-[#111113] border border-white/6 rounded-xl overflow-hidden shadow-elevation-1">
+                                                <div className="px-6 py-5 border-b border-white/6 flex items-center justify-between">
                                                     <div>
                                                         <h2 className="text-[14px] font-semibold text-white mb-0.5 flex items-center gap-2">
                                                             <Globe size={14} className="text-[#71717a]" /> Domains
@@ -241,7 +241,7 @@ export default function Settings() {
                                                     </div>
                                                 </div>
                                                 <div className="px-6 py-5">
-                                                    <div className="flex items-center justify-between px-4 py-3 bg-[#0d0d0f] border border-white/[0.06] rounded-lg">
+                                                    <div className="flex items-center justify-between px-4 py-3 bg-[#0d0d0f] border border-white/6 rounded-lg">
                                                         <div>
                                                             <span className="text-[13px] font-medium text-white block">
                                                                 {project?.name?.toLowerCase().replace(/\s+/g, '-')}.velora.app
@@ -305,7 +305,7 @@ export default function Settings() {
                                     {activeTab === "DANGER" && (
                                         <motion.div key="danger" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
                                             <div className="bg-[#111113] border border-[#ef4444]/20 rounded-xl overflow-hidden shadow-elevation-1">
-                                                <div className="px-6 py-5 border-b border-[#ef4444]/10 bg-[#ef4444]/[0.02] flex items-start gap-3">
+                                                <div className="px-6 py-5 border-b border-[#ef4444]/10 bg-[#ef4444]/2 flex items-start gap-3">
                                                     <AlertTriangle size={16} className="text-[#ef4444] mt-0.5 shrink-0" />
                                                     <div>
                                                         <h2 className="text-[14px] font-semibold text-[#ef4444] mb-0.5">Delete Project</h2>
@@ -315,7 +315,7 @@ export default function Settings() {
                                                     </div>
                                                 </div>
                                                 <div className="px-6 py-5 flex flex-col gap-5">
-                                                    <div className="rounded-xl border border-white/[0.06] bg-[#0d0d0f] p-4">
+                                                    <div className="rounded-xl border border-white/6 bg-[#0d0d0f] p-4">
                                                         <p className="text-[12px] font-semibold text-white mb-1">Deletion summary</p>
                                                         <p className="text-[12px] text-[#71717a] leading-6">
                                                             This removes <span className="font-semibold text-white">{project?.name}</span> from your Velora dashboard, stops any active deployment, and hides the project from your workspace.
@@ -333,7 +333,7 @@ export default function Settings() {
                                                         placeholder={project?.name || "Project name"}
                                                     />
 
-                                                    <label className="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-[#0d0d0f] px-4 py-4 cursor-pointer">
+                                                    <label className="flex items-start gap-3 rounded-xl border border-white/6 bg-[#0d0d0f] px-4 py-4 cursor-pointer">
                                                         <input
                                                             type="checkbox"
                                                             checked={deleteRemoteRepo}
@@ -391,10 +391,10 @@ export default function Settings() {
                                                             <div 
                                                                 key={p._id}
                                                                 onClick={() => navigate(`/settings?projectId=${p._id}`)}
-                                                                className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                                                                className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-white/3 transition-colors cursor-pointer group"
                                                             >
                                                                 <div className="flex items-center gap-3">
-                                                                    <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+                                                                    <div className="w-8 h-8 rounded-lg bg-white/4 border border-white/6 flex items-center justify-center">
                                                                         <Folder size={14} className="text-[#a1a1aa]" />
                                                                     </div>
                                                                     <div>
@@ -420,8 +420,8 @@ export default function Settings() {
                                                         { label: "Deployments", value: workspaceStats?.totalDeployments || "0" },
                                                         { label: "Success Rate", value: workspaceStats?.successRate || "0%" },
                                                     ].map((item) => (
-                                                        <div key={item.label} className="rounded-xl border border-white/[0.06] bg-[#0d0d0f] px-4 py-4">
-                                                            <p className="text-[11px] text-[#52525b] uppercase tracking-[0.1em] font-bold">{item.label}</p>
+                                                        <div key={item.label} className="rounded-xl border border-white/6 bg-[#0d0d0f] px-4 py-4">
+                                                            <p className="text-[11px] text-[#52525b] uppercase tracking-widest font-bold">{item.label}</p>
                                                             <p className="text-[20px] text-white font-bold mt-2">{item.value}</p>
                                                         </div>
                                                     ))}
@@ -432,7 +432,7 @@ export default function Settings() {
 
                                     {(activeTab === "PROFILE" || activeTab === "SECURITY") && (
                                         <div className="py-10 text-center">
-                                            <div className="w-12 h-12 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
+                                            <div className="w-12 h-12 rounded-full bg-white/4 border border-white/6 flex items-center justify-center mx-auto mb-4">
                                                 <User size={20} className="text-[#3f3f46]" />
                                             </div>
                                             <p className="text-[14px] font-bold text-white mb-1">Redirecting to Account</p>

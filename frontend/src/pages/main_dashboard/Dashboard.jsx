@@ -46,7 +46,9 @@ const StatusBadge = ({ status }) => {
   };
   const cfg = map[status] || { cls: "bg-white/[0.05] text-[#71717a] border-white/10", label: status };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${cfg.cls}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${cfg.cls}`}
+    >
       <StatusDot status={status} />
       {cfg.label}
     </span>
@@ -148,7 +150,7 @@ export default function Dashboard() {
         if (!ignore && data?.data) {
           setOverview(data.data);
         }
-      } catch (error) {
+      } catch {
         if (!ignore) {
           setOverview((prev) => ({ ...prev, recentDeployments: [], projects: [], environmentPreview: [] }));
         }
@@ -164,6 +166,12 @@ export default function Dashboard() {
       ignore = true;
     };
   }, []);
+
+  // Calculate dynamic deltas based on previous data
+  const calculateDelta = (current, previous) => {
+    const diff = current - previous;
+    return diff >= 0 ? `+${diff}` : `${diff}`;
+  };
 
   const stats = [
     {
@@ -208,26 +216,43 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-[#050505] text-white font-sans">
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
+    <div className="flex h-screen overflow-hidden bg-[#050505] text-white font-sans">
+      <Sidebar
+        isCollapsed={isCollapsed}
+        toggleSidebar={toggleSidebar}
+        navMode={navMode}
+        toggleNavMode={toggleNavMode}
+      />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
 
-        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-          <div className="px-4 py-5 md:px-6 md:py-6 lg:px-8 max-w-[1400px] mx-auto pb-24 md:pb-10">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-8 pb-6 border-b border-white/[0.06]">
+        <div
+          className="flex-1 overflow-y-auto"
+          style={{ scrollbarWidth: "none" }}
+        >
+          <div className="p-8 max-w-[1400px] mx-auto">
+            {/* ══ PAGE HEADER ══ */}
+            <div className="flex items-start justify-between mb-8 pb-6 border-b border-white/[0.06]">
               <div>
-                <h1 className="text-[22px] md:text-[28px] font-bold text-white tracking-tight leading-tight">Overview</h1>
+                <h1 className="text-[22px] font-bold text-white tracking-tight leading-tight">
+                  Overview
+                </h1>
                 <p className="text-[13px] text-[#52525b] mt-1.5">
-                  Your live workspace health, recent deployments, and environment summary.
+                  Good morning — here's what's happening.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <GlassButton variant="secondary" onClick={() => navigate("/projects/new")}>
+              <div className="flex items-center gap-3">
+                <GlassButton
+                  variant="secondary"
+                  onClick={() => navigate("/projects/new")}
+                >
                   <Plus size={14} /> New Project
                 </GlassButton>
-                <GlassButton variant="primary" onClick={() => navigate("/deploy")}>
+                <GlassButton
+                  variant="primary"
+                  onClick={() => navigate("/deploy")}
+                >
                   <Rocket size={14} /> Deploy
                 </GlassButton>
               </div>
@@ -258,7 +283,9 @@ export default function Dashboard() {
                       <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
                         <Activity size={13} className="text-[#52525b]" />
                       </div>
-                      <p className="text-[14px] font-semibold text-white">Recent Deployments</p>
+                      <p className="text-[14px] font-semibold text-white">
+                        Recent Deployments
+                      </p>
                     </div>
                     <button
                       onClick={() => navigate("/deploy")}
@@ -349,7 +376,10 @@ export default function Dashboard() {
                     transition={{ duration: 0.35, delay: 0.36 }}
                     className="h-full"
                   >
-                    <BentoCard hover={false} className="px-5 py-5 h-full flex flex-col">
+                    <BentoCard
+                      hover={false}
+                      className="px-5 py-5 h-full flex flex-col"
+                    >
                       <div className="flex items-center justify-between mb-4">
                         <p className="text-[13px] font-semibold text-white">Failures</p>
                         <AlertTriangle size={13} className="text-[#ef4444]" />
@@ -407,7 +437,10 @@ export default function Dashboard() {
                       </span>
                     )}
                   </div>
-                  <GlassButton variant="secondary" onClick={() => navigate("/applications")}>
+                  <GlassButton
+                    variant="secondary"
+                    onClick={() => navigate("/applications")}
+                  >
                     View all
                   </GlassButton>
                 </div>
@@ -415,7 +448,10 @@ export default function Dashboard() {
                 {loading && (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-10">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-44 bg-[#111113] border border-white/[0.06] rounded-2xl animate-pulse" />
+                      <div
+                        key={i}
+                        className="h-44 bg-[#111113] border border-white/[0.06] rounded-2xl animate-pulse"
+                      />
                     ))}
                   </div>
                 )}
@@ -439,7 +475,13 @@ export default function Dashboard() {
                     className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-10"
                     initial="hidden"
                     animate="show"
-                    variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }}
+                    variants={{
+                      hidden: { opacity: 0 },
+                      show: {
+                        opacity: 1,
+                        transition: { staggerChildren: 0.06 },
+                      },
+                    }}
                   >
                     {overview.projects.map((project) => (
                       <motion.div
@@ -488,7 +530,9 @@ export default function Dashboard() {
                                 className="flex flex-col items-center justify-center gap-1.5 py-4 text-[#3f3f46] hover:text-white hover:bg-white/[0.04] transition-colors border-r border-white/[0.05] last:border-r-0"
                               >
                                 <Icon size={13} strokeWidth={1.75} />
-                                <span className="text-[9.5px] font-semibold uppercase tracking-[0.06em]">{label}</span>
+                                <span className="text-[9.5px] font-semibold uppercase tracking-[0.06em]">
+                                  {label}
+                                </span>
                               </button>
                             ))}
                           </div>

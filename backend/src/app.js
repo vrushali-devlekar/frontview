@@ -78,8 +78,9 @@ app.use(cors({
         if (isAllowedOrigin(origin)) return callback(null, true);
         return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
-    credentials: true
-}));
+    credentials: true,
+  }),
+);
 
 // 6. Body Parsers
 app.use(express.json());
@@ -97,33 +98,36 @@ app.use('/api/workspace', workspaceRoutes);
 app.use('/live/:id', proxyLiveDeployment);
 
 // --- BASIC ROUTE ---
-app.get('/api/health', (req, res) => {
-    res.send('DeployPilot API is running perfectly!');
+app.get("/api/health", (req, res) => {
+  res.send("DeployPilot API is running perfectly!");
 });
 
-const { analyzeLogsWithAI } = require('./services/logAnalysisService');
+const { analyzeLogsWithAI } = require("./services/logAnalysisService");
 
-app.post('/api/test-ai', async (req, res) => {
-    try {
-        const { logs } = req.body;
-        if (!logs) return res.status(400).json({ error: "Logs array is required for testing" });
+app.post("/api/test-ai", async (req, res) => {
+  try {
+    const { logs } = req.body;
+    if (!logs)
+      return res
+        .status(400)
+        .json({ error: "Logs array is required for testing" });
 
-        console.log("🤖 Sending logs to AI for analysis...");
+    console.log("🤖 Sending logs to AI for analysis...");
 
         const aiResponse = await analyzeLogsWithAI(logs, 'mistral');
 
-        res.status(200).json({ success: true, aiAnalysis: aiResponse });
-    } catch (error) {
-        console.error("AI Error:", error);
-        res.status(500).json({ success: false, error: error.message });
-    }
+    res.status(200).json({ success: true, aiAnalysis: aiResponse });
+  } catch (error) {
+    console.error("AI Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Serve frontend build from backend/dist when available
-const frontendDistPath = path.resolve(__dirname, '../dist');
+const frontendDistPath = path.resolve(__dirname, "../dist");
 app.use(express.static(frontendDistPath));
 app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  res.sendFile(path.join(frontendDistPath, "index.html"));
 });
 
 // --- ERROR HANDLERS ---

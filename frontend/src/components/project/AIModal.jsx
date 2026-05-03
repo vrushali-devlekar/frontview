@@ -154,7 +154,9 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
                 if (parsed.text) {
                   appendChunkToMessage(astMsgId, parsed.text, setChatMessages);
                 }
-              } catch (e) { }
+              } catch (e) { /* partial chunk */
+                e.message = "Received malformed response from AI.";
+                throw e;
             }
           }
         }

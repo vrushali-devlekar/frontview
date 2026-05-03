@@ -123,47 +123,47 @@ const TopNav = () => {
   };
 
   return (
-    <header className="h-16 flex items-center justify-between px-4 md:px-6 lg:px-8 shrink-0 relative z-50 w-full border-b border-white/[0.05] bg-[#050505]/40 backdrop-blur-2xl gap-3">
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="relative z-50 flex h-16 w-full shrink-0 items-center justify-between gap-3 border-b border-white/[0.05] bg-[#050505]/40 px-4 backdrop-blur-2xl md:px-6 lg:px-8">
+      <div className="flex min-w-0 items-center gap-3">
         <div className="md:hidden">
           <BrandLogo to="/dashboard" compact />
         </div>
-        <div className="hidden md:flex items-center gap-2 min-w-0">
+        <div className="hidden min-w-0 items-center gap-2 md:flex">
           <BrandLogo to="/dashboard" compact />
           {pageLabel && (
             <>
-              <span className="text-[#3f3f46] text-[10px] select-none">•</span>
-              <span className="text-[13px] font-bold text-white/80 select-none tracking-tight truncate">
+              <span className="select-none text-[10px] text-[#3f3f46]">•</span>
+              <span className="truncate select-none text-[13px] font-bold tracking-tight text-white/80">
                 {pageLabel}
               </span>
             </>
           )}
         </div>
-        <div className="md:hidden min-w-0">
-          <span className="text-[13px] font-bold text-white/80 truncate">{pageLabel || "Velora"}</span>
+        <div className="min-w-0 md:hidden">
+          <span className="truncate text-[13px] font-bold text-white/80">{pageLabel || "Velora"}</span>
         </div>
       </div>
 
       <div className="flex items-center gap-1 md:gap-2">
         <div
           ref={searchRef}
-          className={`relative flex items-center rounded-lg overflow-visible transition-all duration-200 ${
-            isSearchOpen ? "w-52 md:w-72" : "w-8 h-8"
+          className={`relative flex items-center overflow-visible rounded-lg transition-all duration-200 ${
+            isSearchOpen ? "w-52 md:w-72" : "h-8 w-8"
           }`}
         >
           <div
-            className={`flex items-center rounded-lg overflow-hidden transition-all duration-200 ${
+            className={`flex items-center overflow-hidden rounded-lg transition-all duration-200 ${
               isSearchOpen
-                ? "w-full bg-[#111113] border border-white/[0.08] ring-1 ring-[#22c55e]/20"
-                : "w-8 h-8"
+                ? "w-full border border-white/[0.08] bg-[#111113] ring-1 ring-[#22c55e]/20"
+                : "h-8 w-8"
             }`}
           >
             <button
               onClick={() => setIsSearchOpen(true)}
-              className={`flex items-center justify-center shrink-0 transition-colors w-8 h-8 ${
+              className={`flex h-8 w-8 shrink-0 items-center justify-center transition-colors ${
                 isSearchOpen
-                  ? "text-[#52525b] pointer-events-none"
-                  : "text-[#52525b] hover:text-white hover:bg-white/[0.05] rounded-lg"
+                  ? "pointer-events-none text-[#52525b]"
+                  : "rounded-lg text-[#52525b] hover:bg-white/[0.05] hover:text-white"
               }`}
             >
               <Search size={14} />
@@ -174,15 +174,15 @@ const TopNav = () => {
               autoFocus={isSearchOpen}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`bg-transparent text-[12px] text-white placeholder:text-[#3f3f46] pr-3 focus:outline-none transition-all duration-200 ${
-                isSearchOpen ? "w-full opacity-100" : "w-0 opacity-0 pointer-events-none"
+              className={`bg-transparent pr-3 text-[12px] text-white placeholder:text-[#3f3f46] transition-all duration-200 focus:outline-none ${
+                isSearchOpen ? "w-full opacity-100" : "pointer-events-none w-0 opacity-0"
               }`}
             />
             {searchLoading && isSearchOpen && <Loader2 size={12} className="mr-3 animate-spin text-[#52525b]" />}
           </div>
 
           {isSearchOpen && (searchResults.length > 0 || debouncedSearch.trim()) && (
-            <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[#111113] border border-white/[0.08] rounded-xl shadow-2xl overflow-hidden">
+            <div className="absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-xl border border-white/[0.08] bg-[#111113] shadow-2xl">
               {searchResults.length > 0 ? (
                 <div className="max-h-72 overflow-y-auto py-1.5">
                   {searchResults.map((item) => (
@@ -193,20 +193,18 @@ const TopNav = () => {
                         setSearchTerm("");
                         navigate(item.href);
                       }}
-                      className="w-full text-left px-3 py-2.5 hover:bg-white/[0.05] transition-colors"
+                      className="w-full px-3 py-2.5 text-left transition-colors hover:bg-white/[0.05]"
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-[12.5px] font-semibold text-white truncate">{item.title}</span>
-                        <span className="text-[10px] uppercase tracking-wide text-[#52525b] shrink-0">{item.type}</span>
+                        <span className="truncate text-[12.5px] font-semibold text-white">{item.title}</span>
+                        <span className="shrink-0 text-[10px] uppercase tracking-wide text-[#52525b]">{item.type}</span>
                       </div>
-                      <p className="text-[11px] text-[#71717a] truncate mt-0.5">{item.subtitle}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-[#71717a]">{item.subtitle}</p>
                     </button>
                   ))}
                 </div>
               ) : (
-                !searchLoading && (
-                  <div className="px-3 py-4 text-[12px] text-[#71717a]">No matches found.</div>
-                )
+                !searchLoading && <div className="px-3 py-4 text-[12px] text-[#71717a]">No matches found.</div>
               )}
             </div>
           )}
@@ -221,17 +219,17 @@ const TopNav = () => {
                 void loadNotifications();
               }
             }}
-            className="relative flex items-center justify-center w-8 h-8 rounded-lg text-[#52525b] hover:text-white hover:bg-white/[0.05] transition-colors"
+            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-[#52525b] transition-colors hover:bg-white/[0.05] hover:text-white"
           >
             <Bell size={14} />
             {notifications.length > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-[5px] h-[5px] bg-[#22c55e] rounded-full ring-2 ring-[#09090b]" />
+              <span className="absolute right-1.5 top-1.5 h-[5px] w-[5px] rounded-full bg-[#22c55e] ring-2 ring-[#09090b]" />
             )}
           </button>
 
           {isNotificationsOpen && (
-            <div className="absolute right-0 top-[calc(100%+8px)] w-[min(92vw,360px)] bg-[#111113] border border-white/[0.08] rounded-xl shadow-2xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
+            <div className="absolute right-0 top-[calc(100%+8px)] w-[min(92vw,360px)] overflow-hidden rounded-xl border border-white/[0.08] bg-[#111113] shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
                 <p className="text-[13px] font-semibold text-white">Notifications</p>
                 {notificationsLoading && <Loader2 size={12} className="animate-spin text-[#52525b]" />}
               </div>
@@ -246,13 +244,13 @@ const TopNav = () => {
                         setIsNotificationsOpen(false);
                         navigate(item.href || "/dashboard");
                       }}
-                      className="w-full text-left px-4 py-3 hover:bg-white/[0.04] transition-colors border-b border-white/[0.04] last:border-b-0"
+                      className="w-full border-b border-white/[0.04] px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-white/[0.04]"
                     >
                       <div className="flex items-start gap-3">
                         <span className={`mt-0.5 text-[10px] ${typeStyles[item.type] || typeStyles.info}`}>●</span>
                         <div className="min-w-0">
                           <p className="text-[12.5px] font-semibold text-white">{item.title}</p>
-                          <p className="text-[11px] text-[#71717a] mt-0.5">{item.description}</p>
+                          <p className="mt-0.5 text-[11px] text-[#71717a]">{item.description}</p>
                         </div>
                       </div>
                     </button>
@@ -263,61 +261,61 @@ const TopNav = () => {
           )}
         </div>
 
-        <div className="w-px h-4 bg-white/[0.08] mx-1 hidden md:block" />
+        <div className="mx-1 hidden h-4 w-px bg-white/[0.08] md:block" />
 
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen((open) => !open)}
-            className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-white/[0.05] transition-colors"
+            className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-white/[0.05]"
           >
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[12px] font-black text-black">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[12px] font-black text-black">
               {initials}
             </div>
-            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none max-w-28 truncate">
+            <span className="hidden max-w-28 truncate text-[13px] font-bold leading-none text-white/70 md:block">
               {user?.username || user?.name || "Operator"}
             </span>
             <ChevronDown
               size={12}
-              className={`hidden md:block text-[#3f3f46] transition-transform duration-300 ${
+              className={`hidden text-[#3f3f46] transition-transform duration-300 md:block ${
                 isDropdownOpen ? "rotate-180" : ""
               }`}
             />
           </button>
 
           <div
-            className={`absolute right-0 top-[calc(100%+8px)] w-52 bg-[#111113] border border-white/[0.10] rounded-xl shadow-elevation-3 overflow-hidden origin-top-right transition-all duration-150 ${
-              isDropdownOpen ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
+            className={`absolute right-0 top-[calc(100%+8px)] w-52 origin-top-right overflow-hidden rounded-xl border border-white/[0.10] bg-[#111113] shadow-2xl transition-all duration-150 ${
+              isDropdownOpen ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
             }`}
           >
-            <div className="px-4 py-3 border-b border-white/[0.06]">
-              <p className="text-[12.5px] font-semibold text-white truncate">{user?.username || user?.name || "Operator"}</p>
-              <p className="text-[11px] text-[#71717a] truncate">{user?.email || "No email"}</p>
+            <div className="border-b border-white/[0.06] px-4 py-3">
+              <p className="truncate text-[12.5px] font-semibold text-white">{user?.username || user?.name || "Operator"}</p>
+              <p className="truncate text-[11px] text-[#71717a]">{user?.email || "No email"}</p>
             </div>
-            <div className="py-1.5 flex flex-col gap-0.5 px-1.5">
+            <div className="flex flex-col gap-0.5 px-1.5 py-1.5">
               <Link
                 to="/account"
                 onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center gap-2.5 px-2.5 py-2 text-[12.5px] text-[#a1a1aa] hover:bg-white/[0.05] hover:text-white rounded-lg transition-colors"
+                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] text-[#a1a1aa] transition-colors hover:bg-white/[0.05] hover:text-white"
               >
                 <User size={13} /> Profile
               </Link>
               <Link
                 to="/settings"
                 onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center gap-2.5 px-2.5 py-2 text-[12.5px] text-[#a1a1aa] hover:bg-white/[0.05] hover:text-white rounded-lg transition-colors"
+                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] text-[#a1a1aa] transition-colors hover:bg-white/[0.05] hover:text-white"
               >
                 <Settings size={13} /> Settings
               </Link>
               <Link
                 to="/documentation"
                 onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center gap-2.5 px-2.5 py-2 text-[12.5px] text-[#a1a1aa] hover:bg-white/[0.05] hover:text-white rounded-lg transition-colors"
+                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] text-[#a1a1aa] transition-colors hover:bg-white/[0.05] hover:text-white"
               >
                 <FileText size={13} /> Documentation
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2.5 px-2.5 py-2 text-[12.5px] text-[#ef4444] hover:bg-[#ef4444]/10 rounded-lg transition-colors"
+                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] text-[#ef4444] transition-colors hover:bg-[#ef4444]/10"
               >
                 <LogOut size={13} /> Sign out
               </button>

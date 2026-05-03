@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
       const backendUser = response?.data?.user || null
       setUser(backendUser)
       return backendUser
-    } catch (error) {
+    } catch {
       localStorage.removeItem('token')
       setUser(null)
       return null
