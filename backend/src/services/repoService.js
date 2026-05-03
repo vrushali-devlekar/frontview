@@ -25,6 +25,7 @@ const fetchUserRepos = async (accessToken) => {
             name: repo.name,
             owner: repo.owner.login,
             url: repo.html_url,
+            defaultBranch: repo.default_branch || 'main',
             language: repo.language,
             stars: repo.stargazers_count,
             description: repo.description,

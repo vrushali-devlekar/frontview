@@ -12,6 +12,7 @@ const projectRoutes = require('./routes/projectRoutes');
 const { protect } = require('./middlewares/authMiddleware');
 const deploymentRoutes = require('./routes/deploymentRoutes');
 const envRoutes = require('./routes/envRoutes');
+const integrationRoutes = require('./routes/integrationRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 
 // Express app initialize karna
@@ -23,12 +24,12 @@ const app = express();
 app.use(helmet());
 
 // 2. Global Rate Limiting
-const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again after 15 minutes'
-});
-app.use(globalLimiter);
+// const globalLimiter = rateLimit({
+//     windowMs: 15 * 60 * 1000, // 15 minutes
+//     max: 100, // limit each IP to 100 requests per windowMs
+//     message: 'Too many requests from this IP, please try again after 15 minutes'
+// });
+// app.use(globalLimiter);
 
 // 3. Session sabse pehle aayega
 app.use(session({
@@ -47,8 +48,20 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // 5. CORS
+// Allow local dev ports (Vite may switch 5173 -> 5174 when busy)
+const allowedOrigins = new Set([
+    process.env.FRONTEND_URL,
+    'http://localhost:5173',
+    'http://localhost:5174'
+].filter(Boolean));
+
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: (origin, callback) => {
+        // allow server-to-server/no-origin requests
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.has(origin)) return callback(null, true);
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true
 }));
 
@@ -61,6 +74,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/deployments', deploymentRoutes);
 app.use('/api/projects', envRoutes);
+app.use('/api/projects/:projectId/integrations', integrationRoutes);
+app.use('/api/ai', aiRoutes);
 
 // --- BASIC ROUTE ---
 app.get('/api/health', (req, res) => {
