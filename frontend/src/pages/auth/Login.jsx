@@ -5,8 +5,11 @@ import api from "../../api/api";
 import CyberButton from "../../components/ui/CyberButton";
 import InputField from "../../components/ui/InputField";
 
+<<<<<<< HEAD
 import { githubAuthUrl, googleAuthUrl } from "../../api/api";
 
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,11 +39,19 @@ const Login = () => {
   };
 
   const handleGithubLogin = () => {
+<<<<<<< HEAD
     window.location.href = githubAuthUrl;
   };
 
   const handleGoogleLogin = () => {
     window.location.href = googleAuthUrl;
+=======
+    window.location.href = "http://localhost:5000/api/auth/github";
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:5000/api/auth/google";
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
   };
 
   return (

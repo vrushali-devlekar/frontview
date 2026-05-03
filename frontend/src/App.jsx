@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import React from "react";
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 
 import Landing from "./pages/public/Landing";
@@ -10,8 +14,11 @@ import Overview from "./pages/project_view/Overview";
 import Metrics from "./pages/project_view/Metrics";
 import Settings from "./pages/project_view/Settings";
 import Environments from "./pages/project_view/Environments";
+<<<<<<< HEAD
 import DeploymentLogsPage from "./pages/project_view/Terminal";
 import NewProjectPage from "./pages/main_dashboard/NewProject";
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 
 import "./App.css";
 
@@ -37,18 +44,24 @@ const router = createBrowserRouter([
     element: <Dashboard />
   },
   {
+<<<<<<< HEAD
     path: "/projects/new",
     element: <NewProjectPage />
   },
   {
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
     path: "/deploy",
     element: <Deployments />
   },
   {
+<<<<<<< HEAD
     path: "/deploy/logs/:deploymentId",
     element: <DeploymentLogsPage />
   },
   {
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
     path: "/applications",
     element: <Overview />
   },
