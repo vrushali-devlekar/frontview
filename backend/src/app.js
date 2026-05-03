@@ -102,12 +102,7 @@ app.get('/api/health', (req, res) => {
     res.send('DeployPilot API is running perfectly!');
 });
 
-// Serve frontend build from backend/dist when available
-const frontendDistPath = path.resolve(__dirname, '../dist');
-app.use(express.static(frontendDistPath));
-app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(path.join(frontendDistPath, 'index.html'));
-});
+
 
 // --- ERROR HANDLERS ---
 app.use(notFound);
