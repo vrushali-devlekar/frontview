@@ -1,18 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Search, Bell, User, Settings, FileText, ChevronDown } from "lucide-react";
+import {
+  Search,
+  Bell,
+  User,
+  Settings,
+  FileText,
+  ChevronDown,
+} from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const routeLabels = {
-  "/dashboard":    "Overview",
+  "/dashboard": "Overview",
   "/applications": "Applications",
-  "/deploy":       "Deployments",
+  "/deploy": "Deployments",
   "/environments": "Environments",
-  "/metrics":      "Metrics",
-  "/members":      "Members",
+  "/metrics": "Metrics",
+  "/members": "Members",
   "/integrations": "Integrations",
-  "/settings":     "Settings",
-  "/documentation":"Documentation",
-  "/account":      "Account",
+  "/settings": "Settings",
+  "/documentation": "Documentation",
+  "/account": "Account",
   "/projects/new": "New Project",
 };
 
@@ -22,8 +30,24 @@ const TopNav = () => {
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const pageLabel = routeLabels[location.pathname] ?? "";
+
+  // Get user initials and name for display
+  const getUserInitials = () => {
+    if (!user?.name) return "U";
+    return user.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getDisplayName = () => {
+    return user?.name || user?.email?.split("@")[0] || "User";
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -38,21 +62,23 @@ const TopNav = () => {
 
   return (
     <header className="h-16 flex items-center justify-between px-8 shrink-0 relative z-50 w-full border-b border-white/[0.05] bg-[#050505]/40 backdrop-blur-2xl">
-
       {/* Left — breadcrumb */}
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-[12.5px] text-[#3f3f46] font-medium select-none">Velora</span>
+        <span className="text-[12.5px] text-[#3f3f46] font-medium select-none">
+          Velora
+        </span>
         {pageLabel && (
           <>
             <span className="text-[#3f3f46] text-[10px] select-none">•</span>
-            <span className="text-[13px] font-bold text-white/80 select-none tracking-tight">{pageLabel}</span>
+            <span className="text-[13px] font-bold text-white/80 select-none tracking-tight">
+              {pageLabel}
+            </span>
           </>
         )}
       </div>
 
       {/* Right — actions */}
       <div className="flex items-center gap-1">
-
         {/* Expandable search */}
         <div
           ref={searchRef}
@@ -63,9 +89,13 @@ const TopNav = () => {
           }`}
         >
           <button
-            onClick={() => { setIsSearchOpen(true); }}
+            onClick={() => {
+              setIsSearchOpen(true);
+            }}
             className={`flex items-center justify-center shrink-0 transition-colors w-8 h-8 ${
-              isSearchOpen ? "text-[#52525b] pointer-events-none" : "text-[#52525b] hover:text-white hover:bg-white/[0.05] rounded-lg"
+              isSearchOpen
+                ? "text-[#52525b] pointer-events-none"
+                : "text-[#52525b] hover:text-white hover:bg-white/[0.05] rounded-lg"
             }`}
           >
             <Search size={14} />
@@ -75,7 +105,9 @@ const TopNav = () => {
             placeholder="Search…"
             autoFocus={isSearchOpen}
             className={`bg-transparent text-[12px] text-white placeholder:text-[#3f3f46] pr-3 focus:outline-none transition-all duration-200 ${
-              isSearchOpen ? "w-full opacity-100" : "w-0 opacity-0 pointer-events-none"
+              isSearchOpen
+                ? "w-full opacity-100"
+                : "w-0 opacity-0 pointer-events-none"
             }`}
           />
         </div>
@@ -96,16 +128,23 @@ const TopNav = () => {
             className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-white/[0.05] transition-colors"
           >
             <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[12px] font-black text-black">
-              S
+              {getUserInitials()}
             </div>
-            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none">Sheryian</span>
-            <ChevronDown size={12} className={`hidden md:block text-[#3f3f46] transition-transform duration-300 ${isDropdownOpen ? "rotate-180" : ""}`} />
+            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none">
+              {getDisplayName()}
+            </span>
+            <ChevronDown
+              size={12}
+              className={`hidden md:block text-[#3f3f46] transition-transform duration-300 ${isDropdownOpen ? "rotate-180" : ""}`}
+            />
           </button>
 
           {/* Dropdown menu */}
           <div
             className={`absolute right-0 top-[calc(100%+8px)] w-48 bg-[#111113] border border-white/[0.10] rounded-xl shadow-elevation-3 overflow-hidden origin-top-right transition-all duration-150 ${
-              isDropdownOpen ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
+              isDropdownOpen
+                ? "opacity-100 scale-100 pointer-events-auto"
+                : "opacity-0 scale-95 pointer-events-none"
             }`}
           >
             <div className="py-1.5 flex flex-col gap-0.5 px-1.5">
@@ -131,10 +170,19 @@ const TopNav = () => {
               >
                 <FileText size={13} /> Documentation
               </Link>
+              <div className="h-px bg-white/[0.06] mx-1 my-1" />
+              <button
+                onClick={() => {
+                  logout();
+                  setIsDropdownOpen(false);
+                }}
+                className="flex items-center gap-2.5 px-2.5 py-2 text-[12.5px] text-[#ef4444] hover:bg-white/[0.05] hover:text-[#ef4444] rounded-lg transition-colors w-full text-left"
+              >
+                <User size={13} /> Logout
+              </button>
             </div>
           </div>
         </div>
-
       </div>
     </header>
   );
