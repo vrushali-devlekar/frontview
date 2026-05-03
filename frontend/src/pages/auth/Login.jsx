@@ -5,6 +5,14 @@ import api, { githubAuthUrl, googleAuthUrl } from "../../api/api";
 import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+import { githubAuthUrl, googleAuthUrl } from "../../api/api";
+
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 const Login = () => {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
@@ -42,11 +50,33 @@ const Login = () => {
   };
 
   const handleGithubLogin = () => {
+<<<<<<< HEAD
     window.location.href = githubAuthUrl;
   };
 
   const handleGoogleLogin = () => {
     window.location.href = googleAuthUrl;
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+    window.location.href = githubAuthUrl;
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = googleAuthUrl;
+=======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+    window.location.href = "http://localhost:5000/api/auth/github";
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:5000/api/auth/google";
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+>>>>>>> 5b94c478ee6b62a623140273e09b191633b41eb7
   };
 
   return (

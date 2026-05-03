@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+import { useState } from "react";
+>>>>>>> 5b94c478ee6b62a623140273e09b191633b41eb7
 import { Link, useNavigate } from "react-router-dom";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
@@ -429,3 +435,18 @@ export default function NewProjectPage() {
     </div>
   );
 }
+<<<<<<< HEAD
+=======
+=======
+// main section
+// deploy aur prj btn (jese user click karega modal ayega , uss modal me user apna github ka repo daloge , input me repo ka url jayega)
+// frame works select krne ka options like react, nextjs
+// deploy btn (repo clone hoga , install dependencies,build cmd run hoga, build ka output upload hoga, live url return) 
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
+// main section
+// deploy aur prj btn (jese user click karega modal ayega , uss modal me user apna github ka repo daloge , input me repo ka url jayega)
+// frame works select krne ka options like react, nextjs
+// deploy btn (repo clone hoga , install dependencies,build cmd run hoga, build ka output upload hoga, live url return) 
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+>>>>>>> 5b94c478ee6b62a623140273e09b191633b41eb7
