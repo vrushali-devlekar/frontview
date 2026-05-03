@@ -2,6 +2,24 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('../middlewares/asyncHandler');
+const {
+    frontendUrl,
+    sessionCookieSameSite,
+    sessionCookieSecure
+} = require('../config/runtime');
+
+const serializeUser = (user) => ({
+    id: user._id || user.id,
+    name: user.username,
+    username: user.username,
+    email: user.email,
+    avatar: user.avatarUrl,
+    avatarUrl: user.avatarUrl,
+    authProvider: user.authProvider,
+    githubId: user.githubId || null,
+    googleId: user.googleId || null,
+    githubConnected: Boolean(user.githubId)
+});
 
 // Helper Function: JWT Token Generate karna
 const generateToken = (id) => {
@@ -14,7 +32,9 @@ const generateToken = (id) => {
 // 1. LOCAL REGISTER (Naya Account Banana)
 // ==========================================
 exports.registerUser = asyncHandler(async (req, res) => {
-    const { username, email, password } = req.body;
+    const username = req.body.username?.trim();
+    const email = req.body.email?.trim().toLowerCase();
+    const password = req.body.password;
 
     if (!username || !email || !password) {
         res.status(400);
@@ -37,7 +57,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
     if (user) {
         res.status(201).json({
             success: true,
-            user: { id: user.id, username: user.username, email: user.email },
+            user: serializeUser(user),
             token: generateToken(user._id),
         });
     } else {
@@ -55,18 +75,21 @@ exports.authSuccess = (req, res) => {
         res.status(401);
         throw new Error('Authentication Failed');
     }
-    res.cookie('token', generateToken(req.user._id))
+    const token = generateToken(req.user._id);
+
+    res.cookie('token', token, {
+        secure: sessionCookieSecure,
+        httpOnly: true,
+        sameSite: sessionCookieSameSite,
+        maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
     // Passport ne user ko verify kar diya hai, ab hum apna JWT token bhejenge
     res.status(200).json({
         success: true,
         message: `Logged in successfully via ${req.user.authProvider}`,
-        user: {
-            id: req.user._id,
-            username: req.user.username,
-            email: req.user.email,
-            avatar: req.user.avatarUrl
-        },
-        token: generateToken(req.user._id) // Backend ticket
+        user: serializeUser(req.user),
+        token // Backend ticket
     });
 };
 
@@ -74,8 +97,6 @@ exports.authSuccess = (req, res) => {
 // 2.5 OAUTH SPECIFIC SUCCESS CALLBACK (For Github/Google)
 // ==========================================
 exports.oauthSuccess = (req, res) => {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-
     if (!req.user) {
         // Agar fail ho jaye toh frontend ke login page par error ke sath bhejo
         return res.redirect(`${frontendUrl}/login?error=AuthenticationFailed`);
@@ -86,7 +107,7 @@ exports.oauthSuccess = (req, res) => {
 
     // 🌟 PROFESSIONAL SDE FIX: JSON dikhane ki jagah seedha React App par redirect maaro 
     // Token ko URL me pass kar rahe hain taaki React use catch kar sake
-    res.redirect(`${frontendUrl}/auth/success?token=${token}`);
+    res.redirect(`${frontendUrl}/auth/success?token=${encodeURIComponent(token)}`);
 };
 
 // ==========================================
@@ -114,12 +135,7 @@ exports.getMe = asyncHandler(async (req, res) => {
 
     res.status(200).json({
         success: true,
-        user: {
-            id: req.user._id,
-            username: req.user.username,
-            email: req.user.email,
-            avatar: req.user.avatarUrl
-        }
+        user: serializeUser(req.user)
     });
 });
 
@@ -163,11 +179,6 @@ exports.updateMe = asyncHandler(async (req, res) => {
     res.status(200).json({
         success: true,
         message: 'Profile updated successfully',
-        user: {
-            id: updated._id,
-            username: updated.username,
-            email: updated.email,
-            avatar: updated.avatarUrl
-        }
+        user: serializeUser(updated)
     });
 });

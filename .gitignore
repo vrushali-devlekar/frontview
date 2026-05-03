@@ -6,6 +6,12 @@ frontend/node_modules/
 backend/.env
 frontend/.env
 .env
+backend/.env.*
+frontend/.env.*
+.env.*
+!backend/.env*.example
+!frontend/.env*.example
+!.env*.example
 
 # Build outputs
 frontend/dist/
