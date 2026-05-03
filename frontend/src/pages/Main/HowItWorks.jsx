@@ -1,5 +1,5 @@
 import React from 'react'
-import sectionBg from '../../assets/mcrft-bg.png'
+import sectionBg from '../../assets/m3.jpg'
 
 const steps = [
   {
@@ -94,7 +94,7 @@ export default function HowItWorks () {
     <section className='relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden bg-transparent border-y border-white/5'>
       {/* BACKGROUND IMAGE LAYER - Active and refined */}
       <div
-        className='absolute inset-0 z-0  bg-cover bg-center bg-no-repeat pointer-events-none'
+        className='absolute inset-0 z-0 opacity-60 bg-black/40 bg-cover bg-center bg-no-repeat pointer-events-none'
         style={{
           backgroundImage: `url(${sectionBg})`,
           // This ensures it shifts as intended in your Hero request
