@@ -1,21 +1,16 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-// IMPORTANT: Refer to your local assets folder to ensure these render.
-import bee from '../../assets/bee.png'
-import creeperImg from '../../assets/how.png' 
 
 export default function ReadyToDeploy() {
   return (
     <section className="bg-transparent py-24 px-4 overflow-hidden relative">
       <div className="max-w-5xl mx-auto relative group">
         
-        {/* Left Side Asset */}
-        <div className="absolute -left-5 top-[0px] w-48 z-30 pointer-events-none transition-transform group-hover:scale-105 duration-500 hidden md:block">
-          <img 
-            src={bee} 
-            alt="Bee" 
-            className="w-full h-auto drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]" 
-          />
+        {/* Left Side Decorative */}
+        <div className="absolute -left-5 top-[0px] w-48 z-30 pointer-events-none hidden md:block opacity-20">
+          <svg viewBox="0 0 100 100" className="w-full h-auto fill-[#a3e635]">
+            <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" />
+          </svg>
         </div>
 
         {/* Main Banner Box */}
@@ -47,13 +42,11 @@ export default function ReadyToDeploy() {
             </div>
           </div>
 
-          {/* Right Side Asset */}
-          <div className="absolute right-[-20px] bottom-[-30px] w-48 pointer-events-none transition-transform group-hover:-translate-y-4 duration-500 hidden md:block z-10">
-            <img 
-              src={creeperImg} 
-              alt="Creeper Character" 
-              className="w-full h-auto drop-shadow-[0_10px_50px_rgba(0,0,0,0.8)]" 
-            />
+          {/* Right Side Decorative */}
+          <div className="absolute right-[-20px] bottom-[-30px] w-32 pointer-events-none hidden md:block z-10 opacity-10">
+            <svg viewBox="0 0 100 100" className="w-full h-auto fill-[#a3e635]">
+              <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" />
+            </svg>
           </div>
         </div>
       </div>

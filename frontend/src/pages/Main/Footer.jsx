@@ -1,7 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-// IMPORTANT: Ensure this path is correct based on your folder structure
-import footerDecoration from "../../assets/footer-assets.png";
 
 const footerLinks = {
   Product: ["Features", "Pricing", "Changelog", "Status"],
@@ -70,12 +68,10 @@ export default function Footer() {
 
           {/* Decorative Assets Section - Matches right side of reference image */}
           <div className="flex flex-col items-center lg:items-end justify-center gap-4">
-            <div className="relative w-40 md:w-44">
-                <img 
-                    src={footerDecoration} 
-                    alt="Minecraft assets" 
-                    className="w-full h-auto drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]" 
-                />
+            <div className="w-16 h-16 flex items-center justify-center opacity-20">
+              <svg viewBox="0 0 40 40" className="w-full h-full fill-[#a3e635]">
+                <path d="M20 5L5 15V25L20 35L35 25V15L20 5ZM18 28L10 20L12 18L18 24L28 14L30 16L18 28Z" />
+              </svg>
             </div>
             <div className="flex items-center gap-2 text-gray-400 text-[11px] font-mono whitespace-nowrap">
               <span>Made with</span>
