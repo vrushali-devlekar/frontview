@@ -76,9 +76,10 @@ export default function DeployRow({ deployment, projectId, onRollback }) {
                 href={deployment.liveUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 mt-2.5 text-[12px] font-medium text-[#3b82f6] hover:text-[#60a5fa] hover:underline transition-colors"
+                className="inline-flex max-w-full items-center gap-2 mt-3 rounded-xl border border-[#22c55e]/25 bg-[#22c55e]/10 px-3 py-2 text-[12px] font-semibold text-[#86efac] shadow-[0_0_0_1px_rgba(34,197,94,0.08)] transition-colors hover:border-[#22c55e]/40 hover:bg-[#22c55e]/14 hover:text-[#dcfce7]"
               >
-                <ExternalLink size={12} /> {deployment.liveUrl}
+                <ExternalLink size={12} className="shrink-0" />
+                <span className="truncate">{deployment.liveUrl}</span>
               </a>
             ) : null}
             

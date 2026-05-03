@@ -34,8 +34,10 @@ const fetchUserRepos = async (accessToken) => {
 
         // 4. Data ko clean aur transform karna (jaise tumne design mein likha tha)
         const repos = rawRepos.map(repo => ({
+            id: repo.id,
             name: repo.name,
             owner: repo.owner.login,
+            fullName: repo.full_name,
             url: repo.html_url,
             defaultBranch: repo.default_branch || 'main',
             language: repo.language,
@@ -54,6 +56,29 @@ const fetchUserRepos = async (accessToken) => {
     }
 };
 
+const deleteGithubRepo = async (accessToken, repoFullName) => {
+    try {
+        const response = await fetch(`https://api.github.com/repos/${repoFullName}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.status === 204) {
+            return true;
+        }
+
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(`GitHub API Error: ${errBody.message || response.statusText}`);
+    } catch (error) {
+        console.error("RepoService Delete Error:", error.message);
+        throw error;
+    }
+};
+
 module.exports = {
-    fetchUserRepos
+    fetchUserRepos,
+    deleteGithubRepo
 };

@@ -2,7 +2,7 @@
 const express = require('express');
 const passport = require('passport');
 const { body, validationResult } = require('express-validator');
-const { registerUser, authSuccess, logout, oauthSuccess, getMe, updateMe } = require('../controllers/authController');
+const { registerUser, authSuccess, logout, oauthSuccess, getMe, updateMe, updatePassword } = require('../controllers/authController');
 const { protect } = require('../middlewares/authMiddleware');
 
 // Validation middleware generator
@@ -87,6 +87,7 @@ router.get('/google/callback',
 router.get('/logout', logout);
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateMe);
+router.put('/password', protect, updatePassword);
 
 // Failure route agar kisi karan se login fail ho jaye
 router.get('/login-failed', (req, res) => {

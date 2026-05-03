@@ -1,4 +1,4 @@
-import React from 'react'
+
 import Navbar from '../Main/Navbar'
 import HeroSection from '../Main/HeroSection'
 import WhyChoose from '../Main/WhyChoose'
