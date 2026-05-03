@@ -149,14 +149,46 @@ const detectFramework = async (targetPath) => {
             };
         }
 
-        // 6. Fallback (Agar koi script nahi hai, toh main file dhundo)
-        const mainFile = packageData.main || 'index.js';
+        if (scripts['dev']) {
+            return {
+                type: 'backend-node-dev',
+                projectPath,
+                installCmd: 'npm install',
+                buildCmd: null,
+                startCmd: 'npm run dev'
+            };
+        }
+
+        // 6. Fallback (Agar koi script nahi hai, toh main file dhundo intelligently)
+        const possibleEntryPoints = [
+            packageData.main, 
+            'server.js', 
+            'app.js', 
+            'index.js', 
+            'main.js',
+            'src/index.js',
+            'src/server.js',
+            'src/app.js'
+        ].filter(Boolean);
+
+        let actualMainFile = 'index.js'; // Ultimate fallback
+
+        for (const file of possibleEntryPoints) {
+            try {
+                await fs.access(path.join(projectPath, file));
+                actualMainFile = file;
+                break; // Jo pehli file mil jaye, usko main maan lo
+            } catch {
+                continue;
+            }
+        }
+
         return {
             type: 'backend-fallback',
             projectPath,
             installCmd: 'npm install',
             buildCmd: null,
-            startCmd: `node ${mainFile}` // e.g., node server.js
+            startCmd: `node ${actualMainFile}` // e.g., node server.js
         };
 
     } catch (error) {

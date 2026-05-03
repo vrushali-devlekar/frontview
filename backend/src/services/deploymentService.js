@@ -2,6 +2,7 @@
 const { spawn } = require('child_process');
 const Project = require('../models/Project');
 const Deployment = require('../models/Deployment');
+const User = require('../models/User');
 const { cloneRepo } = require('./fsManager');
 const { getAvailablePort, releasePort } = require('../utils/portManager');
 const { detectFramework } = require('../utils/frameworkDetector');
@@ -9,6 +10,8 @@ const { streamLogs } = require('../utils/logStreamer');
 const fs = require('fs').promises;
 const path = require('path');
 const { decrypt } = require('../utils/crypto');
+const Integration = require('../models/Integration');
+const { notifyIntegrations } = require('./notificationService');
 
 // Ye Map track karega ki kaunsa deployment kis process me chal raha hai (Stop karne ke kaam aayega)
 const activeProcesses = new Map();
@@ -45,34 +48,45 @@ const executeDeployment = async (deploymentId, io) => {
         await appendDeploymentLog(deploymentRecord, 'info', 'Deployment started');
 
         // 3. GitHub se Repo Clone karo
+        const user = await User.findById(deploymentRecord.userId).select('+githubAccessToken');
         const targetPath = await cloneRepo(
             project.repoUrl,
             deploymentRecord._id.toString(),
-            project.branch || 'main'
+            project.branch || 'main',
+            user?.githubAccessToken || null
         );
         await appendDeploymentLog(deploymentRecord, 'info', `Repository cloned to ${targetPath}`);
 
-        // 🌟 MISSING SDE MAGIC: Decrypt & Inject Environment Variables
-        console.log(`🔒 Decrypting and injecting environment variables...`);
-        await appendDeploymentLog(deploymentRecord, 'info', 'Injecting environment variables...');
-
-        // Check karo ki project mein env vars hain ya nahi
+        // 🌟 INTEGRATIONS INJECTION (Category A)
+        const integrations = await Integration.find({ projectId: project._id, isActive: true });
+        
+        let envContent = '';
+        
+        // 1. Regular project env vars
         if (project.envVars && project.envVars.length > 0) {
-            let envContent = '';
             for (const env of project.envVars) {
-                // Gibberish ko wapas asli value mein badlo
                 const decryptedValue = decrypt(env.encryptedValue, env.iv);
-                envContent += `${env.key}="${decryptedValue}"\n`; // .env format (KEY="VALUE")
+                envContent += `${env.key}="${decryptedValue}"\n`;
             }
+        }
 
-            // Clone ki hui target path mein .env file banao
+        // 2. Integration-based env vars (Automatic Injection)
+        integrations.forEach(integration => {
+            const config = Object.fromEntries(integration.config);
+            if (integration.provider === 'mongodb' && config.uri) {
+                envContent += `MONGODB_URI="${config.uri}"\n`;
+                envContent += `MONGO_URL="${config.uri}"\n`;
+            } else if (integration.provider === 'redis' && config.uri) {
+                envContent += `REDIS_URL="${config.uri}"\n`;
+            }
+        });
+
+        if (envContent) {
             const envFilePath = path.join(targetPath, '.env');
             await fs.writeFile(envFilePath, envContent);
-
-            console.log(`✅ .env file successfully created!`);
-            await appendDeploymentLog(deploymentRecord, 'info', '.env file successfully created');
+            await appendDeploymentLog(deploymentRecord, 'info', 'Environment variables (including integrations) successfully injected');
         } else {
-            console.log(`⚠️ No environment variables to inject.`);
+            await appendDeploymentLog(deploymentRecord, 'info', 'No environment variables to inject');
         }
 
         // 🌟 NEW: Auto-Detect Framework & Commands
@@ -165,6 +179,39 @@ const executeDeployment = async (deploymentId, io) => {
         startProcess.stdout.on('data', (data) => console.log(`[APP ${assignedPort}]: ${data}`));
         startProcess.stderr.on('data', (data) => console.error(`[APP ERR]: ${data}`));
 
+        // If app process exits by itself, mark final status clearly.
+        startProcess.on('close', async (code, signal) => {
+            try {
+                const latest = await Deployment.findById(deploymentRecord._id);
+                if (!latest) return;
+
+                // Already handled manually/earlier
+                if (['stopped', 'failed'].includes(latest.status)) {
+                    activeProcesses.delete(deploymentRecord._id.toString());
+                    return;
+                }
+
+                activeProcesses.delete(deploymentRecord._id.toString());
+                if (latest.port) {
+                    releasePort(latest.port);
+                }
+
+                if (code === 0) {
+                    latest.status = 'stopped';
+                    latest.completedAt = new Date();
+                    await appendDeploymentLog(latest, 'info', `Process exited normally (code 0${signal ? `, signal ${signal}` : ''})`);
+                } else {
+                    latest.status = 'failed';
+                    latest.errorMessage = `Process exited unexpectedly (code ${code}${signal ? `, signal ${signal}` : ''})`;
+                    latest.completedAt = new Date();
+                    await appendDeploymentLog(latest, 'error', latest.errorMessage);
+                }
+                await latest.save();
+            } catch (closeErr) {
+                console.error(`Failed to persist process close state: ${closeErr.message}`);
+            }
+        });
+
         // 6. Agar process bina kisi error ke start ho gaya, toh DB update kar do
         deploymentRecord.status = 'running';
         deploymentRecord.port = assignedPort;
@@ -176,6 +223,9 @@ const executeDeployment = async (deploymentId, io) => {
 
         console.log(`✅ Deployment ${deploymentRecord._id} is now LIVE at http://localhost:${assignedPort}`);
         await appendDeploymentLog(deploymentRecord, 'info', `Deployment live at http://localhost:${assignedPort}`);
+
+        // 🌟 NOTIFY SUCCESS (Category B)
+        notifyIntegrations(project._id, { ...deploymentRecord.toObject(), projectName: project.name }, 'success');
 
     } catch (error) {
         console.error(`❌ Deployment failed: ${error.message}`);
@@ -197,6 +247,10 @@ const executeDeployment = async (deploymentId, io) => {
             deploymentRecord.errorMessage = error.message;
             deploymentRecord.completedAt = new Date();
             await deploymentRecord.save();
+
+            // 🌟 NOTIFY FAILURE (Category B)
+            const project = await Project.findById(deploymentRecord.projectId);
+            notifyIntegrations(project._id, { ...deploymentRecord.toObject(), projectName: project.name }, 'failed');
         }
     }
 };

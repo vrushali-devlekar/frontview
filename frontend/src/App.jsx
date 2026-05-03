@@ -12,6 +12,10 @@ import Settings from "./pages/project_view/Settings";
 import Environments from "./pages/project_view/Environments";
 import DeploymentLogsPage from "./pages/project_view/Terminal";
 import NewProjectPage from "./pages/main_dashboard/NewProject";
+import Account from "./pages/main_dashboard/Account";
+import Members from "./pages/main_dashboard/Members";
+import Integrations from "./pages/main_dashboard/Integrations";
+import Docs from "./pages/Extra/Docs";
 
 import "./App.css";
 
@@ -63,6 +67,22 @@ const router = createBrowserRouter([
   {
     path: "/settings",
     element: <Settings />
+  },
+  {
+    path: "/account",
+    element: <Account />
+  },
+  {
+    path: "/members",
+    element: <Members />
+  },
+  {
+    path: "/integrations",
+    element: <Integrations />
+  },
+  {
+    path: "/documentation",
+    element: <Docs />
   },
   {
     path: "*",

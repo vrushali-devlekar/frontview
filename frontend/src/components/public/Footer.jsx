@@ -1,106 +1,90 @@
 import React from "react";
-import {  Disc as Discord } from "lucide-react";
+import { Zap } from "lucide-react";
 
-// Import assets - update these paths to match your folder structure
-import footerBg from "../../assets/bg-top.png"; // Your image with the character
-import logoImg from "../../assets/logo.png";
+const Github = ({ size = 18, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+    <path d="M9 18c-4.51 2-5-2-7-2" />
+  </svg>
+);
+
+const Twitter = ({ size = 18, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+  </svg>
+);
+
+const Linkedin = ({ size = 18, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect width="4" height="12" x="2" y="9" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   const footerLinks = [
-    // {
-    //   title: "PRODUCT",
-    //   links: ["Features", "Pricing", "Changelog", "Status"],
-    // },
     {
-      title: "RESOURCES",
+      title: "Resources",
       links: ["Docs", "Guides", "API Reference", "Blog"],
     },
     {
-      title: "COMPANY",
+      title: "Company",
       links: ["About", "Careers", "Contact", "Press"],
     },
     {
-      title: "LEGAL",
+      title: "Legal",
       links: ["Privacy", "Terms", "Security"],
     },
   ];
 
   return (
-    <footer className="relative w-full bg-black text-white font-press-start overflow-hidden border-t border-gray-900">
-      {/* BACKGROUND IMAGE WITH PRECISE POSITIONING */}
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-no-repeat opacity-50"
-        style={{
-          backgroundImage: `url(${footerBg})`,
-          backgroundPosition: "right center", // Keeps the pixel art character visible
-        }}
-      >
-        {/* Darkening overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
-      </div>
-
-      <div className="relative z-10 max-w-[1600px] mx-auto px-6 py-12 md:px-12">
-        <div className="flex flex-col lg:flex-row justify-between gap-8">
+    <footer className="w-full bg-[#09090b] text-white font-sans border-t border-white/[0.06]">
+      <div className="max-w-[1200px] mx-auto px-6 py-12 md:px-12 lg:px-24">
+        <div className="flex flex-col lg:flex-row justify-between gap-12">
+          
           {/* 1. LOGO AND BRANDING */}
-          <div className="lg:w-1/4 space-y-6 pr-8 border-r border-gray-800/50">
-            <div className="flex items-center gap-3 text-lg font-bold tracking-tighter uppercase text-[#facc15]">
-              <img
-                src={logoImg}
-                alt="Velora"
-                className="h-8 w-auto object-contain"
-              />
-              VELORA
+          <div className="lg:w-1/3 flex flex-col items-start gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#22c55e] flex items-center justify-center">
+                <Zap size={16} className="text-black" strokeWidth={3} />
+              </div>
+              <span className="text-lg font-semibold text-white tracking-tight">Velora</span>
             </div>
 
-            <div className="space-y-4">
-              <p className="text-[10px] text-[#facc15] uppercase tracking-wider">
-                Deploy. Scale. Relax.
-              </p>
-              <p className="text-[9px] leading-loose text-gray-500 uppercase">
-                The deployment platform for modern developers. No complexity.
-                Just speed, reliability and control.
-              </p>
-            </div>
+            <p className="text-[14px] leading-relaxed text-[#a1a1aa] max-w-sm">
+              The modern deployment platform for developers. Scale infrastructure, ship faster, and stay in control.
+            </p>
 
             {/* SOCIAL ICONS */}
-            <div className="flex gap-5 text-gray-400">
-              {/* <Github
-                size={16}
-                className="hover:text-white cursor-pointer transition-colors"
-              /> */}
-              {/* <Twitter
-                size={16}
-                className="hover:text-white cursor-pointer transition-colors"
-              /> */}
-              <Discord
-                size={16}
-                className="hover:text-white cursor-pointer transition-colors"
-              />
-              {/* <Youtube
-                size={16}
-                className="hover:text-white cursor-pointer transition-colors"
-              /> */}
+            <div className="flex gap-4 text-[#71717a] mt-2">
+              <a href="#" className="hover:text-white transition-colors p-2 rounded-full hover:bg-white/[0.04]">
+                <Github size={18} />
+              </a>
+              <a href="#" className="hover:text-white transition-colors p-2 rounded-full hover:bg-white/[0.04]">
+                <Twitter size={18} />
+              </a>
+              <a href="#" className="hover:text-white transition-colors p-2 rounded-full hover:bg-white/[0.04]">
+                <Linkedin size={18} />
+              </a>
             </div>
           </div>
 
-          {/* 2. DYNAMIC LINK COLUMNS WITH SEPARATORS */}
-          <div className="lg:w-3/4 grid grid-cols-2 md:grid-cols-4 gap-8">
+          {/* 2. DYNAMIC LINK COLUMNS */}
+          <div className="lg:w-2/3 grid grid-cols-2 md:grid-cols-3 gap-8">
             {footerLinks.map((section) => (
-              <div
-                key={section.title}
-                className="space-y-6 md:border-l md:border-gray-800/50 md:pl-8"
-              >
-                <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">
+              <div key={section.title} className="flex flex-col gap-4">
+                <h4 className="text-[14px] font-medium text-white">
                   {section.title}
                 </h4>
-                <ul className="space-y-4">
+                <ul className="flex flex-col gap-3">
                   {section.links.map((link) => (
                     <li key={link}>
                       <a
                         href="#"
-                        className="text-[9px] text-gray-400 hover:text-[#facc15] transition-colors uppercase block"
+                        className="text-[14px] text-[#a1a1aa] hover:text-white transition-colors"
                       >
                         {link}
                       </a>
@@ -113,22 +97,17 @@ const Footer = () => {
         </div>
 
         {/* 3. BOTTOM COPYRIGHT */}
-        <div className="mt-16 pt-6 border-t border-gray-900/50">
-          <p className="text-[8px] text-gray-600 uppercase tracking-widest">
+        <div className="mt-16 pt-8 border-t border-white/[0.06] flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-[13px] text-[#71717a]">
             © {currentYear} Velora Inc. All rights reserved.
           </p>
+          <div className="flex gap-6">
+            <span className="flex items-center gap-2 text-[13px] text-[#71717a]">
+              <span className="w-2 h-2 rounded-full bg-[#22c55e]"></span>
+              All systems operational
+            </span>
+          </div>
         </div>
-      </div>
-
-      {/* FLOATING RETRO TEXT (Optional extra from your design) */}
-      <div className="hidden xl:block absolute right-16 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none">
-        <h3 className="text-xl text-[#facc15] font-black leading-none uppercase italic border border-[#facc15]/20 p-4">
-          DEPLOY
-          <br />
-          SCALE
-          <br />
-          RELAX
-        </h3>
       </div>
     </footer>
   );

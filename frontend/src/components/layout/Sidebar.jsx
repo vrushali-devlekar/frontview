@@ -1,152 +1,176 @@
 import React, { useState, useRef, useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  Rocket,
-  Home,
-  Grid,
-  Zap,
-  Layers,
-  BarChart2,
-  Settings,
-  ChevronDown,
-  LogOut,
-  Menu,
+  LayoutDashboard, Grid3X3, Zap, Layers, BarChart2,
+  Settings, ChevronDown, LogOut, User, Users,
+  FileText, PanelLeft, Plug, Monitor
 } from "lucide-react";
-import pf1 from "../../assets/p1.jpeg";
+import { motion, AnimatePresence } from "framer-motion";
 
-const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => (
-  <NavLink
-    to={to}
-    className={({ isActive }) =>
-      `flex items-center px-4 py-3 my-1 cursor-pointer transition-colors duration-200 border-l-2 font-mono uppercase tracking-widest text-[10px] ${
-        isActive
-          ? "bg-valora-card border-valora-yellow text-valora-yellow"
-          : "border-transparent text-[#888] hover:bg-[#111] hover:text-white hover:border-[#444]"
-      }`
-    }
-  >
-    <Icon size={20} className="min-w-[20px]" />
-    {!isCollapsed && (
-      <span className="ml-4 text-sm tracking-wide">{label}</span>
-    )}
-  </NavLink>
-);
+const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) => `
+        group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300
+        ${isActive
+          ? "bg-white text-black font-bold shadow-lg"
+          : "text-[#71717a] hover:text-white hover:bg-white/[0.03] hover:translate-x-1"
+        }
+        ${isCollapsed ? "justify-center px-0 w-[44px] h-[44px] mx-auto" : ""}
+      `}
+    >
+      {({ isActive }) => (
+        <>
+          <Icon size={18} strokeWidth={isActive ? 2.2 : 1.5} />
+          {!isCollapsed && <span className="text-[13.5px] tracking-tight">{label}</span>}
 
-const Sidebar = ({ isCollapsed, toggleSidebar }) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
+          {isCollapsed && (
+            <div className="absolute left-full ml-4 px-2 py-1 bg-white text-black text-[10px] font-bold rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl">
+              {label}
+            </div>
+          )}
+        </>
+      )}
+    </NavLink>
+  );
+};
+
+const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  if (navMode === "dock") return null;
+
+  const topItems = [
+    { icon: LayoutDashboard, label: "Overview", to: "/dashboard" },
+    { icon: Grid3X3, label: "Applications", to: "/applications" },
+    { icon: Zap, label: "Deployments", to: "/deploy" },
+    { icon: Layers, label: "Environments", to: "/environments" },
+    { icon: BarChart2, label: "Metrics", to: "/metrics" },
+  ];
+
+  const bottomItems = [
+    { icon: Users, label: "Members", to: "/members" },
+    { icon: Plug, label: "Integrations", to: "/integrations" },
+    { icon: Settings, label: "Settings", to: "/settings" },
+  ];
+
   return (
-    <>
-      {/* Mobile Backdrop */}
-      <div
-        className={`md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
-          !isCollapsed ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
-        onClick={toggleSidebar}
-      />
+    <motion.aside
+      initial={false}
+      animate={{ width: isCollapsed ? 92 : 260 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="fixed left-0 top-0 h-screen z-50 bg-[#050505]/60 backdrop-blur-3xl border-r border-white/[0.05] flex flex-col"
+    >
+      {/* Brand Header */}
+      <div className={`h-20 flex items-center px-6 ${isCollapsed ? "justify-center" : ""}`}>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-white text-black rounded-full flex items-center justify-center font-bold text-[15px] shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+            V
+          </div>
+          {!isCollapsed && <span className="text-[16px] font-bold tracking-tight text-white/90">Velora</span>}
+        </div>
+      </div>
 
-      <aside
-        className={`fixed left-0 top-0 flex flex-col h-screen
-        ${isCollapsed ? "w-[72px] -translate-x-full md:translate-x-0" : "w-[260px] translate-x-0"}
-        transition-all duration-300 ease-in-out
-        bg-valora-bg border-r-2 border-valora-border z-50
-        shadow-[4px_0_30px_rgba(0,0,0,0.8)]`}
-      >
-        {/* Logo */}
-        <div
-          className="flex items-center p-5 cursor-pointer border-b-2 border-valora-border"
-          onClick={toggleSidebar}
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-2 space-y-8 scrollbar-hide">
+        <div>
+          {!isCollapsed && <h3 className="px-4 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.25em] mb-4">Workspace</h3>}
+          <div className="space-y-1">
+            {topItems.map((item) => (
+              <MenuItem key={item.to} {...item} isCollapsed={isCollapsed} />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          {!isCollapsed && <h3 className="px-4 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.25em] mb-4">Account</h3>}
+          <div className="space-y-1">
+            {bottomItems.map((item) => (
+              <MenuItem key={item.to} {...item} isCollapsed={isCollapsed} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 space-y-2 border-t border-white/[0.05]">
+        <button
+          onClick={toggleNavMode}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-[#71717a] hover:text-white hover:bg-white/[0.03]
+            ${isCollapsed ? "justify-center px-0 w-[48px] h-[48px] mx-auto" : ""}
+          `}
+          title="Switch to Dock"
         >
-          <div className="w-8 h-8 border-2 border-valora-yellow flex items-center justify-center shrink-0">
-            <div className="w-2 h-2 bg-valora-yellow"></div>
-          </div>
-          {!isCollapsed && (
-            <div className="ml-3 flex flex-col">
-              <h1 className="text-valora-yellow text-[11px] font-pixel tracking-tighter uppercase">
-                VELORA
-              </h1>
-              <p className="text-valora-cyan text-[8px] tracking-widest mt-1 uppercase font-bold">
-                SYS_ONLINE
-              </p>
-            </div>
-          )}
-        </div>
+          <Monitor size={18} strokeWidth={1.5} />
+          {!isCollapsed && <span className="text-[13px] font-medium">Switch to Dock</span>}
+        </button>
 
-        {/* Menu */}
-        <div className="flex-1 overflow-y-auto py-5">
-          <div className="px-3 mb-4">
-            {!isCollapsed && (
-              <div className="text-[#555] text-[10px] px-4 mb-3 tracking-widest font-mono uppercase">
-                SYS_MODULES
-              </div>
-            )}
+        <button
+          onClick={toggleSidebar}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-[#71717a] hover:text-white hover:bg-white/[0.03]
+            ${isCollapsed ? "justify-center px-0 w-[48px] h-[48px] mx-auto" : ""}
+          `}
+        >
+          <PanelLeft size={18} strokeWidth={1.5} className={`transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`} />
+          {!isCollapsed && <span className="text-[13px] font-medium">Collapse Sidebar</span>}
+        </button>
 
-            <MenuItem icon={Home}     label="Dashboard"     to="/dashboard"                  isCollapsed={isCollapsed} />
-            <MenuItem icon={Grid}     label="Applications"  to="/applications"     isCollapsed={isCollapsed} />
-            <MenuItem icon={Zap}      label="Deployments"   to="/deploy"      isCollapsed={isCollapsed} />
-            <MenuItem icon={Layers}   label="Environments"  to="/environments"     isCollapsed={isCollapsed} />
-            <MenuItem icon={BarChart2} label="Metrics"      to="/metrics"          isCollapsed={isCollapsed} />
-            <MenuItem icon={Settings} label="Settings"      to="/settings"         isCollapsed={isCollapsed} />
-          </div>
-        </div>
-
-        {/* User */}
-        <div className="relative p-4 border-t border-[#2c2c2b]" ref={dropdownRef}>
-          <div 
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center cursor-pointer hover:bg-[#2c2c2b] p-2 -m-2 rounded transition"
+        {/* Profile Card */}
+        <div className="relative pt-2" ref={dropdownRef}>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className={`w-full flex items-center gap-3 bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-all rounded-2xl
+              ${isCollapsed ? "justify-center p-0 w-[48px] h-[48px] mx-auto" : "p-2.5"}
+            `}
           >
-            <div className="w-10 h-10 rounded flex items-center justify-center overflow-hidden shrink-0 border border-white/10 bg-slate-800">
-              <img src={pf1} alt="avatar" className="w-full h-full object-cover" />
+            <div className="w-8 h-8 rounded-full bg-[#ff3b30] flex items-center justify-center text-[12px] font-bold text-white shrink-0 relative shadow-[0_0_10px_rgba(255,59,48,0.3)]">
+              S
             </div>
             {!isCollapsed && (
-              <div className="ml-3 flex-1 min-w-0">
-                <div className="text-white text-sm truncate font-mono">usr_8f3a7c2d</div>
-                <div className="text-slate-500 text-xs truncate">Admin</div>
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-[13px] font-bold text-white truncate">Sheryian</p>
+                <p className="text-[11px] text-[#52525b] truncate">admin@velora.io</p>
               </div>
             )}
-            {!isCollapsed && <ChevronDown size={16} className="text-slate-500 shrink-0 ml-1" />}
-          </div>
+          </button>
 
-          {/* Dropdown Menu */}
-          <div 
-            className={`absolute bottom-full left-4 mb-2 w-48 bg-[#11151c] border border-white/10 rounded-lg shadow-xl overflow-hidden transition-all duration-200 origin-bottom-left ${
-              isDropdownOpen ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
-            }`}
-          >
-            <div className="py-1 flex flex-col">
-              <button 
-                onClick={() => {
-                  setIsDropdownOpen(false);
-                  navigate("/");
-                }}
-                className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-colors text-left"
+          <AnimatePresence>
+            {dropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className={`absolute bottom-full mb-3 z-50 bg-[#111113] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden
+                  ${isCollapsed ? "left-14 w-48" : "left-0 right-0"}`}
               >
-                <Home size={14} /> Home
-              </button>
-              <button 
-                onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-colors text-left border-t border-white/5"
-              >
-                <LogOut size={14} /> Log Out
-              </button>
-            </div>
-          </div>
+                <div className="p-1.5 space-y-0.5">
+                  <button onClick={() => { setDropdownOpen(false); navigate("/account"); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#a1a1aa] hover:text-white hover:bg-white/[0.05] rounded-xl transition-colors">
+                    <User size={16} /> Profile
+                  </button>
+                  <button onClick={() => { setDropdownOpen(false); navigate("/login"); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#ef4444] hover:bg-[#ef4444]/0.1 rounded-xl transition-colors">
+                    <LogOut size={16} /> Sign out
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </aside>
-    </>
+      </div>
+    </motion.aside>
   );
 };
 

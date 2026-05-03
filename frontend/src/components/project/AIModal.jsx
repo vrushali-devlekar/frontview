@@ -1,77 +1,102 @@
-import { useMemo, useState, useEffect } from "react";
-import { Activity, X, Terminal, Cpu, MessageSquare, Expand } from "lucide-react";
-import CyberButton from "../ui/CyberButton";
-import { analyzeDeploymentLogs } from "../../api/api";
-
-function normalizeAnalysis(data) {
-  if (!data || typeof data !== "object") return null;
-  return {
-    rootCause: data.rootCause || "",
-    stepByStepFix: Array.isArray(data.stepByStepFix) ? data.stepByStepFix : [],
-    securityFlags: Array.isArray(data.securityFlags) ? data.securityFlags : [],
-    rawOutput: typeof data.rawOutput === "string" ? data.rawOutput : "",
-  };
-}
+import { useMemo, useState, useEffect, useRef } from "react";
+import { X, Cpu, MessageSquare, Expand, Send, BrainCircuit, Loader2 } from "lucide-react";
+import GlassButton from "../ui/GlassButton";
 
 export default function AIModal({ deploymentId, isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState("");
-  const [provider, setProvider] = useState("gemini");
+  const [provider, setProvider] = useState("cohere");
+
+  const [streamedAnalysis, setStreamedAnalysis] = useState("");
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef(null);
 
   useEffect(() => {
-    if (!isOpen) return undefined;
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [streamedAnalysis, chatMessages]);
+
+  useEffect(() => {
+    if (!isOpen) return;
 
     let cancelled = false;
 
-    const run = async () => {
+    const runStreamingAnalysis = async () => {
       setIsLoading(true);
-      setAnalysis(null);
       setError("");
-      setIsChatExpanded(false);
+      setStreamedAnalysis("");
       setChatMessages([]);
-      setChatInput("");
-      setChatLoading(false);
+      setIsChatExpanded(false);
+
       if (!deploymentId) {
-        setError("Missing deployment id.");
+        setError("No deployment selected.");
         setIsLoading(false);
         return;
       }
+
       try {
-        const { data } = await analyzeDeploymentLogs(deploymentId, { provider });
-        if (cancelled) return;
-        const payload = data?.data;
-        const normalized = normalizeAnalysis(payload);
-        setAnalysis(normalized);
-        setChatMessages([
-          {
-            id: "initial",
-            role: "assistant",
-            kind: "analysis",
-            data: normalized,
+        const response = await fetch(`http://localhost:4000/api/deployments/${deploymentId}/analyze/stream`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
-        ]);
+          body: JSON.stringify({ provider })
+        });
+
+        if (!response.ok) throw new Error("Connection failed.");
+
+        setIsLoading(false);
+        setIsTyping(true);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let done = false;
+
+        while (!done) {
+          const { value, done: readerDone } = await reader.read();
+          done = readerDone;
+          if (value) {
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (let line of lines) {
+              if (line.startsWith('data: ')) {
+                const dataStr = line.substring(6);
+                if (dataStr === '[DONE]') {
+                  setIsTyping(false);
+                  break;
+                }
+                try {
+                  const parsed = JSON.parse(dataStr);
+                  if (parsed.text && !cancelled) {
+                    for (let char of parsed.text) {
+                      if (cancelled) break;
+                      setStreamedAnalysis((prev) => prev + char);
+                      await new Promise(r => setTimeout(r, 15));
+                    }
+                  }
+                } catch (e) { /* partial chunk */ }
+              }
+            }
+          }
+        }
       } catch (e) {
         if (!cancelled) {
-          setError(
-            e.response?.data?.message ||
-              e.message ||
-              "Failed to analyze logs."
-          );
+          setError(e.message || "Failed to analyze.");
+          setIsLoading(false);
         }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) setIsTyping(false);
       }
     };
 
-    void run();
-    return () => {
-      cancelled = true;
-    };
+    runStreamingAnalysis();
+    return () => { cancelled = true; };
   }, [isOpen, deploymentId, provider]);
 
   const canChat = useMemo(() => Boolean(deploymentId), [deploymentId]);
@@ -80,261 +105,207 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
 
   const sendChat = async () => {
     const text = chatInput.trim();
-    if (!text || !deploymentId || chatLoading) return;
-    setChatInput("");
-    setChatLoading(true);
-    setChatMessages((prev) => [
-      ...prev,
-      { id: `${Date.now()}-u`, role: "user", kind: "text", text },
-    ]);
-    try {
-      const { data } = await analyzeDeploymentLogs(deploymentId, {
-        provider,
-        question: text,
-      });
-      const normalized = normalizeAnalysis(data?.data);
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}-a`,
-          role: "assistant",
-          kind: "analysis",
-          data: normalized,
-        },
-      ]);
-    } catch (e) {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}-e`,
-          role: "assistant",
-          kind: "text",
-          text:
-            e.response?.data?.message ||
-            e.message ||
-            "Failed to send message.",
-        },
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
+    if (!text || !deploymentId || isTyping) return;
 
-  const AnalysisBlock = ({ data }) => {
-    if (!data) return <p className="text-[#666] normal-case">No data.</p>;
-    return (
-      <div className="space-y-4 normal-case">
-        <div className="border border-[#222] bg-[#050505] p-4">
-          <p className="text-[10px] font-mono tracking-widest text-[#00FFCC] uppercase mb-2">
-            Root_cause
-          </p>
-          <p className="text-[12px] text-[#ddd] leading-relaxed">
-            {data.rootCause || "—"}
-          </p>
-        </div>
-        <div className="border border-[#222] bg-[#050505] p-4">
-          <p className="text-[10px] font-mono tracking-widest text-[#FFCC00] uppercase mb-2">
-            Step_by_step_fix
-          </p>
-          {data.stepByStepFix?.length ? (
-            <ol className="list-decimal pl-4 space-y-2 text-[12px] text-[#ddd] leading-relaxed">
-              {data.stepByStepFix.map((s, i) => (
-                <li key={i}>{s}</li>
-              ))}
-            </ol>
-          ) : (
-            <p className="text-[12px] text-[#777]">—</p>
-          )}
-        </div>
-        <div className="border border-[#222] bg-[#050505] p-4">
-          <p className="text-[10px] font-mono tracking-widest text-red-400 uppercase mb-2">
-            Security_flags
-          </p>
-          {data.securityFlags?.length ? (
-            <ul className="list-disc pl-4 space-y-2 text-[12px] text-[#ddd] leading-relaxed">
-              {data.securityFlags.map((s, i) => (
-                <li key={i}>{s}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-[12px] text-[#777]">—</p>
-          )}
-        </div>
-        {data.rawOutput ? (
-          <details className="border border-[#222] bg-[#050505] p-4">
-            <summary className="cursor-pointer text-[10px] font-mono tracking-widest text-[#888] uppercase">
-              Raw_output
-            </summary>
-            <pre className="mt-3 whitespace-pre-wrap text-[11px] text-[#bbb] leading-relaxed">
-              {data.rawOutput}
-            </pre>
-          </details>
-        ) : null}
-      </div>
-    );
+    setChatInput("");
+    setIsTyping(true);
+
+    const userMsgId = `${Date.now()}-u`;
+    setChatMessages((prev) => [...prev, { id: userMsgId, role: "user", text }]);
+
+    const astMsgId = `${Date.now()}-a`;
+    setChatMessages((prev) => [...prev, { id: astMsgId, role: "assistant", text: "" }]);
+
+    try {
+      const response = await fetch(`http://localhost:4000/api/deployments/${deploymentId}/analyze/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ provider, question: text })
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let done = false;
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          for (let line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.substring(6);
+              if (dataStr === '[DONE]') break;
+              try {
+                const parsed = JSON.parse(dataStr);
+                if (parsed.text) {
+                  for (let char of parsed.text) {
+                    setChatMessages((prev) => prev.map(msg =>
+                      msg.id === astMsgId ? { ...msg, text: msg.text + char } : msg
+                    ));
+                    await new Promise(r => setTimeout(r, 10));
+                  }
+                }
+              } catch (e) { }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      setChatMessages((prev) => [...prev, { id: `${Date.now()}-e`, role: "assistant", text: "Connection lost. Please try again." }]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-[#050505]/90 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
 
-      <div
-        className={`relative w-full bg-[#0f0f0f] border-2 border-[#2c2c2b] flex flex-col max-h-[85vh] shadow-[0_0_30px_rgba(0,255,204,0.1)] ${
-          isChatExpanded ? "max-w-4xl" : "max-w-2xl"
-        }`}
-      >
-        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#00FFCC]" />
-        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#00FFCC]" />
-        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#00FFCC]" />
-        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#00FFCC]" />
+      <div className={`relative w-full bg-[#09090b] border border-white/[0.06] rounded-xl flex flex-col max-h-[85vh] shadow-elevation-2 overflow-hidden transition-all duration-300 ${isChatExpanded ? "max-w-4xl" : "max-w-2xl"}`}>
 
-        <div className="flex items-center justify-between p-4 border-b-2 border-[#222] shrink-0 bg-[#0a0a0a]">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 border border-[#00FFCC] bg-[#00FFCC]/10 text-[#00FFCC]">
-              <Cpu size={16} />
+        {/* Header - Clean & Professional */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0 bg-[#111113]">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-white/[0.04] flex items-center justify-center border border-white/[0.06]">
+              <BrainCircuit size={20} className="text-[#a1a1aa]" />
             </div>
-            <h2
-              className="text-[14px] font-mono text-[#00FFCC] uppercase tracking-widest"
-              style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "10px" }}
-            >
-              VELORA_AI_ANALYSIS
-            </h2>
+            <div>
+              <h2 className="text-[15px] font-semibold text-white tracking-tight">
+                AI Diagnostics
+              </h2>
+              <p className="text-[12px] text-[#71717a] font-medium mt-0.5">Automated issue resolution</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <select
-              value={provider}
-              onChange={(e) => setProvider(e.target.value)}
-              className="bg-[#050505] border border-[#333] text-[#ccc] text-[10px] font-mono px-2 py-1 outline-none"
-              title="AI model provider"
-            >
-              <option value="gemini" className="bg-[#050505]">
-                gemini (default)
-              </option>
-              <option value="cohere" className="bg-[#050505]">
-                cohere
-              </option>
-              <option value="mistral" className="bg-[#050505]">
-                mistral
-              </option>
-            </select>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               disabled={!canChat}
               onClick={() => setIsChatExpanded((v) => !v)}
-              className="px-3 py-2 text-[10px] font-mono tracking-widest border border-[#333] text-[#ccc] hover:bg-[#111] disabled:opacity-50"
-              title="Expand chat"
+              className="p-2 rounded-md text-[#71717a] hover:text-white hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
+              title={isChatExpanded ? "Collapse Chat" : "Expand Chat"}
             >
-              <Expand size={14} className="inline-block mr-2" />
-              {isChatExpanded ? "COLLAPSE" : "CHAT"}
+              <Expand size={16} />
             </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 text-[#666] hover:text-white hover:bg-[#222] transition-colors border border-transparent hover:border-[#444]"
-          >
-            <X size={16} />
-          </button>
+            <button 
+              onClick={onClose} 
+              className="p-2 rounded-md text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors"
+              title="Close"
+            >
+              <X size={16} />
+            </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 font-mono text-[11px] leading-relaxed custom-scrollbar">
+        {/* Content */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 font-mono text-[13px]" style={{ scrollbarWidth: 'thin' }}>
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-48 gap-6">
-              <div className="relative w-16 h-16">
-                <div className="absolute inset-0 border-2 border-t-[#00FFCC] border-r-transparent border-b-[#00FFCC] border-l-transparent rounded-full animate-spin" />
-                <div className="absolute inset-2 border-2 border-t-transparent border-r-[#FFCC00] border-b-transparent border-l-[#FFCC00] rounded-full animate-spin" style={{ animationDuration: "2s" }} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Activity size={16} className="text-[#00FFCC] animate-pulse" />
-                </div>
+            <div className="flex flex-col items-center justify-center h-52 gap-4">
+              <Loader2 size={24} className="text-[#a1a1aa] animate-spin" />
+              <div className="text-center">
+                <p className="text-[#d4d4d8] font-medium font-sans">
+                  Analyzing deployment logs...
+                </p>
+                <p className="text-[#71717a] text-[12px] font-sans mt-1">
+                  This usually takes a few seconds
+                </p>
               </div>
-              <p className="text-[#00FFCC] font-mono text-[10px] uppercase tracking-[0.2em] animate-pulse">
-                AI IS ANALYZING LOGS...
-              </p>
             </div>
           ) : error ? (
-            <p className="text-red-400 normal-case">{error}</p>
+            <div className="flex flex-col items-center justify-center h-40 gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#ef4444]/10 flex items-center justify-center">
+                <X size={18} className="text-[#ef4444]" />
+              </div>
+              <p className="text-[#ef4444] font-medium font-sans text-[14px]">{error}</p>
+              <button onClick={() => setError("")} className="text-[13px] text-[#71717a] hover:text-white underline font-sans">Try again</button>
+            </div>
           ) : !isChatExpanded ? (
-            <AnalysisBlock data={analysis} />
+            <div className="space-y-4">
+              <div className="bg-[#111113] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1">
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/[0.06]">
+                  <Cpu size={14} className="text-[#3b82f6]" />
+                  <span className="text-[12px] font-medium text-[#3b82f6] tracking-wide font-sans">Analysis Result</span>
+                </div>
+                <div className="text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap">
+                  {streamedAnalysis}
+                  {isTyping && <span className="inline-block w-1.5 h-4 bg-[#a1a1aa] animate-pulse ml-1 align-middle"></span>}
+                </div>
+              </div>
+            </div>
           ) : (
-            <div className="flex flex-col gap-4 min-h-0">
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+            <div className="flex flex-col gap-4 min-h-0 h-full">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-2" style={{ scrollbarWidth: 'thin' }}>
+                {/* Initial Analysis */}
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] bg-[#111113] border border-white/[0.06] rounded-2xl rounded-tl-sm px-4 py-3 text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap shadow-elevation-1">
+                    {streamedAnalysis}
+                  </div>
+                </div>
+
                 {chatMessages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[85%] border px-4 py-3 ${
-                        m.role === "user"
-                          ? "bg-[#111] border-[#333] text-[#ddd]"
-                          : "bg-[#050505] border-[#222] text-[#ddd]"
-                      }`}
-                    >
-                      {m.kind === "text" ? (
-                        <p className="text-[12px] leading-relaxed normal-case">
-                          {m.text}
-                        </p>
-                      ) : (
-                        <AnalysisBlock data={m.data} />
+                  <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap shadow-elevation-1 ${m.role === "user"
+                        ? "bg-white/[0.06] border border-white/[0.08] text-white rounded-tr-sm"
+                        : "bg-[#111113] border border-white/[0.06] text-[#d4d4d8] rounded-tl-sm"
+                      }`}>
+                      {m.text}
+                      {(isTyping && m.id === chatMessages[chatMessages.length - 1].id && m.role === "assistant") && (
+                        <span className="inline-block w-1.5 h-4 bg-[#a1a1aa] animate-pulse ml-1 align-middle"></span>
                       )}
                     </div>
                   </div>
                 ))}
-                {chatLoading && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[85%] border px-4 py-3 bg-[#050505] border-[#222] text-[#888]">
-                      <span className="text-[11px] tracking-widest uppercase">
-                        AI_TYPING...
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              <div className="border-t border-[#222] pt-4 flex items-end gap-3">
+              <div className="pt-3 flex items-end gap-3 shrink-0">
                 <div className="flex-1">
-                  <label className="block text-[10px] text-[#888] font-mono tracking-widest uppercase mb-2">
-                    Ask_followup
-                  </label>
                   <textarea
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    rows={2}
-                    placeholder="Ask about the error, fixes, versions, security…"
-                    className="w-full bg-[#050505] border border-[#333] text-[#ddd] text-[12px] font-mono p-3 outline-none focus:border-[#00FFCC] placeholder:text-[#444]"
+                    rows={1}
+                    placeholder="Ask a follow-up question..."
+                    className="w-full bg-[#111113] border border-white/[0.06] text-white text-[13px] rounded-lg p-3 outline-none focus:border-white/[0.12] placeholder:text-[#71717a] resize-none transition-colors shadow-elevation-1 font-sans"
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
                   />
                 </div>
-                <button
-                  type="button"
-                  disabled={!chatInput.trim() || chatLoading}
+                <GlassButton
+                  variant="primary"
+                  disabled={!chatInput.trim() || isTyping}
                   onClick={sendChat}
-                  className="h-[42px] px-4 bg-[#00FFCC] text-black text-[10px] font-bold border-2 border-black shadow-[2px_2px_0_0_#007777] hover:bg-[#33ffcc] disabled:opacity-50 font-mono"
+                  className="h-[46px] px-4 shrink-0"
                 >
-                  <MessageSquare size={14} className="inline-block mr-2" />
-                  SEND
-                </button>
+                  <Send size={16} />
+                </GlassButton>
               </div>
             </div>
           )}
         </div>
 
-        <div className="p-4 border-t-2 border-[#222] bg-[#0a0a0a] shrink-0 flex justify-end gap-4">
-          <CyberButton variant="neutral" onClick={onClose}>
-            DISMISS
-          </CyberButton>
-          {!isLoading && !error && (
-            <CyberButton
-              variant="primary"
-              onClick={() => onClose()}
+        {/* Footer */}
+        <div className="px-6 py-3 border-t border-white/[0.06] bg-[#111113] shrink-0 flex justify-between items-center">
+          <p className="text-[11px] text-[#71717a] font-medium font-sans">AI responses may be inaccurate. Verify with logs.</p>
+          <div className="flex gap-2">
+            {!isLoading && !error && !isChatExpanded && (
+              <GlassButton
+                variant="outline"
+                onClick={() => setIsChatExpanded(true)}
+                className="h-8 px-3 text-xs"
+              >
+                <MessageSquare size={12} className="mr-1.5" /> Ask Follow-up
+              </GlassButton>
+            )}
+            <GlassButton
+              variant="outline"
+              onClick={onClose}
+              className="h-8 px-3 text-xs"
             >
-              <Terminal size={14} className="mr-2" />
-              SATISFIED_CLOSE
-            </CyberButton>
-          )}
+              Close
+            </GlassButton>
+          </div>
         </div>
       </div>
     </div>

@@ -92,6 +92,57 @@ exports.getProjectById = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, data: project });
 });
 
+// @desc    Update project detail
+// @route   PUT /api/projects/:id
+exports.updateProject = asyncHandler(async (req, res) => {
+    let project = await Project.findOne({ 
+        _id: req.params.id, 
+        owner: req.user.id, 
+        isDeleted: false 
+    });
+
+    if (!project) {
+        res.status(404);
+        throw new Error('Project not found or you are not the owner');
+    }
+
+    project = await Project.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true
+    });
+
+    res.status(200).json({ success: true, data: project });
+});
+
+// @desc    Get dashboard stats
+// @route   GET /api/projects/stats
+exports.getDashboardStats = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const Project = require('../models/Project');
+    const Deployment = require('../models/Deployment');
+
+    const totalProjects = await Project.countDocuments({ owner: userId, isDeleted: false });
+    const totalDeployments = await Deployment.countDocuments({ triggeredBy: userId }); // or owner via project
+    
+    // For simplicity, let's just count all deployments for now or filter by user projects
+    // Better: get all projects ids, then count deployments
+    const projectIds = (await Project.find({ owner: userId, isDeleted: false }).select('_id')).map(p => p._id);
+    const deploymentsCount = await Deployment.countDocuments({ project: { $in: projectIds } });
+    const successCount = await Deployment.countDocuments({ project: { $in: projectIds }, status: 'SUCCESS' });
+    
+    const successRate = deploymentsCount > 0 ? ((successCount / deploymentsCount) * 100).toFixed(1) : "0";
+
+    res.status(200).json({
+        success: true,
+        stats: {
+            totalProjects,
+            totalDeployments: deploymentsCount,
+            successRate: successRate + "%",
+            avgBuildTime: "42s" // hardcoded for now or calculate from logs
+        }
+    });
+});
+
 // @desc    Project delete karna (Soft Delete)
 // @route   DELETE /api/projects/:id
 exports.deleteProject = asyncHandler(async (req, res) => {
