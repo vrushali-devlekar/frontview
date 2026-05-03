@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Bell, User, Settings, FileText, ChevronDown } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { getFrameworkIcon } from "../../utils/frameworkIcons";
 
 const routeLabels = {
   "/dashboard":    "Overview",
@@ -20,45 +18,24 @@ const routeLabels = {
 };
 
 const TopNav = () => {
+  const { user, avatar } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
   const location = useLocation();
-  const { user } = useAuth();
-
-  const queryParams = new URLSearchParams(location.search);
-  const projectId = queryParams.get("projectId");
-  const [project, setProject] = useState(null);
-  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
-  const [projects, setProjects] = useState([]);
-  const projectDropdownRef = useRef(null);
 
   const pageLabel = routeLabels[location.pathname] ?? "";
 
   useEffect(() => {
-    if (projectId) {
-      const fetchProject = async () => {
-        try {
-          const { getProjectById, getUserProjects } = await import("../../api/api");
-          const pRes = await getProjectById(projectId);
-          setProject(pRes.data.data);
-          
-          const psRes = await getUserProjects();
-          setProjects(psRes.data.data || []);
-        } catch (e) { console.error(e); }
-      };
-      fetchProject();
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (projectDropdownRef.current && !projectDropdownRef.current.contains(e.target))
-        setIsProjectDropdownOpen(false);
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
+        setIsDropdownOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target))
+        setIsSearchOpen(false);
     };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -66,55 +43,11 @@ const TopNav = () => {
 
       {/* Left — breadcrumb */}
       <div className="flex items-center gap-2 min-w-0">
-        <Link to="/dashboard" className="text-[12.5px] text-[#3f3f46] font-black hover:text-white transition-colors select-none tracking-tight">VELORA</Link>
-        
-        {projectId && project && (
-          <>
-            <span className="text-[#1a1a1a] text-[12px] select-none mx-1">/</span>
-            <div className="relative" ref={projectDropdownRef}>
-              <button 
-                onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition-all group"
-              >
-                {project.framework && (
-                  <div style={{ color: getFrameworkIcon(project.framework).color }}>
-                    {React.createElement(getFrameworkIcon(project.framework).Icon, { size: 14, strokeWidth: 2 })}
-                  </div>
-                )}
-                <span className="text-[13px] font-bold text-white/90 select-none tracking-tight">{project.name}</span>
-                <ChevronDown size={12} className={`text-[#3f3f46] transition-transform duration-300 ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence>
-                {isProjectDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-56 bg-[#111113] border border-white/[0.1] rounded-xl shadow-2xl p-1.5 z-[60]">
-                    <div className="px-3 py-2 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.2em]">Switch Project</div>
-                    <div className="space-y-0.5 max-h-60 overflow-y-auto scrollbar-hide">
-                      {projects.map(p => (
-                        <button
-                          key={p._id}
-                          onClick={() => {
-                            setIsProjectDropdownOpen(false);
-                            window.location.href = `${location.pathname}?projectId=${p._id}`;
-                          }}
-                          className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-all ${p._id === projectId ? 'bg-white text-black font-bold' : 'text-[#a1a1aa] hover:bg-white/5 hover:text-white'}`}
-                        >
-                          <span className="text-[12.5px] truncate">{p.name}</span>
-                          {p._id === projectId && <div className="w-1 h-1 rounded-full bg-black" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </AnimatePresence>
-            </div>
-          </>
-        )}
-
+        <span className="text-[12.5px] text-[#3f3f46] font-medium select-none">Velora</span>
         {pageLabel && (
           <>
-            <span className="text-[#1a1a1a] text-[12px] select-none mx-1">/</span>
-            <span className="text-[13px] font-bold text-[#52525b] select-none tracking-tight">{pageLabel}</span>
+            <span className="text-[#3f3f46] text-[10px] select-none">•</span>
+            <span className="text-[13px] font-bold text-white/80 select-none tracking-tight">{pageLabel}</span>
           </>
         )}
       </div>
@@ -149,6 +82,12 @@ const TopNav = () => {
           />
         </div>
 
+        {/* Notifications */}
+        <button className="relative flex items-center justify-center w-8 h-8 rounded-lg text-[#52525b] hover:text-white hover:bg-white/[0.05] transition-colors">
+          <Bell size={14} />
+          <span className="absolute top-1.5 right-1.5 w-[5px] h-[5px] bg-[#22c55e] rounded-full ring-2 ring-[#09090b]" />
+        </button>
+
         {/* Divider */}
         <div className="w-px h-4 bg-white/[0.08] mx-1.5" />
 
@@ -158,29 +97,10 @@ const TopNav = () => {
             onClick={() => setIsDropdownOpen((o) => !o)}
             className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-white/[0.05] transition-colors"
           >
-            {user?.avatar || user?.githubAvatarUrl || user?.googleAvatarUrl ? (
-              <img 
-                src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl} 
-                className="w-8 h-8 rounded-full object-cover border border-white/10" 
-                alt="Avatar"
-              />
-            ) : (
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-black text-white shadow-inner"
-                style={{ 
-                  backgroundColor: (() => {
-                    const colors = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
-                    const name = user?.name || "User";
-                    let hash = 0;
-                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-                    return colors[Math.abs(hash) % colors.length];
-                  })()
-                }}
-              >
-                {user?.name?.charAt(0).toUpperCase() || "U"}
-              </div>
-            )}
-            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none ml-1">{user?.name || "User"}</span>
+            <div className="w-8 h-8 rounded-full bg-[#111113] border border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden shadow-[0_0_10px_rgba(255,59,48,0.1)]">
+              <img src={new URL(`../../assets/${avatar}`, import.meta.url).href} alt="Profile" className="w-full h-full object-cover" onError={(e) => { e.target.src = "https://github.com/identicons/velora.png"; }} />
+            </div>
+            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none">{user?.name || "Operator"}</span>
             <ChevronDown size={12} className={`hidden md:block text-[#3f3f46] transition-transform duration-300 ${isDropdownOpen ? "rotate-180" : ""}`} />
           </button>
 
