@@ -1,7 +1,7 @@
 import React from "react";
-import isometric_6595c7 from "../../assets/stepp1.png";
-import isometric_6595c8 from "../../assets/stepp2.png";
-import isometric_6595c9 from "../../assets/stepp3.png";
+import isometric_6595c7 from "../../assets/st1.png";
+import isometric_6595c8 from "../../assets/stt2.png";
+import isometric_6595c9 from "../../assets/stt3.png";
 import { GitBranch, Settings2, Rocket } from "lucide-react";
 
 const StepsSection = () => {
@@ -10,37 +10,37 @@ const StepsSection = () => {
       id: 1,
       title: "Connect Repository",
       description: "Connect your GitHub or GitLab repository. Velora automatically detects your framework and settings.",
-      icon: <GitBranch size={20} className="text-[#3b82f6]" />,
-      iconBg: "bg-[#3b82f6]/10",
+      icon: <GitBranch size={20} className="text-[#a3e635]" />,
+      iconBg: "bg-[#a3e635]/10",
       image: isometric_6595c7,
     },
     {
       id: 2,
       title: "Configure Build",
       description: "Set environment variables, build commands, and output directories. Override defaults as needed.",
-      icon: <Settings2 size={20} className="text-[#a1a1aa]" />,
-      iconBg: "bg-[#71717a]/10",
+      icon: <Settings2 size={20} className="text-[#a3e635]" />,
+      iconBg: "bg-[#a3e635]/10",
       image: isometric_6595c8,
     },
     {
       id: 3,
       title: "Deploy Globally",
       description: "Push code to deploy instantly to our global edge network. Enjoy zero downtime and instant rollbacks.",
-      icon: <Rocket size={20} className="text-[#22c55e]" />,
-      iconBg: "bg-[#22c55e]/10",
+      icon: <Rocket size={20} className="text-[#a3e635]" />,
+      iconBg: "bg-[#a3e635]/10",
       image: isometric_6595c9,
     },
   ];
 
   return (
-    <section className="bg-[#09090b] text-white font-sans py-24 px-6 md:px-12 lg:px-24 overflow-hidden select-none">
+    <section className="bg-[#060606] text-white font-sans py-24 px-6 md:px-12 lg:px-24 overflow-hidden select-none">
       <div className="max-w-[1200px] mx-auto">
         {/* SECTION HEADING */}
         <div className="mb-16 text-center">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tighter text-white mb-4">
-            From Code to Live
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tighter text-white mb-4 font-['Press_Start_2P'] uppercase">
+            From Code to <span className="text-[#facc15]">Live</span>
           </h2>
-          <p className="text-[15px] text-[#a1a1aa] max-w-2xl mx-auto leading-relaxed">
+          <p className="text-[15px] text-[#a1a1aa] max-w-2xl mx-auto leading-relaxed mt-8">
             Deploy your application in three simple steps. We handle the complex infrastructure so you can focus on writing code.
           </p>
         </div>
@@ -54,7 +54,7 @@ const StepsSection = () => {
             >
               {/* Card visual */}
               <div className="relative mb-6 bg-[#111113] border border-white/[0.06] rounded-xl p-6 w-full flex flex-col items-center justify-center transition-all duration-300 hover:border-white/[0.12] hover:bg-[#18181b] shadow-elevation-1">
-                
+
                 <img
                   src={step.image}
                   alt={`${step.title} visual`}
