@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { X, Cpu, MessageSquare, Expand, Send, BrainCircuit, Loader2 } from "lucide-react";
 import GlassButton from "../ui/GlassButton";
+import { buildApiUrl } from "../../api/api";
 
 export default function AIModal({ deploymentId, isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +40,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
       }
 
       try {
-        const response = await fetch(`http://localhost:4000/api/deployments/${deploymentId}/analyze/stream`, {
+        const response = await fetch(buildApiUrl(`/deployments/${deploymentId}/analyze/stream`), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -117,7 +118,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
     setChatMessages((prev) => [...prev, { id: astMsgId, role: "assistant", text: "" }]);
 
     try {
-      const response = await fetch(`http://localhost:4000/api/deployments/${deploymentId}/analyze/stream`, {
+      const response = await fetch(buildApiUrl(`/deployments/${deploymentId}/analyze/stream`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

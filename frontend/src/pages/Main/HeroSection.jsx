@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import heroBg from '../../assets/mcrft-bg.png'
 
 export default function HeroSection () {
   const [progress, setProgress] = useState(0)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -12,26 +14,21 @@ export default function HeroSection () {
   }, [])
 
   return (
-    // Changed to items-start to pull content upwards
     <section className='relative min-h-screen bg-[#060606] text-white overflow-hidden flex items-start'>
-      {/* Background Image - Set to cover the entire viewport including navbar area */}
       <div
         className='absolute inset-0 z-0 h-full w-full bg-cover bg-no-repeat'
         style={{
           backgroundImage: `url(${heroBg})`,
-          // Shifted focal point to the left
           backgroundPosition: 'left 20% center',
           filter: 'brightness(0.8) contrast(1.1)'
         }}
       />
 
-      {/* Overlays - Lightened so the image is clear in the navbar area */}
       <div className='absolute inset-0 z-10 bg-gradient-to-r from-black/50 via-black/10 to-transparent' />
       <div className='absolute inset-0 z-10 bg-gradient-to-t from-black/20 via-transparent to-transparent' />
 
       <div className='relative z-20 w-full max-w-7xl px-6 lg:px-12 pt-28 lg:pt-36'>
         <div className='grid lg:grid-cols-2 gap-8 items-start'>
-          {/* Left Content */}
           <div className='flex flex-col space-y-6 mt-4'>
             <div className='space-y-3'>
               <div className='flex items-center gap-2'>
@@ -60,16 +57,21 @@ export default function HeroSection () {
             </div>
 
             <div className='flex flex-wrap gap-3'>
-              <button className='px-5 py-2.5 bg-[#a3e635] text-black font-bold text-xs rounded hover:bg-[#bef264] transition-all font-mono'>
-                Get Started Free →
+              <button
+                onClick={() => navigate('/register')}
+                className='px-5 py-2.5 bg-[#a3e635] text-black font-bold text-xs rounded hover:bg-[#bef264] transition-all font-mono'
+              >
+                Get Started Free
               </button>
-              <button className='px-5 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold text-xs rounded font-mono'>
+              <button
+                onClick={() => navigate('/documentation')}
+                className='px-5 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold text-xs rounded font-mono'
+              >
                 View Docs
               </button>
             </div>
           </div>
 
-          {/* Right Content - Terminal Box */}
           <div className='relative mt-4 lg:mt-0'>
             <div className='relative bg-[#0d0d0d]/85 backdrop-blur-md border border-white/10 rounded-lg overflow-hidden'>
               <div className='flex items-center gap-1.5 bg-white/5 px-3 py-2 border-b border-white/5'>
@@ -110,7 +112,10 @@ export default function HeroSection () {
                     )}
                   </div>
                   <div className='border border-dashed border-white/10 rounded p-4 flex flex-col items-center justify-center text-center'>
-                    <button className='px-2 py-1 bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/20 text-[8px] font-bold rounded uppercase'>
+                    <button
+                      onClick={() => navigate('/login')}
+                      className='px-2 py-1 bg-[#a3e635]/10 text-[#a3e635] border border-[#a3e635]/20 text-[8px] font-bold rounded uppercase'
+                    >
                       Choose Repo
                     </button>
                   </div>

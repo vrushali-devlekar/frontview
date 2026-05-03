@@ -1,17 +1,9 @@
 import axios from 'axios';
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-
-/** Socket.IO server origin (no /api suffix). */
-export const SOCKET_ORIGIN =
-  import.meta.env.VITE_SOCKET_URL ||
-  API_BASE_URL.replace(/\/api\/?$/, '') ||
-  'http://localhost:4000';
+import { API_BASE_URL, SOCKET_ORIGIN, buildApiUrl } from './runtime';
 
 /** Full URL for browser redirect (Passport OAuth). */
-export const githubAuthUrl = `${API_BASE_URL}/auth/github`;
-export const googleAuthUrl = `${API_BASE_URL}/auth/google`;
+export const githubAuthUrl = buildApiUrl('/auth/github');
+export const googleAuthUrl = buildApiUrl('/auth/google');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -55,17 +47,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// ==========================================
-// AUTH APIs
-// ==========================================
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 // Auth APIs
 export const login = (credentials) => api.post('/auth/login', credentials);
@@ -144,3 +125,4 @@ export const stopDeploymentRequest = stopDeployment;
 export const rollbackProject = rollbackDeployment;
 
 export default api;
+export { API_BASE_URL, SOCKET_ORIGIN, buildApiUrl };

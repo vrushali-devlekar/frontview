@@ -2,6 +2,11 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('../middlewares/asyncHandler');
+const {
+    frontendUrl,
+    sessionCookieSameSite,
+    sessionCookieSecure
+} = require('../config/runtime');
 
 // Helper Function: JWT Token Generate karna
 const generateToken = (id) => {
@@ -55,7 +60,14 @@ exports.authSuccess = (req, res) => {
         res.status(401);
         throw new Error('Authentication Failed');
     }
-    res.cookie('token', generateToken(req.user._id))
+    const token = generateToken(req.user._id);
+
+    res.cookie('token', token, {
+        secure: sessionCookieSecure,
+        sameSite: sessionCookieSameSite,
+        maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
     // Passport ne user ko verify kar diya hai, ab hum apna JWT token bhejenge
     res.status(200).json({
         success: true,
@@ -66,7 +78,7 @@ exports.authSuccess = (req, res) => {
             email: req.user.email,
             avatar: req.user.avatarUrl
         },
-        token: generateToken(req.user._id) // Backend ticket
+        token // Backend ticket
     });
 };
 
@@ -74,8 +86,6 @@ exports.authSuccess = (req, res) => {
 // 2.5 OAUTH SPECIFIC SUCCESS CALLBACK (For Github/Google)
 // ==========================================
 exports.oauthSuccess = (req, res) => {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-
     if (!req.user) {
         // Agar fail ho jaye toh frontend ke login page par error ke sath bhejo
         return res.redirect(`${frontendUrl}/login?error=AuthenticationFailed`);
@@ -86,7 +96,7 @@ exports.oauthSuccess = (req, res) => {
 
     // 🌟 PROFESSIONAL SDE FIX: JSON dikhane ki jagah seedha React App par redirect maaro 
     // Token ko URL me pass kar rahe hain taaki React use catch kar sake
-    res.redirect(`${frontendUrl}/auth/success?token=${token}`);
+    res.redirect(`${frontendUrl}/auth/success?token=${encodeURIComponent(token)}`);
 };
 
 // ==========================================

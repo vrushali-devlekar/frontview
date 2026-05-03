@@ -4,6 +4,10 @@ const LocalStrategy = require('passport-local').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
+const {
+    githubCallbackUrl,
+    googleCallbackUrl
+} = require('./runtime');
 
 // User ki ID ko session mein pack karna
 passport.serializeUser((user, done) => {
@@ -76,7 +80,7 @@ function resolveGithubAvatar(profile) {
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: "http://localhost:4000/api/auth/github/callback"
+    callbackURL: githubCallbackUrl
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         const email = resolveGithubEmail(profile);
@@ -121,17 +125,35 @@ passport.use(new GitHubStrategy({
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:4000/api/auth/google/callback"
+    callbackURL: googleCallbackUrl
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        let user = await User.findOne({ email: profile.emails[0].value });
-        if (user) return done(null, user);
+        const email = profile.emails?.[0]?.value;
+        if (!email) {
+            return done(null, false, { message: 'Google did not provide an email address.' });
+        }
+
+        let user = await User.findOne({ googleId: profile.id });
+        if (!user) {
+            user = await User.findOne({ email });
+        }
+
+        if (user) {
+            if (!user.googleId) {
+                user.googleId = profile.id;
+            }
+            if (!user.avatarUrl && profile.photos?.[0]?.value) {
+                user.avatarUrl = profile.photos[0].value;
+            }
+            await user.save();
+            return done(null, user);
+        }
 
         user = await User.create({
             username: profile.displayName,
-            email: profile.emails[0].value,
+            email,
             googleId: profile.id,
-            avatarUrl: profile.photos[0].value,
+            avatarUrl: profile.photos?.[0]?.value,
             authProvider: 'google'
         });
         return done(null, user);

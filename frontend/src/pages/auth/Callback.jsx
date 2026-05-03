@@ -10,9 +10,9 @@ export default function Callback() {
     const token = searchParams.get("token");
     if (token) {
       localStorage.setItem("token", token);
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } else {
-      navigate("/login?error=auth_failed");
+      navigate("/login?error=auth_failed", { replace: true });
     }
   }, [searchParams, navigate]);
 
