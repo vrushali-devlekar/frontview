@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import heroBg from '../../assets/mcrft-bg.png'
+import { Link } from 'react-router-dom'
 
 export default function HeroSection () {
   const [progress, setProgress] = useState(0)
@@ -16,12 +16,9 @@ export default function HeroSection () {
     <section className='relative min-h-screen bg-[#060606] text-white overflow-hidden flex items-start'>
       {/* Background Image - Set to cover the entire viewport including navbar area */}
       <div
-        className='absolute inset-0 z-0 h-full w-full bg-cover bg-no-repeat'
+        className='absolute inset-0 z-0 h-full w-full'
         style={{
-          backgroundImage: `url(${heroBg})`,
-          // Shifted focal point to the left
-          backgroundPosition: 'left 20% center',
-          filter: 'brightness(0.8) contrast(1.1)'
+          background: 'radial-gradient(ellipse at 20% 50%, #1a2a0a 0%, #060606 70%)',
         }}
       />
 
