@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import p1 from "../../assets/p2.jpeg";
 
 const routeLabels = {
   "/dashboard": "Overview",
@@ -36,8 +37,9 @@ const TopNav = () => {
 
   // Get user initials and name for display
   const getUserInitials = () => {
-    if (!user?.name) return "U";
-    return user.name
+    if (!user?.username && !user?.name) return "U";
+    const name = user?.username || user?.name;
+    return name
       .split(" ")
       .map((n) => n[0])
       .join("")
@@ -46,7 +48,13 @@ const TopNav = () => {
   };
 
   const getDisplayName = () => {
-    return user?.name || user?.email?.split("@")[0] || "User";
+    // Prioritize GitHub username, then display name, then email username - same as sidebar
+    return (
+      user?.username ||
+      user?.name ||
+      user?.email?.split("@")[0] ||
+      "GitHub User"
+    );
   };
 
   useEffect(() => {
@@ -61,7 +69,7 @@ const TopNav = () => {
   }, []);
 
   return (
-    <header className="h-16 flex items-center justify-between px-8 shrink-0 relative z-50 w-full border-b border-white/[0.05] bg-[#050505]/40 backdrop-blur-2xl">
+    <header className="h-16 flex items-center justify-between px-8 shrink-0 relative z-50 w-full border-b border-white/5 bg-slate-950/40 backdrop-blur-2xl">
       {/* Left — breadcrumb */}
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-[12.5px] text-[#3f3f46] font-medium select-none">
@@ -127,8 +135,12 @@ const TopNav = () => {
             onClick={() => setIsDropdownOpen((o) => !o)}
             className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-white/[0.05] transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[12px] font-black text-black">
-              {getUserInitials()}
+            <div className="w-8 h-8 rounded-full overflow-hidden">
+              <img
+                src={p1}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
             </div>
             <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none">
               {getDisplayName()}

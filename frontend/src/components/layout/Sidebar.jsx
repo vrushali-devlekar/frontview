@@ -146,7 +146,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
       initial={false}
       animate={{ width: isCollapsed ? 92 : 260 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed left-0 top-0 h-screen z-50 bg-[#050505]/60 backdrop-blur-3xl border-r border-white/[0.05] flex flex-col"
+      className="fixed left-0 top-0 h-screen z-50 bg-gradient-to-b from-slate-950/80 to-slate-950/60 backdrop-blur-3xl border-r border-white/5 flex flex-col"
     >
       {/* Brand Header */}
       <div
