@@ -1,44 +1,44 @@
 import React, { useState, useRef, useEffect } from "react";
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Grid3X3, Zap, Layers, BarChart2,
-  Settings, ChevronDown, LogOut, User, Users,
-  FileText, PanelLeft, Plug, Monitor
+  Settings, LogOut, User, Users,
+  PanelLeft, Plug, Monitor
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
+import { logout as logoutRequest } from "../../api/api";
+import BrandLogo from "../ui/BrandLogo";
 
-const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => {
-  return (
-    <NavLink
-      to={to}
-      className={({ isActive }) => `
-        group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300
-        ${isActive
-          ? "bg-white text-black font-bold shadow-lg"
-          : "text-[#71717a] hover:text-white hover:bg-white/[0.03] hover:translate-x-1"
-        }
-        ${isCollapsed ? "justify-center px-0 w-[44px] h-[44px] mx-auto" : ""}
-      `}
-    >
-      {({ isActive }) => (
-        <>
-          <Icon size={18} strokeWidth={isActive ? 2.2 : 1.5} />
-          {!isCollapsed && <span className="text-[13.5px] tracking-tight">{label}</span>}
-
-          {isCollapsed && (
-            <div className="absolute left-full ml-4 px-2 py-1 bg-white text-black text-[10px] font-bold rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl">
-              {label}
-            </div>
-          )}
-        </>
-      )}
-    </NavLink>
-  );
-};
+const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) => `
+      group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300
+      ${isActive
+        ? "bg-white text-black font-bold shadow-lg"
+        : "text-[#71717a] hover:text-white hover:bg-white/[0.03] hover:translate-x-1"
+      }
+      ${isCollapsed ? "justify-center px-0 w-[44px] h-[44px] mx-auto" : ""}
+    `}
+  >
+    {({ isActive }) => (
+      <>
+        <Icon size={18} strokeWidth={isActive ? 2.2 : 1.5} />
+        {!isCollapsed && <span className="text-[13.5px] tracking-tight">{label}</span>}
+        {isCollapsed && (
+          <div className="absolute left-full ml-4 px-2 py-1 bg-white text-black text-[10px] font-bold rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl">
+            {label}
+          </div>
+        )}
+      </>
+    )}
+  </NavLink>
+);
 
 const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -68,27 +68,36 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
     { icon: Settings, label: "Settings", to: "/settings" },
   ];
 
+  const initials = (user?.username || user?.name || "V").charAt(0).toUpperCase();
+
+  const handleLogout = async () => {
+    try {
+      await logoutRequest();
+    } catch (error) {
+      // Ignore network failures on logout.
+    }
+    logout();
+    navigate("/login");
+  };
+
   return (
     <motion.aside
       initial={false}
       animate={{ width: isCollapsed ? 92 : 260 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed left-0 top-0 h-screen z-50 bg-[#050505]/60 backdrop-blur-3xl border-r border-white/[0.05] flex flex-col"
+      className="fixed left-0 top-0 h-screen z-50 bg-[#050505]/60 backdrop-blur-3xl border-r border-white/[0.05] md:flex hidden flex-col"
     >
-      {/* Brand Header */}
       <div className={`h-20 flex items-center px-6 ${isCollapsed ? "justify-center" : ""}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white text-black rounded-full flex items-center justify-center font-bold text-[15px] shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-            V
-          </div>
-          {!isCollapsed && <span className="text-[16px] font-bold tracking-tight text-white/90">Velora</span>}
-        </div>
+        <BrandLogo to="/dashboard" compact={isCollapsed} />
       </div>
 
-      {/* Navigation */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-2 space-y-8 scrollbar-hide">
         <div>
-          {!isCollapsed && <h3 className="px-4 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.25em] mb-4">Workspace</h3>}
+          {!isCollapsed && (
+            <h3 className="px-4 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.25em] mb-4">
+              Workspace
+            </h3>
+          )}
           <div className="space-y-1">
             {topItems.map((item) => (
               <MenuItem key={item.to} {...item} isCollapsed={isCollapsed} />
@@ -97,7 +106,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
         </div>
 
         <div>
-          {!isCollapsed && <h3 className="px-4 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.25em] mb-4">Account</h3>}
+          {!isCollapsed && (
+            <h3 className="px-4 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.25em] mb-4">
+              Account
+            </h3>
+          )}
           <div className="space-y-1">
             {bottomItems.map((item) => (
               <MenuItem key={item.to} {...item} isCollapsed={isCollapsed} />
@@ -106,13 +119,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="p-4 space-y-2 border-t border-white/[0.05]">
         <button
           onClick={toggleNavMode}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-[#71717a] hover:text-white hover:bg-white/[0.03]
-            ${isCollapsed ? "justify-center px-0 w-[48px] h-[48px] mx-auto" : ""}
-          `}
+            ${isCollapsed ? "justify-center px-0 w-[48px] h-[48px] mx-auto" : ""}`}
           title="Switch to Dock"
         >
           <Monitor size={18} strokeWidth={1.5} />
@@ -122,28 +133,29 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
         <button
           onClick={toggleSidebar}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-[#71717a] hover:text-white hover:bg-white/[0.03]
-            ${isCollapsed ? "justify-center px-0 w-[48px] h-[48px] mx-auto" : ""}
-          `}
+            ${isCollapsed ? "justify-center px-0 w-[48px] h-[48px] mx-auto" : ""}`}
         >
-          <PanelLeft size={18} strokeWidth={1.5} className={`transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`} />
+          <PanelLeft
+            size={18}
+            strokeWidth={1.5}
+            className={`transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
+          />
           {!isCollapsed && <span className="text-[13px] font-medium">Collapse Sidebar</span>}
         </button>
 
-        {/* Profile Card */}
         <div className="relative pt-2" ref={dropdownRef}>
           <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
+            onClick={() => setDropdownOpen((open) => !open)}
             className={`w-full flex items-center gap-3 bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-all rounded-2xl
-              ${isCollapsed ? "justify-center p-0 w-[48px] h-[48px] mx-auto" : "p-2.5"}
-            `}
+              ${isCollapsed ? "justify-center p-0 w-[48px] h-[48px] mx-auto" : "p-2.5"}`}
           >
-            <div className="w-8 h-8 rounded-full bg-[#ff3b30] flex items-center justify-center text-[12px] font-bold text-white shrink-0 relative shadow-[0_0_10px_rgba(255,59,48,0.3)]">
-              S
+            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[12px] font-bold text-black shrink-0">
+              {initials}
             </div>
             {!isCollapsed && (
               <div className="flex-1 text-left min-w-0">
-                <p className="text-[13px] font-bold text-white truncate">Sheryian</p>
-                <p className="text-[11px] text-[#52525b] truncate">admin@velora.io</p>
+                <p className="text-[13px] font-bold text-white truncate">{user?.username || user?.name || "Operator"}</p>
+                <p className="text-[11px] text-[#52525b] truncate">{user?.email || "No email"}</p>
               </div>
             )}
           </button>
@@ -158,10 +170,19 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
                   ${isCollapsed ? "left-14 w-48" : "left-0 right-0"}`}
               >
                 <div className="p-1.5 space-y-0.5">
-                  <button onClick={() => { setDropdownOpen(false); navigate("/account"); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#a1a1aa] hover:text-white hover:bg-white/[0.05] rounded-xl transition-colors">
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate("/account");
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#a1a1aa] hover:text-white hover:bg-white/[0.05] rounded-xl transition-colors"
+                  >
                     <User size={16} /> Profile
                   </button>
-                  <button onClick={() => { setDropdownOpen(false); navigate("/login"); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#ef4444] hover:bg-[#ef4444]/0.1 rounded-xl transition-colors">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#ef4444] hover:bg-[#ef4444]/10 rounded-xl transition-colors"
+                  >
                     <LogOut size={16} /> Sign out
                   </button>
                 </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
 import Dock from "../../components/layout/Dock";
@@ -26,7 +26,9 @@ import {
   Zap
 } from "lucide-react";
 import { addEnvVar, createProject, getGithubRepos } from "../../api/api";
+import { githubAuthUrl } from "../../api/api";
 import { parseGithubRepoInput } from "../../utils/githubRepo";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 // Removed react-hot-toast import as it's missing in package.json
 
 const GitHubIcon = ({ size = 14, className = "" }) => (
@@ -53,6 +55,7 @@ export default function NewProjectPage() {
   // Form State
   const [name, setName] = useState("");
   const [repoInput, setRepoInput] = useState("");
+  const [repoName, setRepoName] = useState("");
   const [branch, setBranch] = useState("main");
   const [installCommand, setInstallCommand] = useState("npm install");
   const [startCommand, setStartCommand] = useState("npm start");
@@ -66,18 +69,24 @@ export default function NewProjectPage() {
   const [reposLoading, setReposLoading] = useState(false);
   const [repoSearch, setRepoSearch] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [githubConnectionRequired, setGithubConnectionRequired] = useState(false);
+  const debouncedRepoSearch = useDebouncedValue(repoSearch, 300);
 
   useEffect(() => {
     fetchRepos();
-  }, []);
+  }, [debouncedRepoSearch]);
 
   const fetchRepos = async () => {
     setReposLoading(true);
+    setGithubConnectionRequired(false);
     try {
-      const { data } = await getGithubRepos(repoSearch || undefined);
+      const { data } = await getGithubRepos(debouncedRepoSearch || undefined);
       setRepos(Array.isArray(data?.repos) ? data.repos : []);
     } catch (e) {
       setRepos([]);
+      if (e.response?.status === 403 && e.response?.data?.code === "GITHUB_CONNECTION_REQUIRED") {
+        setGithubConnectionRequired(true);
+      }
     } finally {
       setReposLoading(false);
     }
@@ -86,8 +95,10 @@ export default function NewProjectPage() {
   const handleImport = (repo) => {
     const cloneUrl = `https://github.com/${repo.owner}/${repo.name}.git`;
     setRepoInput(cloneUrl);
+    setRepoName(repo.fullName || `${repo.owner}/${repo.name}`);
     setBranch((repo.defaultBranch || "main").trim());
     setName(repo.name.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase());
+    setError("");
     setStep(2);
   };
 
@@ -97,8 +108,18 @@ export default function NewProjectPage() {
       setError(parsed.error);
       return;
     }
+    setRepoInput(parsed.repoUrl);
+    setRepoName(parsed.repoName);
+    if (!name.trim()) {
+      setName(parsed.repoName.split("/")[1].replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase());
+    }
     setError("");
     setStep(2);
+  };
+
+  const handleConnectGithub = () => {
+    sessionStorage.setItem("postAuthRedirect", "/projects/new");
+    window.location.href = githubAuthUrl;
   };
 
   const handleSubmit = async (e) => {
@@ -108,6 +129,7 @@ export default function NewProjectPage() {
       const { data } = await createProject({
         name: name.trim(),
         repoUrl: repoInput.trim(),
+        repoName: repoName.trim(),
         branch: branch.trim() || "main",
         installCommand: installCommand.trim(),
         startCommand: startCommand.trim(),
@@ -188,6 +210,17 @@ export default function NewProjectPage() {
                       <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide">
                         {reposLoading ? (
                           [1,2,3,4,5].map(i => <div key={i} className="h-14 bg-white/[0.02] animate-pulse rounded-2xl" />)
+                        ) : githubConnectionRequired ? (
+                          <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                            <GitHubIcon size={40} className="text-white mb-4" />
+                            <p className="text-[14px] text-white font-semibold mb-2">Connect GitHub to import repositories</p>
+                            <p className="text-[13px] text-[#71717a] max-w-[260px] mb-5">
+                              Your Velora account is logged in, but GitHub access has not been linked yet.
+                            </p>
+                            <GlassButton variant="primary" className="h-10 px-5" onClick={handleConnectGithub}>
+                              Connect GitHub
+                            </GlassButton>
+                          </div>
                         ) : repos.length > 0 ? (
                           repos.filter(r => r.name.toLowerCase().includes(repoSearch.toLowerCase())).map(repo => (
                             <button
@@ -208,7 +241,7 @@ export default function NewProjectPage() {
                         ) : (
                           <div className="h-full flex flex-col items-center justify-center text-center p-8">
                             <GitHubIcon size={40} className="text-[#1a1a1a] mb-4" />
-                            <p className="text-[13px] text-[#52525b] max-w-[200px]">No repositories found. Connect your GitHub account.</p>
+                            <p className="text-[13px] text-[#52525b] max-w-[220px]">No repositories found for this GitHub account yet.</p>
                           </div>
                         )}
                       </div>
@@ -286,6 +319,21 @@ export default function NewProjectPage() {
                             onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s/g, '-'))}
                             placeholder="my-awesome-app"
                           />
+                          <InputField
+                            label="Repository Slug"
+                            value={repoName}
+                            onChange={(e) => setRepoName(e.target.value.trim())}
+                            placeholder="owner/repository"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <InputField
+                            label="Production Branch"
+                            value={branch}
+                            onChange={(e) => setBranch(e.target.value)}
+                            placeholder="main"
+                          />
                           <div className="space-y-2">
                             <label className="text-[11px] font-black text-[#3f3f46] uppercase tracking-[0.2em] ml-1">Framework Preset</label>
                             <div className="relative group">
@@ -305,6 +353,13 @@ export default function NewProjectPage() {
                             </div>
                           </div>
                         </div>
+
+                        <InputField
+                          label="Repository URL"
+                          value={repoInput}
+                          onChange={(e) => setRepoInput(e.target.value)}
+                          placeholder="https://github.com/owner/repo.git"
+                        />
 
                         {/* Advanced Settings */}
                         <div>
@@ -383,7 +438,7 @@ export default function NewProjectPage() {
                             variant="primary" 
                             className="w-full h-14 text-[15px]" 
                             onClick={handleSubmit}
-                            disabled={loading || !name}
+                            disabled={loading || !name || !repoInput || !repoName}
                           >
                             {loading ? "Initializing Deployment..." : "Deploy Application"} <ArrowRight size={18} className="ml-2" />
                           </GlassButton>

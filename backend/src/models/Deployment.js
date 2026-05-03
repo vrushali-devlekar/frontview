@@ -1,5 +1,6 @@
 // models/Deployment.js
 const mongoose = require('mongoose');
+const { backendUrl } = require('../config/runtime');
 
 const deploymentSchema = new mongoose.Schema({
     projectId: {
@@ -47,8 +48,8 @@ const deploymentSchema = new mongoose.Schema({
 
 // Virtual Property for URL
 deploymentSchema.virtual('url').get(function () {
-    if (this.port) {
-        return `http://localhost:${this.port}`;
+    if (this._id && this.port) {
+        return `${backendUrl}/live/${this._id}`;
     }
     return null;
 });

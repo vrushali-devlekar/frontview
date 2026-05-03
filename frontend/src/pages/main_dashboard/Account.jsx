@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
 import Dock from "../../components/layout/Dock";
@@ -10,6 +10,7 @@ import InputField from "../../components/ui/InputField";
 import { PageShell, PageHeader, Card, CardHeader, CardBody, AlertBanner } from "../../components/layout/PageLayout";
 import { Shield, Key, User, Mail, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { githubAuthUrl, updateCurrentUser, updatePassword } from "../../api/api";
 
 const GithubIcon = ({ size = 20, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -20,30 +21,66 @@ const GithubIcon = ({ size = 20, className = "" }) => (
 
 export default function Account() {
   const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
-  const { user } = useAuth();
-  const [alias, setAlias] = useState(user?.username || user?.name || "SHERYIANS_SDE");
+  const { user, refreshUser } = useAuth();
+  const [displayName, setDisplayName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState({ text: "", type: "" });
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
 
-  const handleUpdateProfile = (e) => {
+  useEffect(() => {
+    const fetchDisplayName = async () => {
+      await setDisplayName(user?.username || user?.name || "");
+    };
+    fetchDisplayName();
+  }, [user]);
+
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    setIsUpdating(true);
-    setTimeout(() => { setMessage({ text: "Profile updated successfully.", type: "success" }); setIsUpdating(false); }, 1000);
+    const username = displayName.trim();
+    if (!username) {
+      setMessage({ text: "Display name is required.", type: "error" });
+      return;
+    }
+
+    setIsSavingProfile(true);
+    setMessage({ text: "", type: "" });
+    try {
+      await updateCurrentUser({ username });
+      await refreshUser();
+      setMessage({ text: "Profile updated successfully.", type: "success" });
+    } catch (err) {
+      setMessage({ text: err.response?.data?.message || "Profile update failed.", type: "error" });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
-    if (!currentPassword || !newPassword) { setMessage({ text: "Please enter both passwords.", type: "error" }); return; }
-    setIsUpdating(true);
-    setTimeout(() => {
+    if (!newPassword || newPassword.length < 6) {
+      setMessage({ text: "New password must be at least 6 characters.", type: "error" });
+      return;
+    }
+
+    setIsSavingPassword(true);
+    setMessage({ text: "", type: "" });
+    try {
+      await updatePassword({ currentPassword, newPassword });
+      setCurrentPassword("");
+      setNewPassword("");
       setMessage({ text: "Password updated successfully.", type: "success" });
-      setCurrentPassword(""); setNewPassword(""); setIsUpdating(false);
-    }, 1000);
+    } catch (err) {
+      setMessage({ text: err.response?.data?.message || "Password update failed.", type: "error" });
+    } finally {
+      setIsSavingPassword(false);
+    }
   };
 
-  // sidebarAttr removed in favor of PageWrapper inline styles
+  const avatar = user?.avatarUrl || user?.avatar;
+  const name = user?.username || user?.name || "Your account";
+  const email = user?.email || "No email available";
 
   return (
     <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
@@ -52,9 +89,8 @@ export default function Account() {
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
         <PageShell>
-          <PageHeader title="Account" subtitle="Manage your profile, security, and connected services" />
+          <PageHeader title="Account" subtitle="Manage your real profile, security, and connected services" />
 
-          {/* Alert */}
           {message.text && (
             <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}>
               <AlertBanner type={message.type}>
@@ -64,32 +100,24 @@ export default function Account() {
             </motion.div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-            {/* ── Profile card ── */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
               <Card className="h-fit">
                 <CardHeader icon={User} title="Profile" />
                 <CardBody>
-                  {/* Avatar row */}
-                  <div className="flex items-center gap-5 mb-7 pb-6 border-b border-white/[0.06]">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-5 mb-7 pb-6 border-b border-white/[0.06]">
                     <div className="w-16 h-16 rounded-2xl bg-[#111113] border border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden">
-                      {user?.githubConnected ? (
-                        <img
-                          src={user?.avatarUrl || user?.avatar || `https://avatars.githubusercontent.com/${user?.githubId || "github"}`}
-                          alt="Avatar"
-                          className="w-full h-full object-cover"
-                          onError={(e) => { e.target.src = "https://github.com/identicons/velora.png"; }}
-                        />
+                      {avatar ? (
+                        <img src={avatar} alt={name} className="w-full h-full object-cover" />
                       ) : (
                         <User size={24} className="text-[#3f3f46]" />
                       )}
                     </div>
-                    <div>
-                      <p className="text-[14px] font-bold text-white mb-1">{user?.username || user?.name || "Operator"}</p>
-                      <div className="flex items-center gap-1.5 text-[12px] text-[#52525b]">
-                        <Mail size={12} className="text-[#3f3f46]" />
-                        {user?.email || "sysadmin@velora.io"}
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-bold text-white mb-1 truncate">{name}</p>
+                      <div className="flex items-center gap-1.5 text-[12px] text-[#71717a] min-w-0">
+                        <Mail size={12} className="text-[#3f3f46] shrink-0" />
+                        <span className="truncate">{email}</span>
                       </div>
                     </div>
                   </div>
@@ -97,48 +125,56 @@ export default function Account() {
                   <form onSubmit={handleUpdateProfile} className="flex flex-col gap-5">
                     <InputField
                       label="Display Name"
-                      value={alias}
-                      onChange={(e) => setAlias(e.target.value)}
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      autoComplete="name"
                     />
-                    <GlassButton type="submit" variant="primary" className="w-full h-10">
-                      {isUpdating ? "Saving…" : "Save Changes"}
+                    <InputField
+                      label="Email"
+                      value={email}
+                      readOnly
+                      className="text-[#71717a]"
+                    />
+                    <GlassButton type="submit" variant="primary" className="w-full h-10" disabled={isSavingProfile}>
+                      {isSavingProfile ? "Saving..." : "Save Changes"}
                     </GlassButton>
                   </form>
                 </CardBody>
               </Card>
             </motion.div>
 
-            {/* ── Right column ── */}
             <div className="flex flex-col gap-5">
-
-              {/* Connected accounts */}
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.08 }}>
                 <Card>
                   <CardHeader icon={Shield} title="Connected Accounts" />
                   <CardBody>
-                    <div className="flex items-center justify-between p-4 bg-[#0d0d0f] border border-white/[0.07] rounded-xl">
-                      <div className="flex items-center gap-3.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-[#0d0d0f] border border-white/[0.07] rounded-xl">
+                      <div className="flex items-center gap-3.5 min-w-0">
                         <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center shrink-0">
                           <GithubIcon size={17} className="text-white" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-[13px] font-semibold text-white leading-tight">GitHub</p>
-                          <p className="text-[11px] text-[#52525b] mt-0.5">Required for repo imports</p>
+                          <p className="text-[11px] text-[#52525b] mt-0.5 truncate">Required for repo imports</p>
                         </div>
                       </div>
                       {user?.githubConnected ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-[#22c55e] bg-[#22c55e]/10 border border-[#22c55e]/20">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-[#22c55e] bg-[#22c55e]/10 border border-[#22c55e]/20 w-fit">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" /> Connected
                         </span>
                       ) : (
-                        <GlassButton variant="secondary" className="h-8 px-4 text-xs">Connect</GlassButton>
+                        <GlassButton variant="secondary" className="h-8 px-4 text-xs w-full sm:w-auto" onClick={() => {
+                          sessionStorage.setItem("postAuthRedirect", "/account");
+                          window.location.href = githubAuthUrl;
+                        }}>
+                          Connect
+                        </GlassButton>
                       )}
                     </div>
                   </CardBody>
                 </Card>
               </motion.div>
 
-              {/* Change password */}
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.14 }}>
                 <Card className="border-[#ef4444]/10">
                   <CardHeader icon={Key} title="Change Password" />
@@ -150,6 +186,7 @@ export default function Account() {
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder="Enter current password"
+                        autoComplete="current-password"
                       />
                       <InputField
                         label="New Password"
@@ -157,9 +194,10 @@ export default function Account() {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Enter new password"
+                        autoComplete="new-password"
                       />
-                      <GlassButton type="submit" variant="danger" className="w-full h-10 border border-[#ef4444]/20">
-                        {isUpdating ? "Updating…" : "Update Password"}
+                      <GlassButton type="submit" variant="danger" className="w-full h-10 border border-[#ef4444]/20" disabled={isSavingPassword}>
+                        {isSavingPassword ? "Updating..." : "Update Password"}
                       </GlassButton>
                     </form>
                   </CardBody>
@@ -172,6 +210,3 @@ export default function Account() {
     </div>
   );
 }
-  React.useEffect(() => {
-    setAlias(user?.username || user?.name || "SHERYIANS_SDE");
-  }, [user]);

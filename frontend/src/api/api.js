@@ -35,7 +35,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    const status = error.response?.status
+    const shouldSkipRedirect = error.config?.skipAuthRedirect
+
+    if (status === 401 && !shouldSkipRedirect) {
       // Token expired or invalid — clear and redirect
       localStorage.removeItem('token');
       // Only redirect if not already on login/register/landing
@@ -54,11 +57,14 @@ export const register = (userData) => api.post('/auth/register', userData);
 export const logout = () => api.get('/auth/logout');
 export const getCurrentUser = () => api.get('/auth/me');
 export const updateCurrentUser = (payload) => api.put('/auth/me', payload);
+export const updatePassword = (payload) => api.put('/auth/password', payload);
 
 // PROJECT APIs
 // ==========================================
 export const getUserRepos = (search = '') =>
-  api.get(`/projects/repos${search ? `?search=${search}` : ''}`);
+  api.get(`/projects/repos${search ? `?search=${search}` : ''}`, {
+    skipAuthRedirect: true,
+  });
 
 export const getUserProjects = () => api.get('/projects');
 export const getDashboardStats = () => api.get('/projects/stats');
@@ -68,7 +74,8 @@ export const createProject = (projectData) =>
 
 export const getProjectById = (id) => api.get(`/projects/${id}`);
 
-export const deleteProject = (id) => api.delete(`/projects/${id}`);
+export const deleteProject = (id, options = {}) =>
+  api.delete(`/projects/${id}`, { data: options });
 
 export const updateProject = (id, data) => api.put(`/projects/${id}`, data);
 
@@ -113,6 +120,17 @@ export const connectIntegration = (projectId, integrationData) =>
 
 export const disconnectIntegration = (projectId, integrationId) =>
   api.delete(`/projects/${projectId}/integrations/${integrationId}`);
+
+// Workspace APIs
+export const getWorkspaceOverview = () => api.get('/workspace/overview');
+export const getWorkspaceMetrics = () => api.get('/workspace/metrics');
+export const getWorkspaceEnvironments = () => api.get('/workspace/environments');
+export const getWorkspaceNotifications = () => api.get('/workspace/notifications');
+export const searchWorkspace = (query) =>
+  api.get('/workspace/search', { params: { q: query } });
+export const getWorkspaceMembers = () => api.get('/workspace/members');
+export const inviteWorkspaceMember = (payload) =>
+  api.post('/workspace/members/invite', payload);
 
 // Aliases to support existing React components
 export const getProjects = getUserProjects;

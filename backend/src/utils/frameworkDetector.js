@@ -14,6 +14,27 @@ const pathExists = async (target) => {
     }
 };
 
+const STATIC_SERVER_PATH = path.resolve(__dirname, 'staticServer.js');
+
+const parseNodeScriptTarget = (script = '') => {
+    const match = String(script).trim().match(/^node\s+["']?([^"']+)["']?$/i);
+    return match ? match[1] : null;
+};
+
+const isStaticSite = async (projectPath) => {
+    const directIndex = path.join(projectPath, 'index.html');
+    const publicIndex = path.join(projectPath, 'public', 'index.html');
+    return (await pathExists(directIndex)) || (await pathExists(publicIndex));
+};
+
+const getStaticServePath = async (projectPath) => {
+    const publicIndex = path.join(projectPath, 'public', 'index.html');
+    if (await pathExists(publicIndex)) {
+        return path.join(projectPath, 'public');
+    }
+    return projectPath;
+};
+
 const scoreCandidatePath = (candidatePath, rootPath) => {
     const rel = path.relative(rootPath, candidatePath).toLowerCase();
     const segments = rel.split(path.sep).filter(Boolean);
@@ -113,6 +134,7 @@ const detectFramework = async (targetPath) => {
         const packageData = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
         const deps = { ...packageData.dependencies, ...packageData.devDependencies };
         const scripts = packageData.scripts || {};
+        const hasIndexHtml = await isStaticSite(projectPath);
 
         // 3. Detect Vite (Modern React/Vue) - FRONTEND
         if (deps['vite']) {
@@ -136,6 +158,39 @@ const detectFramework = async (targetPath) => {
                 // CRA 'build' folder banata hai.
                 startCmd: 'npx serve -s build -l $PORT'
             };
+        }
+
+        if (hasIndexHtml) {
+            const configuredNodeEntry = parseNodeScriptTarget(scripts['start']);
+            const nodeEntryExists = configuredNodeEntry
+                ? await pathExists(path.join(projectPath, configuredNodeEntry))
+                : false;
+
+            const explicitBackendDeps = ['express', 'koa', 'fastify', '@nestjs/core', 'hono'];
+            const hasBackendSignals = explicitBackendDeps.some((dep) => deps[dep]);
+            const servePath = await getStaticServePath(projectPath);
+
+            // If the declared Node entry file does not exist but a static site does,
+            // prefer serving the site instead of launching a broken backend command.
+            if (configuredNodeEntry && !nodeEntryExists) {
+                return {
+                    type: 'frontend-static',
+                    projectPath,
+                    installCmd: null,
+                    buildCmd: null,
+                    startCmd: `node "${STATIC_SERVER_PATH}" "${servePath}" $PORT`
+                };
+            }
+
+            if (!hasBackendSignals && !scripts['start']) {
+                return {
+                    type: 'frontend-static',
+                    projectPath,
+                    installCmd: null,
+                    buildCmd: null,
+                    startCmd: `node "${STATIC_SERVER_PATH}" "${servePath}" $PORT`
+                };
+            }
         }
 
         // 5. Detect Standard Backend / Node.js

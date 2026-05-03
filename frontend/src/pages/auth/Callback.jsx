@@ -12,8 +12,10 @@ export default function Callback() {
     const completeOAuth = async () => {
       const token = searchParams.get("token");
       if (token) {
+        const redirectTarget = sessionStorage.getItem("postAuthRedirect") || "/dashboard";
+        sessionStorage.removeItem("postAuthRedirect");
         await login(null, token);
-        navigate("/dashboard", { replace: true });
+        navigate(redirectTarget, { replace: true });
       } else {
         navigate("/login?error=auth_failed", { replace: true });
       }

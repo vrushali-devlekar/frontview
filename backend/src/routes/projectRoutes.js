@@ -11,7 +11,7 @@ const {
     deleteProject
 } = require('../controllers/projectController');
 const { protect } = require('../middlewares/authMiddleware');
-const { rollbackDeployment } = require('../controllers/deploymentController');
+const { rollbackDeployment } =require('../controllers/deploymentController');
 
 // Sabhi routes protected hain (JWT Token zaroori hai)
 router.use(protect);

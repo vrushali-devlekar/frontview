@@ -182,3 +182,47 @@ exports.updateMe = asyncHandler(async (req, res) => {
         user: serializeUser(updated)
     });
 });
+
+exports.updatePassword = asyncHandler(async (req, res) => {
+    if (!req.user) {
+        res.status(401);
+        throw new Error('Not authorized');
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword || String(newPassword).trim().length < 6) {
+        res.status(400);
+        throw new Error('New password must be at least 6 characters long');
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    if (user.password) {
+        if (!currentPassword) {
+            res.status(400);
+            throw new Error('Current password is required');
+        }
+
+        const matches = await user.matchPassword(currentPassword);
+        if (!matches) {
+            res.status(400);
+            throw new Error('Current password is incorrect');
+        }
+    }
+
+    user.password = String(newPassword).trim();
+    if (user.authProvider !== 'local') {
+        user.authProvider = 'local';
+    }
+    await user.save();
+
+    res.status(200).json({
+        success: true,
+        message: 'Password updated successfully'
+    });
+});

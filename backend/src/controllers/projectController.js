@@ -1,9 +1,18 @@
-// and ye phase 3 hai - imlementing the project management features and soft deletion of projects. if user se galti se delete ho gaya ho project so ham use database se pura nahi uda denge sirf value tru kr denge taki if use wapas chahiye ye tho wapas se recover kr pay ..
 // controllers/projectController.js
 const Project = require('../models/Project');
 const asyncHandler = require('../middlewares/asyncHandler');
 const User = require('../models/User');
-const { fetchUserRepos } = require('../services/repoService'); // Nayi service import ki
+const { fetchUserRepos, deleteGithubRepo } = require('../services/repoService'); // Nayi service import ki
+const Deployment = require('../models/Deployment');
+const Integration = require('../models/Integration');
+const EnvVar = require('../models/EnvVar');
+const { stopDeployment } = require('../services/deploymentService');
+
+const parseRepoNameFromUrl = (repoUrl = '') => {
+    const match = String(repoUrl).trim().match(/^https:\/\/github\.com\/([^/]+)\/([^/.]+)(?:\.git)?$/i);
+    if (!match) return '';
+    return `${match[1]}/${match[2]}`;
+};
 
 // @desc    Get user's GitHub repositories
 // @route   GET /api/projects/repos
@@ -14,11 +23,26 @@ exports.getUserRepos = asyncHandler(async (req, res) => {
 
     const user = await User.findById(userId).select('+githubAccessToken');
     if (!user || !user.githubAccessToken) {
-        res.status(401);
-        throw new Error('Not authorized or GitHub token missing');
+        return res.status(403).json({
+            success: false,
+            code: 'GITHUB_CONNECTION_REQUIRED',
+            message: 'Connect GitHub to import repositories into Velora.'
+        });
     }
 
-    let repos = await fetchUserRepos(user.githubAccessToken);
+    let repos;
+    try {
+        repos = await fetchUserRepos(user.githubAccessToken);
+    } catch (error) {
+        if (String(error.message || '').toLowerCase().includes('github api error')) {
+            return res.status(403).json({
+                success: false,
+                code: 'GITHUB_CONNECTION_REQUIRED',
+                message: 'Reconnect GitHub to import repositories into Velora.'
+            });
+        }
+        throw error;
+    }
     if (searchQuery) {
         repos = repos.filter(repo => repo.name.toLowerCase().includes(searchQuery));
     }
@@ -29,10 +53,11 @@ exports.getUserRepos = asyncHandler(async (req, res) => {
 // @desc    Naya Project create karna (Save to DB)
 // @route   POST /api/projects
 exports.createProject = asyncHandler(async (req, res) => {
-    const { name, repoUrl, repoName, branch, installCommand, startCommand } = req.body;
+    const { name, repoUrl, branch, installCommand, startCommand } = req.body;
+    const resolvedRepoName = String(req.body.repoName || '').trim() || parseRepoNameFromUrl(repoUrl);
 
     // 1. Validation
-    if (!name || !repoUrl || !repoName) {
+    if (!name || !repoUrl || !resolvedRepoName) {
         res.status(400);
         throw new Error('Please provide name, repoUrl, and repoName');
     }
@@ -53,7 +78,7 @@ exports.createProject = asyncHandler(async (req, res) => {
     const project = await Project.create({
         name,
         repoUrl,
-        repoName,
+        repoName: resolvedRepoName,
         branch: branch || 'main',
         owner: req.user.id,
         installCommand: installCommand || 'npm install',
@@ -122,15 +147,29 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
     const Deployment = require('../models/Deployment');
 
     const totalProjects = await Project.countDocuments({ owner: userId, isDeleted: false });
-    const totalDeployments = await Deployment.countDocuments({ triggeredBy: userId }); // or owner via project
-    
-    // For simplicity, let's just count all deployments for now or filter by user projects
-    // Better: get all projects ids, then count deployments
     const projectIds = (await Project.find({ owner: userId, isDeleted: false }).select('_id')).map(p => p._id);
-    const deploymentsCount = await Deployment.countDocuments({ project: { $in: projectIds } });
-    const successCount = await Deployment.countDocuments({ project: { $in: projectIds }, status: 'SUCCESS' });
-    
+    const deployments = await Deployment.find({ projectId: { $in: projectIds } })
+        .select('status buildDuration startedAt completedAt');
+
+    const deploymentsCount = deployments.length;
+    const successCount = deployments.filter(deployment => ['running', 'stopped'].includes(deployment.status)).length;
     const successRate = deploymentsCount > 0 ? ((successCount / deploymentsCount) * 100).toFixed(1) : "0";
+    const durations = deployments
+        .map(deployment => {
+            if (typeof deployment.buildDuration === 'number' && deployment.buildDuration > 0) {
+                return deployment.buildDuration;
+            }
+            if (deployment.startedAt && deployment.completedAt) {
+                return new Date(deployment.completedAt).getTime() - new Date(deployment.startedAt).getTime();
+            }
+            return 0;
+        })
+        .filter(duration => duration > 0);
+    const avgMs = durations.length ? durations.reduce((sum, duration) => sum + duration, 0) / durations.length : 0;
+    const avgSeconds = Math.round(avgMs / 1000);
+    const avgBuildTime = avgSeconds >= 60
+        ? `${Math.floor(avgSeconds / 60)}m ${avgSeconds % 60}s`
+        : `${avgSeconds}s`;
 
     res.status(200).json({
         success: true,
@@ -138,14 +177,15 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
             totalProjects,
             totalDeployments: deploymentsCount,
             successRate: successRate + "%",
-            avgBuildTime: "42s" // hardcoded for now or calculate from logs
+            avgBuildTime
         }
     });
 });
 
-// @desc    Project delete karna (Soft Delete)
+// @desc    Project delete karna (Hard Delete)
 // @route   DELETE /api/projects/:id
 exports.deleteProject = asyncHandler(async (req, res) => {
+    const { deleteRemoteRepo = false, confirmationName = '' } = req.body || {};
     const project = await Project.findOne({ 
         _id: req.params.id, 
         owner: req.user.id 
@@ -156,9 +196,51 @@ exports.deleteProject = asyncHandler(async (req, res) => {
         throw new Error('Project not found or you are not authorized to delete it');
     }
 
-    // Soft delete logic: data rahega par list me nahi dikhega
-    project.isDeleted = true;
-    await project.save();
+    if (String(confirmationName).trim() !== String(project.name).trim()) {
+        res.status(400);
+        throw new Error(`Type "${project.name}" to confirm project deletion`);
+    }
 
-    res.status(200).json({ success: true, message: 'Project removed successfully' });
+    let remoteRepoDeleted = false;
+
+    if (project.activeDeploymentId) {
+        const activeDeployment = await Deployment.findById(project.activeDeploymentId).select('status');
+        if (activeDeployment && ['queued', 'building', 'running', 'rolling_back'].includes(activeDeployment.status)) {
+            await stopDeployment(project.activeDeploymentId);
+        }
+    }
+
+    if (deleteRemoteRepo) {
+        const user = await User.findById(req.user.id).select('+githubAccessToken');
+        if (!user?.githubAccessToken) {
+            res.status(400);
+            throw new Error('Connect GitHub before deleting the linked repository.');
+        }
+
+        if (!project.repoName) {
+            res.status(400);
+            throw new Error('This project does not have a linked GitHub repository name.');
+        }
+
+        await deleteGithubRepo(user.githubAccessToken, project.repoName);
+        remoteRepoDeleted = true;
+    }
+
+    await Promise.all([
+        Deployment.deleteMany({ projectId: project._id }),
+        Integration.deleteMany({ projectId: project._id }),
+        EnvVar.deleteMany({ projectId: project._id })
+    ]);
+
+    await Project.deleteOne({ _id: project._id });
+
+    res.status(200).json({
+        success: true,
+        message: remoteRepoDeleted
+            ? 'Project records and GitHub repository removed successfully'
+            : 'Project records removed successfully',
+        data: {
+            remoteRepoDeleted
+        }
+    });
 });

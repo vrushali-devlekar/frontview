@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { RefreshCw, ShieldCheck, ArrowDown } from "lucide-react";
+import { RefreshCw, ShieldCheck, ArrowDown, Sparkles } from "lucide-react";
 import { io as socketIO } from "socket.io-client";
 import { getDeployment, SOCKET_ORIGIN } from "../../api/api";
 
@@ -50,43 +50,113 @@ export default function TerminalLogs({
   onErrorDetect,
   onComplete,
   onStatusChange,
+  onOpenAnalysis,
 }) {
   const [logs, setLogs] = useState([]);
   const [isStreaming, setIsStreaming] = useState(true);
   const [loadError, setLoadError] = useState("");
   const messagesEndRef = useRef(null);
-  const logsRef = useRef([]);
+  const pendingEntriesRef = useRef([]);
+  const flushTimerRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToBottom = useCallback((behavior = "auto") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
 
-  useEffect(() => {
-    logsRef.current = logs;
-  }, [logs]);
+  const flushQueuedLogs = useCallback(() => {
+    if (pendingEntriesRef.current.length === 0) return;
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [logs]);
-
-  const appendAndMaybeSignalError = useCallback(
-    (entry) => {
-      setLogs((prev) => {
-        const next = [...prev, entry];
+    const queuedEntries = pendingEntriesRef.current.splice(0, pendingEntriesRef.current.length);
+    setLogs((prev) => {
+      const next = [...prev, ...queuedEntries];
+      const hasError = queuedEntries.some((entry) => {
         const msg = entry.message || "";
-        if (
+        return (
           entry.type === "error" ||
           msg.includes("ERR!") ||
           msg.includes("error") ||
           /\[ERROR\]/i.test(msg)
-        ) {
-          if (onErrorDetect) onErrorDetect();
-        }
-        return next;
+        );
       });
+
+      if (hasError && onErrorDetect) {
+        onErrorDetect();
+      }
+
+      return next;
+    });
+  }, [onErrorDetect]);
+
+  const queueLogEntry = useCallback(
+    (entry) => {
+      pendingEntriesRef.current.push(entry);
+      if (flushTimerRef.current) return;
+
+      flushTimerRef.current = window.setTimeout(() => {
+        flushTimerRef.current = null;
+        flushQueuedLogs();
+      }, 80);
     },
-    [onErrorDetect]
+    [flushQueuedLogs]
   );
+
+  const clearPendingFlush = useCallback(() => {
+    if (flushTimerRef.current) {
+      window.clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
+    pendingEntriesRef.current = [];
+  }, []);
+
+  const flushImmediately = useCallback(() => {
+    if (flushTimerRef.current) {
+      window.clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
+    flushQueuedLogs();
+  }, [flushQueuedLogs]);
+
+  const resetLogs = useCallback(() => {
+    clearPendingFlush();
+    setLogs([]);
+  }, [clearPendingFlush]);
+
+  const finishStreaming = useCallback(() => {
+    flushImmediately();
+    setIsStreaming(false);
+    if (onComplete) onComplete();
+  }, [flushImmediately, onComplete]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [logs, scrollToBottom]);
+
+  useEffect(() => clearPendingFlush, [clearPendingFlush]);
+
+  const handleLogCompleteState = useCallback(
+    (status) => {
+      if (
+        status &&
+        ["failed", "stopped", "rolling_back"].includes(String(status).toLowerCase())
+      ) {
+        flushImmediately();
+        setIsStreaming(false);
+      }
+    },
+    [flushImmediately]
+  );
+
+  const appendAndMaybeSignalError = useCallback(
+    (entry) => {
+      queueLogEntry(entry);
+    },
+    [queueLogEntry]
+  );
+
+  const handleScrollToBottomClick = useCallback(() => {
+    flushImmediately();
+    scrollToBottom("smooth");
+  }, [flushImmediately, scrollToBottom]);
 
   useEffect(() => {
     if (!deploymentId) return undefined;
@@ -106,8 +176,7 @@ export default function TerminalLogs({
     };
 
     const handleLogComplete = () => {
-      setIsStreaming(false);
-      if (onComplete) onComplete();
+      finishStreaming();
     };
 
     socket.on("log:line", handleLogLine);
@@ -120,7 +189,7 @@ export default function TerminalLogs({
       await Promise.resolve();
       if (cancelled) return;
       setLoadError("");
-      setLogs([]);
+      resetLogs();
       setIsStreaming(true);
       try {
         const { data } = await getDeployment(deploymentId);
@@ -132,14 +201,7 @@ export default function TerminalLogs({
         }
         const st = doc?.status;
         if (st && onStatusChange) onStatusChange(String(st).toLowerCase());
-        if (
-          st &&
-          ["failed", "stopped", "rolling_back"].includes(
-            String(st).toLowerCase()
-          )
-        ) {
-          setIsStreaming(false);
-        }
+        handleLogCompleteState(st);
       } catch (e) {
         if (!cancelled) {
           setLoadError(
@@ -151,12 +213,13 @@ export default function TerminalLogs({
 
     return () => {
       cancelled = true;
+      flushImmediately();
       socket.emit("leave:deployment", deploymentId);
       socket.off("log:line", handleLogLine);
       socket.off("log:complete", handleLogComplete);
       socket.off("connect_error", handleConnectError);
     };
-  }, [deploymentId, appendAndMaybeSignalError, onComplete, onStatusChange]);
+  }, [deploymentId, appendAndMaybeSignalError, finishStreaming, flushImmediately, handleLogCompleteState, onComplete, onStatusChange, resetLogs]);
 
   const getLogColor = (type) => {
     switch (type) {
@@ -195,6 +258,16 @@ export default function TerminalLogs({
             <span className="text-[12px] text-[#ef4444] max-w-[200px] truncate">
               {loadError}
             </span>
+          )}
+          {onOpenAnalysis && (
+            <button
+              type="button"
+              onClick={onOpenAnalysis}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[12px] font-medium text-[#d4d4d8] transition-colors hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-white"
+            >
+              <Sparkles size={12} className="text-[#22c55e]" />
+              AI Analysis
+            </button>
           )}
           {isStreaming ? (
             <span className="flex items-center gap-1.5 text-[#3b82f6] text-[12px] font-medium">
@@ -252,7 +325,7 @@ export default function TerminalLogs({
       {/* Footer stats */}
       <div className="py-2 px-4 bg-[#111113] border-t border-white/[0.06] flex justify-between items-center shrink-0">
         <span className="text-[12px] text-[#71717a]">{logs.length} lines</span>
-        <button onClick={scrollToBottom} className="text-[12px] text-[#71717a] hover:text-white flex items-center gap-1.5 transition-colors">
+        <button onClick={handleScrollToBottomClick} className="text-[12px] text-[#71717a] hover:text-white flex items-center gap-1.5 transition-colors">
           <ArrowDown size={12} /> Scroll to bottom
         </button>
       </div>

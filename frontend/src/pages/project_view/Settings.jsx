@@ -5,24 +5,26 @@ import Sidebar from "../../components/layout/Sidebar";
 import Dock from "../../components/layout/Dock";
 import PageWrapper from "../../components/layout/PageWrapper";
 import TopNav from "../../components/layout/TopNav";
-import {
-    Settings as SettingsIcon,
-    Key,
-    Globe,
-    Shield,
-    AlertTriangle,
-    Cpu,
-    Loader2,
-    LayoutGrid,
-    User,
-    ChevronRight,
-    Folder
-} from "lucide-react";
+import { 
+Settings as SettingsIcon,
+Key,
+Globe,
+Shield,
+AlertTriangle,
+Cpu,
+Loader2,
+LayoutGrid,
+User,
+ChevronRight,
+Folder,
+Trash2,
+Octagon as Github
+} from "lucide-react";   
 import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
 import EnvTable from "../../components/project/EnvTable";
 import { motion } from "framer-motion";
-import { getProject, updateProject, deleteProject, getProjects } from "../../api/api";
+import { getProject, updateProject, deleteProject, getProjects, getWorkspaceOverview } from "../../api/api";
 import { AlertBanner, Card, PageHeader } from "../../components/layout/PageLayout";
 
 export default function Settings() {
@@ -34,10 +36,13 @@ export default function Settings() {
     const [activeTab, setActiveTab] = useState("GENERAL");
     const [project, setProject] = useState(null);
     const [allProjects, setAllProjects] = useState([]);
+    const [workspaceStats, setWorkspaceStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const [successMsg, setSuccessMsg] = useState("");
+    const [deleteConfirmation, setDeleteConfirmation] = useState("");
+    const [deleteRemoteRepo, setDeleteRemoteRepo] = useState(false);
 
     // Form states
     const [projectName, setProjectName] = useState("");
@@ -56,8 +61,12 @@ export default function Settings() {
                     setStartCommand(data.data.startCommand || "npm start");
                     setActiveTab("GENERAL");
                 } else {
-                    const { data } = await getProjects();
-                    setAllProjects(data.data || []);
+                    const [projectsResponse, overviewResponse] = await Promise.all([
+                        getProjects(),
+                        getWorkspaceOverview(),
+                    ]);
+                    setAllProjects(projectsResponse.data?.data || []);
+                    setWorkspaceStats(overviewResponse.data?.data?.stats || null);
                     setActiveTab("WORKSPACE");
                 }
             } catch (err) {
@@ -87,14 +96,17 @@ export default function Settings() {
     };
 
     const handleDelete = async () => {
-        if (!window.confirm("Are you sure you want to delete this project? This cannot be undone.")) return;
-        
         setSaving(true);
+        setError("");
         try {
-            await deleteProject(projectId);
+            const { data } = await deleteProject(projectId, {
+                deleteRemoteRepo,
+                confirmationName: deleteConfirmation,
+            });
+            setSuccessMsg(data?.message || "Project deleted successfully.");
             navigate("/dashboard");
         } catch (err) {
-            setError("Failed to delete project.");
+            setError(err.response?.data?.message || "Failed to delete project.");
             setSaving(false);
         }
     };
@@ -131,7 +143,7 @@ export default function Settings() {
                 <TopNav />
 
                 {/* Page header */}
-                <div className="px-8 py-6 border-b border-white/[0.06] shrink-0">
+                <div className="px-4 md:px-8 py-5 md:py-6 border-b border-white/[0.06] shrink-0">
                     <div className="max-w-[1200px] mx-auto">
                         <div className="flex items-center gap-2 mb-1">
                              <h1 className="text-2xl font-bold tracking-tight text-white">
@@ -155,16 +167,16 @@ export default function Settings() {
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-hidden max-w-[1200px] mx-auto w-full flex">
+                <div className="flex-1 overflow-y-auto max-w-[1200px] mx-auto w-full flex flex-col lg:flex-row px-4 md:px-8 lg:px-0">
 
                     {/* Tab sidebar */}
-                    <div className="w-64 shrink-0 py-6 pr-6 border-r border-white/[0.06] flex flex-col gap-0.5 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-                        <p className="text-[10px] font-bold text-[#3f3f46] uppercase tracking-widest mb-2 px-3">Sections</p>
+                    <div className="w-full lg:w-64 shrink-0 py-4 lg:py-6 lg:pr-6 border-b lg:border-b-0 lg:border-r border-white/[0.06] flex flex-row lg:flex-col gap-2 lg:gap-0.5 overflow-x-auto lg:overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+                        <p className="hidden lg:block text-[10px] font-bold text-[#3f3f46] uppercase tracking-widest mb-2 px-3">Sections</p>
                         {currentTabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium rounded-lg transition-colors text-left ${activeTab === tab.id
+                                className={`flex shrink-0 items-center gap-3 px-3 py-2.5 text-[13px] font-medium rounded-lg transition-colors text-left ${activeTab === tab.id
                                         ? "bg-white/[0.08] text-white"
                                         : "text-[#71717a] hover:text-white hover:bg-white/[0.04]"
                                     } ${tab.id === "DANGER" ? "text-[#ef4444] hover:text-[#ef4444] hover:bg-[#ef4444]/[0.06] mt-auto" : ""}`}
@@ -177,7 +189,7 @@ export default function Settings() {
                         {projectId && (
                             <button
                                 onClick={() => navigate("/settings")}
-                                className="flex items-center gap-3 px-3 py-2.5 text-[12px] font-bold text-[#71717a] hover:text-white mt-4 border-t border-white/[0.04] pt-6"
+                                className="flex shrink-0 items-center gap-3 px-3 py-2.5 text-[12px] font-bold text-[#71717a] hover:text-white lg:mt-4 lg:border-t lg:border-white/[0.04] lg:pt-6"
                             >
                                 <ChevronRight size={14} className="rotate-180" />
                                 Back to Workspace
@@ -186,8 +198,8 @@ export default function Settings() {
                     </div>
 
                     {/* Tab content */}
-                    <div className="flex-1 overflow-y-auto py-6 pl-8" style={{ scrollbarWidth: "none" }}>
-                        <div className="max-w-[680px]">
+                    <div className="flex-1 overflow-y-auto py-6 lg:pl-8 min-w-0" style={{ scrollbarWidth: "none" }}>
+                        <div className="max-w-[760px]">
                             {error && <AlertBanner type="error">{error}</AlertBanner>}
                             {successMsg && <AlertBanner type="success">{successMsg}</AlertBanner>}
 
@@ -298,22 +310,63 @@ export default function Settings() {
                                                     <div>
                                                         <h2 className="text-[14px] font-semibold text-[#ef4444] mb-0.5">Delete Project</h2>
                                                         <p className="text-[13px] text-[#71717a]">
-                                                            Permanently remove your project and all its deployments. This action cannot be undone.
+                                                            Remove this project from Velora. You can also choose to delete the linked GitHub repository in the same action.
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div className="px-6 py-5 flex items-center justify-between">
-                                                    <span className="text-[13px] text-white">
-                                                        Delete <span className="font-semibold font-mono">{project?.name}</span>
-                                                    </span>
-                                                    <GlassButton 
-                                                        variant="danger" 
-                                                        className="h-9 px-4 text-[13px]"
-                                                        onClick={handleDelete}
-                                                        disabled={saving}
-                                                    >
-                                                        {saving ? "Deleting..." : "Delete Project"}
-                                                    </GlassButton>
+                                                <div className="px-6 py-5 flex flex-col gap-5">
+                                                    <div className="rounded-xl border border-white/[0.06] bg-[#0d0d0f] p-4">
+                                                        <p className="text-[12px] font-semibold text-white mb-1">Deletion summary</p>
+                                                        <p className="text-[12px] text-[#71717a] leading-6">
+                                                            This removes <span className="font-semibold text-white">{project?.name}</span> from your Velora dashboard, stops any active deployment, and hides the project from your workspace.
+                                                        </p>
+                                                        <p className="mt-3 text-[12px] text-[#71717a] leading-6">
+                                                            Linked repository:
+                                                            <span className="ml-2 font-mono text-[#d4d4d8]">{project?.repoName || "Not available"}</span>
+                                                        </p>
+                                                    </div>
+
+                                                    <InputField
+                                                        label={`Type "${project?.name}" to confirm`}
+                                                        value={deleteConfirmation}
+                                                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                                        placeholder={project?.name || "Project name"}
+                                                    />
+
+                                                    <label className="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-[#0d0d0f] px-4 py-4 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={deleteRemoteRepo}
+                                                            onChange={(e) => setDeleteRemoteRepo(e.target.checked)}
+                                                            className="mt-1 h-4 w-4 rounded border-white/20 bg-transparent text-[#ef4444] accent-[#ef4444]"
+                                                        />
+                                                        <div className="min-w-0">
+                                                            <span className="flex items-center gap-2 text-[13px] font-medium text-white">
+                                                                <Github size={14} className="text-[#71717a]" />
+                                                                Also delete the linked GitHub repository
+                                                            </span>
+                                                            <p className="mt-1 text-[12px] text-[#71717a] leading-5">
+                                                                Use this only if you want the actual repository removed from GitHub, not just disconnected from Velora.
+                                                            </p>
+                                                        </div>
+                                                    </label>
+
+                                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                                        <span className="text-[12px] text-[#a1a1aa]">
+                                                            {deleteRemoteRepo
+                                                                ? "Project and linked GitHub repository will be deleted."
+                                                                : "Only the Velora project will be deleted."}
+                                                        </span>
+                                                        <GlassButton 
+                                                            variant="danger" 
+                                                            className="h-10 px-4 text-[13px]"
+                                                            onClick={handleDelete}
+                                                            disabled={saving || deleteConfirmation.trim() !== project?.name}
+                                                        >
+                                                            <Trash2 size={14} />
+                                                            {saving ? "Deleting..." : deleteRemoteRepo ? "Delete Project + Repo" : "Delete Project"}
+                                                        </GlassButton>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -358,17 +411,20 @@ export default function Settings() {
 
                                             <div className="bg-[#111113] border border-white/[0.06] rounded-xl overflow-hidden shadow-elevation-1">
                                                 <div className="px-6 py-5 border-b border-white/[0.06]">
-                                                    <h2 className="text-[14px] font-semibold text-white mb-0.5">Platform Usage</h2>
-                                                    <p className="text-[13px] text-[#71717a]">Monitor your workspace resource allocation.</p>
+                                                    <h2 className="text-[14px] font-semibold text-white mb-0.5">Workspace Usage</h2>
+                                                    <p className="text-[13px] text-[#71717a]">Calculated from your current projects and deployment history.</p>
                                                 </div>
-                                                <div className="px-6 py-5">
-                                                    <div className="flex justify-between items-center mb-2">
-                                                        <span className="text-[12px] text-[#a1a1aa]">Build Minutes</span>
-                                                        <span className="text-[12px] font-bold text-white">124 / 500 min</span>
-                                                    </div>
-                                                    <div className="w-full h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
-                                                        <div className="h-full bg-[#22c55e] w-[25%]" />
-                                                    </div>
+                                                <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                    {[
+                                                        { label: "Projects", value: workspaceStats?.totalProjects || String(allProjects.length) },
+                                                        { label: "Deployments", value: workspaceStats?.totalDeployments || "0" },
+                                                        { label: "Success Rate", value: workspaceStats?.successRate || "0%" },
+                                                    ].map((item) => (
+                                                        <div key={item.label} className="rounded-xl border border-white/[0.06] bg-[#0d0d0f] px-4 py-4">
+                                                            <p className="text-[11px] text-[#52525b] uppercase tracking-[0.1em] font-bold">{item.label}</p>
+                                                            <p className="text-[20px] text-white font-bold mt-2">{item.value}</p>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
                                         </>

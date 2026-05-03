@@ -8,6 +8,7 @@ const { addEnvVar, getEnvVars, deleteEnvVar } = require('../controllers/envContr
 // Toh iska actual path ban jayega: /api/projects/:id/env
 
 router.get('/:id/env', protect, getEnvVars);  // Saare variables (masked) dekhne ke liye
+router.post('/:id/env', protect, addEnvVar);
 
 router.delete('/:id/env/:key', protect, deleteEnvVar);
 

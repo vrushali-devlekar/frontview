@@ -7,7 +7,7 @@ import Dock from "../../components/layout/Dock";
 import PageWrapper from "../../components/layout/PageWrapper";
 import TopNav from "../../components/layout/TopNav";
 import TerminalLogs from "../../components/project/TerminalLogs";
-import AIModal from "../../components/project/AIModal";
+import AIAnalysisPanel from "../../components/project/AIAnalysisPanel";
 import { stopDeploymentRequest } from "../../api/api";
 import GlassButton from "../../components/ui/GlassButton";
 
@@ -64,6 +64,7 @@ const DeploymentLogsPage = () => {
                 if (!deploymentId) return;
                 if (["stopped", "failed"].includes(deploymentStatus)) return;
                 setIsStopping(true);
+                setDeploymentStatus("stopped");
                 try { await stopDeploymentRequest(deploymentId); }
                 finally { setIsStopping(false); }
               }}
@@ -95,6 +96,7 @@ const DeploymentLogsPage = () => {
                   deploymentId={deploymentId}
                   onErrorDetect={() => setHasError(true)}
                   onStatusChange={setDeploymentStatus}
+                  onOpenAnalysis={() => setIsAIModalOpen(true)}
                 />
               </div>
             </div>
@@ -111,7 +113,7 @@ const DeploymentLogsPage = () => {
               </GlassButton>
             </div>
 
-            <AIModal
+            <AIAnalysisPanel
               deploymentId={deploymentId}
               isOpen={isAIModalOpen}
               onClose={() => setIsAIModalOpen(false)}

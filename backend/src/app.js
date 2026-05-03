@@ -9,11 +9,12 @@ const rateLimit = require('express-rate-limit');
 require('./config/passportSetup');
 const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
-const { protect } = require('./middlewares/authMiddleware');
 const deploymentRoutes = require('./routes/deploymentRoutes');
 const envRoutes = require('./routes/envRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const workspaceRoutes = require('./routes/workspaceRoutes');
+const { proxyLiveDeployment } = require('./controllers/liveController');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 const {
     isAllowedOrigin,
@@ -34,16 +35,26 @@ if (isProduction) {
 // 1. Helmet for Security Headers
 app.use(helmet());
 
-// 2. Global Rate Limiting
-const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again after 15 minutes'
+// 2. API Rate Limiting
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: isProduction ? 800 : 5000,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Too many API requests from this IP, please try again after 15 minutes'
 });
-app.use(globalLimiter);
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: isProduction ? 50 : 500,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: 'Too many authentication attempts from this IP, please try again after 15 minutes'
+});
 
 // 3. Session sabse pehle aayega
-app.use(session({
+app.use(session({   
     secret: process.env.SESSION_SECRET || 'mera_super_secret',
     proxy: isProduction,
     resave: false,
@@ -75,12 +86,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 7. Routes
-app.use('/api/auth', authRoutes);
+app.use('/api', apiLimiter);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/deployments', deploymentRoutes);
 app.use('/api/projects', envRoutes);
 app.use('/api/projects/:projectId/integrations', integrationRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/workspace', workspaceRoutes);
+app.use('/live/:id', proxyLiveDeployment);
 
 // --- BASIC ROUTE ---
 app.get('/api/health', (req, res) => {
@@ -96,8 +110,7 @@ app.post('/api/test-ai', async (req, res) => {
 
         console.log("🤖 Sending logs to AI for analysis...");
 
-        // Default gemini use kar rahe hain test ke liye
-        const aiResponse = await analyzeLogsWithAI(logs, 'cohere');
+        const aiResponse = await analyzeLogsWithAI(logs, 'mistral');
 
         res.status(200).json({ success: true, aiAnalysis: aiResponse });
     } catch (error) {
