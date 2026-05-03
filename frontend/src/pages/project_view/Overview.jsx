@@ -199,5 +199,4 @@ export default function Overview() {
       </PageWrapper>
     </div>
   );
-  );
 }
