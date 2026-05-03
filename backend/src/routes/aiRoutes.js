@@ -56,4 +56,37 @@ router.post('/diagnose', protect, async (req, res) => {
     }
 });
 
+// @desc    General AI Chat for debugging and questions
+// @route   POST /api/ai/chat
+router.post('/chat', protect, async (req, res) => {
+    const { message, context } = req.body;
+
+    if (!message) {
+        return res.status(400).json({ message: 'message field is required' });
+    }
+
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+    });
+
+    try {
+        const { analyzeLogsWithAI } = require('../services/logAnalysisService');
+        // We'll repurpose analyzeLogsWithAI for chat by passing the message as the 'question'
+        const result = await analyzeLogsWithAI(context || [], 'cohere', message);
+        
+        const text = typeof result === 'string' ? result : (result.markdown || result.rootCause || "I'm not sure how to answer that.");
+        
+        res.write(`data: ${JSON.stringify({ text })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+    } catch (error) {
+        console.error("AI Chat Error:", error);
+        res.write(`data: ${JSON.stringify({ text: "I'm having trouble connecting to my brain right now. Please try again later." })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+    }
+});
+
 module.exports = router;

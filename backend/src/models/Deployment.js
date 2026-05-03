@@ -32,7 +32,9 @@ const deploymentSchema = new mongoose.Schema({
     containerId: { type: String },
     buildDuration: { type: Number }, // in milliseconds
     errorMessage: { type: String },
-    logs: [{ type: String }],
+    logs: [{ type: String }], // Legacy / Combined
+    buildLogs: [{ type: String }],
+    runtimeLogs: [{ type: String }],
     triggeredBy: {
         type: String,
         enum: ['manual', 'webhook'],
