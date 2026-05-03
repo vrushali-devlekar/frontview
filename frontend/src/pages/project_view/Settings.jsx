@@ -5,7 +5,7 @@ import Sidebar from "../../components/layout/Sidebar";
 import Dock from "../../components/layout/Dock";
 import PageWrapper from "../../components/layout/PageWrapper";
 import TopNav from "../../components/layout/TopNav";
-import { 
+import {
 Settings as SettingsIcon,
 Key,
 Globe,
@@ -19,7 +19,7 @@ ChevronRight,
 Folder,
 Trash2,
 Octagon as Github
-} from "lucide-react";   
+} from "lucide-react";
 import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
 import EnvTable from "../../components/project/EnvTable";
@@ -159,8 +159,8 @@ export default function Settings() {
                             )}
                         </div>
                         <p className="text-[13px] text-[#71717a]">
-                            {projectId 
-                                ? "Manage your project configuration and infrastructure" 
+                            {projectId
+                                ? "Manage your project configuration and infrastructure"
                                 : "Manage your personal workspace and account preferences"}
                         </p>
                     </div>
@@ -185,7 +185,7 @@ export default function Settings() {
                                 {tab.label}
                             </button>
                         ))}
-                        
+
                         {projectId && (
                             <button
                                 onClick={() => navigate("/settings")}
@@ -214,14 +214,14 @@ export default function Settings() {
                                                     <p className="text-[13px] text-[#71717a]">Used to identify your project on the dashboard.</p>
                                                 </div>
                                                 <div className="px-6 py-5">
-                                                    <InputField 
-                                                        value={projectName} 
+                                                    <InputField
+                                                        value={projectName}
                                                         onChange={(e) => setProjectName(e.target.value)}
                                                     />
                                                 </div>
                                                 <div className="px-6 py-3.5 bg-[#0d0d0f] border-t border-white/[0.06] flex justify-end">
-                                                    <GlassButton 
-                                                        variant="primary" 
+                                                    <GlassButton
+                                                        variant="primary"
                                                         className="h-8 px-4 text-xs"
                                                         onClick={() => handleUpdate({ name: projectName })}
                                                         disabled={saving}
@@ -273,24 +273,24 @@ export default function Settings() {
                                                 <div className="px-6 py-5 flex flex-col gap-5">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         <InputField label="Framework Preset" value="Auto-detect" disabled />
-                                                        <InputField 
-                                                            label="Build Command" 
-                                                            value={installCommand} 
+                                                        <InputField
+                                                            label="Build Command"
+                                                            value={installCommand}
                                                             onChange={(e) => setInstallCommand(e.target.value)}
                                                         />
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         <InputField label="Output Directory" defaultValue="dist" disabled />
-                                                        <InputField 
-                                                            label="Start Command" 
-                                                            value={startCommand} 
+                                                        <InputField
+                                                            label="Start Command"
+                                                            value={startCommand}
                                                             onChange={(e) => setStartCommand(e.target.value)}
                                                         />
                                                     </div>
                                                 </div>
                                                 <div className="px-6 py-3.5 bg-[#0d0d0f] border-t border-white/[0.06] flex justify-end">
-                                                    <GlassButton 
-                                                        variant="primary" 
+                                                    <GlassButton
+                                                        variant="primary"
                                                         className="h-8 px-4 text-xs"
                                                         onClick={() => handleUpdate({ installCommand, startCommand })}
                                                         disabled={saving}
@@ -357,8 +357,8 @@ export default function Settings() {
                                                                 ? "Project and linked GitHub repository will be deleted."
                                                                 : "Only the Velora project will be deleted."}
                                                         </span>
-                                                        <GlassButton 
-                                                            variant="danger" 
+                                                        <GlassButton
+                                                            variant="danger"
                                                             className="h-10 px-4 text-[13px]"
                                                             onClick={handleDelete}
                                                             disabled={saving || deleteConfirmation.trim() !== project?.name}
@@ -375,7 +375,7 @@ export default function Settings() {
                             ) : (
                                 /* ── GLOBAL / WORKSPACE SETTINGS ── */
                                 <motion.div key="global" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
-                                    
+
                                     {activeTab === "WORKSPACE" && (
                                         <>
                                             <div className="bg-[#111113] border border-white/[0.06] rounded-xl overflow-hidden shadow-elevation-1">
@@ -388,7 +388,7 @@ export default function Settings() {
                                                         <div className="py-10 text-center text-[#71717a] text-[13px]">No projects found.</div>
                                                     ) : (
                                                         allProjects.map((p) => (
-                                                            <div 
+                                                            <div
                                                                 key={p._id}
                                                                 onClick={() => navigate(`/settings?projectId=${p._id}`)}
                                                                 className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-white/3 transition-colors cursor-pointer group"

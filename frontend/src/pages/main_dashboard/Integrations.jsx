@@ -6,10 +6,29 @@ import Sidebar from "../../components/layout/Sidebar";
 import Dock from "../../components/layout/Dock";
 import TopNav from "../../components/layout/TopNav";
 import GlassButton from "../../components/ui/GlassButton";
-import { PageShell, PageHeader, Card } from "../../components/layout/PageLayout";
-import { Database, MessageSquare, Zap, HardDrive, CheckCircle2, ArrowRight, Settings2, Trash2, X, Plug } from "lucide-react";
+import {
+  PageShell,
+  PageHeader,
+  Card,
+} from "../../components/layout/PageLayout";
+import {
+  Database,
+  MessageSquare,
+  Zap,
+  HardDrive,
+  CheckCircle2,
+  ArrowRight,
+  Settings2,
+  Trash2,
+  X,
+  Plug,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getIntegrations, connectIntegration, disconnectIntegration } from "../../api/api";
+import {
+  getIntegrations,
+  connectIntegration,
+  disconnectIntegration,
+} from "../../api/api";
 
 export default function Integrations() {
   const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
@@ -33,46 +52,50 @@ export default function Integrations() {
     {
       id: "mongodb",
       name: "MongoDB Atlas",
-      description: "Auto-provision a cloud database and inject MONGO_URI into your active projects.",
+      description:
+        "Auto-provision a cloud database and inject MONGO_URI into your active projects.",
       icon: Database,
       accent: "#47A248",
       type: "Database",
       inputLabel: "Connection String (URI)",
       placeholder: "mongodb+srv://user:pass@cluster.mongodb.net/db",
-      engineType: "database"
+      engineType: "database",
     },
     {
       id: "redis",
       name: "Upstash Redis",
-      description: "Serverless Redis caching. Injects REDIS_URL directly into your build environment.",
+      description:
+        "Serverless Redis caching. Injects REDIS_URL directly into your build environment.",
       icon: HardDrive,
       accent: "#FF4438",
       type: "Cache",
       inputLabel: "Redis URI",
       placeholder: "redis://default:pass@endpoint.upstash.io:6379",
-      engineType: "database"
+      engineType: "database",
     },
     {
       id: "slack",
       name: "Slack Alerts",
-      description: "Send deployment success/failure notifications to your team channel.",
+      description:
+        "Send deployment success/failure notifications to your team channel.",
       icon: MessageSquare,
       accent: "#E01E5A",
       type: "Notifications",
       inputLabel: "Incoming Webhook URL",
       placeholder: "https://hooks.slack.com/services/...",
-      engineType: "notification"
+      engineType: "notification",
     },
     {
       id: "discord",
       name: "Discord Webhooks",
-      description: "Stream live build logs and deployment status directly to Discord.",
+      description:
+        "Stream live build logs and deployment status directly to Discord.",
       icon: Zap,
       accent: "#5865F2",
       type: "Notifications",
       inputLabel: "Discord Webhook URL",
       placeholder: "https://discord.com/api/webhooks/...",
-      engineType: "notification"
+      engineType: "notification",
     },
   ];
 
@@ -98,7 +121,7 @@ export default function Integrations() {
 
   const handleOpenModal = (option) => {
     // If already connected, pre-fill config if possible (optional)
-    const existing = activeIntegrations.find(i => i.provider === option.id);
+    const existing = activeIntegrations.find((i) => i.provider === option.id);
     if (existing) {
       // In a real app, you might want to show masked value or allow editing
       const config = Object.fromEntries(existing.config);
@@ -111,17 +134,17 @@ export default function Integrations() {
 
   const handleSaveIntegration = async () => {
     if (!configValue) return showToast("Please enter a value", "error");
-    
+
     setIsSubmitting(true);
     try {
       const config = {};
-      if (modalConfig.engineType === 'database') config.uri = configValue;
+      if (modalConfig.engineType === "database") config.uri = configValue;
       else config.webhookUrl = configValue;
 
       await connectIntegration(projectId, {
         provider: modalConfig.id,
         type: modalConfig.engineType,
-        config
+        config,
       });
 
       showToast(`${modalConfig.name} connected successfully!`);
@@ -135,8 +158,11 @@ export default function Integrations() {
   };
 
   const handleDeleteIntegration = async (integrationId) => {
-    if (!window.confirm("Are you sure you want to disconnect this integration?")) return;
-    
+    if (
+      !window.confirm("Are you sure you want to disconnect this integration?")
+    )
+      return;
+
     try {
       await disconnectIntegration(projectId, integrationId);
       showToast("Integration disconnected");
@@ -148,8 +174,13 @@ export default function Integrations() {
 
   if (!projectId) {
     return (
-      <div className="flex h-screen bg-[#050505] text-white overflow-hidden">
-        <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
+      <div className="flex h-screen bg-black text-white overflow-hidden">
+        <Sidebar
+          isCollapsed={isCollapsed}
+          toggleSidebar={toggleSidebar}
+          navMode={navMode}
+          toggleNavMode={toggleNavMode}
+        />
         <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
         <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
           <TopNav />
@@ -158,11 +189,17 @@ export default function Integrations() {
               <div className="w-16 h-16 rounded-3xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mb-6">
                 <Plug className="text-[#52525b]" size={32} />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">Select a Project First</h2>
+              <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">
+                Select a Project First
+              </h2>
               <p className="text-[#71717a] text-[15px] max-w-md leading-relaxed mb-8">
-                Integrations are configured per project. Please select a project from your dashboard to manage its plugins.
+                Integrations are configured per project. Please select a project
+                from your dashboard to manage its plugins.
               </p>
-              <GlassButton variant="primary" onClick={() => window.location.href = '/dashboard'}>
+              <GlassButton
+                variant="primary"
+                onClick={() => (window.location.href = "/dashboard")}
+              >
                 Back to Dashboard
               </GlassButton>
             </div>
@@ -173,8 +210,13 @@ export default function Integrations() {
   }
 
   return (
-    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
+    <div className="flex h-screen bg-black text-white font-sans overflow-hidden">
+      <Sidebar
+        isCollapsed={isCollapsed}
+        toggleSidebar={toggleSidebar}
+        navMode={navMode}
+        toggleNavMode={toggleNavMode}
+      />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
@@ -186,12 +228,19 @@ export default function Integrations() {
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-pulse">
-              {[1, 2, 3, 4].map(i => <div key={i} className="h-[200px] bg-white/[0.02] border border-white/[0.05] rounded-3xl" />)}
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-[200px] bg-white/[0.02] border border-white/[0.05] rounded-3xl"
+                />
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {integrationOptions.map((app, i) => {
-                const active = activeIntegrations.find(integ => integ.provider === app.id);
+                const active = activeIntegrations.find(
+                  (integ) => integ.provider === app.id,
+                );
                 const isConnected = !!active;
 
                 return (
@@ -201,32 +250,42 @@ export default function Integrations() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: i * 0.07 }}
                   >
-                    <Card className="flex flex-col h-full group overflow-hidden">
+                    <Card className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-lg border border-white/30 flex flex-col h-full group overflow-hidden">
                       {/* Card body */}
                       <div className="p-6 flex-1">
                         <div className="flex items-start justify-between gap-4 mb-5">
                           <div className="flex items-center gap-4">
                             <div
-                              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                              style={{ background: `${app.accent}18`, border: `1px solid ${app.accent}30` }}
+                              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 backdrop-blur-sm"
+                              style={{
+                                background: `${app.accent}20`,
+                                border: `1px solid ${app.accent}40`,
+                              }}
                             >
-                              <app.icon size={20} style={{ color: app.accent }} />
+                              <app.icon
+                                size={20}
+                                style={{ color: app.accent }}
+                              />
                             </div>
                             <div>
-                              <h3 className="text-[14px] font-bold text-white leading-tight">{app.name}</h3>
-                              <span className="text-[10.5px] font-semibold text-[#52525b] uppercase tracking-[0.1em] mt-0.5 block">
+                              <h3 className="text-[14px] font-bold text-white leading-tight">
+                                {app.name}
+                              </h3>
+                              <span className="text-[10.5px] font-semibold text-purple-300 uppercase tracking-[0.1em] mt-0.5 block">
                                 {app.type}
                               </span>
                             </div>
                           </div>
                           {isConnected && (
                             <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#22c55e] bg-[#22c55e]/10 border border-[#22c55e]/20 uppercase tracking-wider">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 uppercase tracking-wider backdrop-blur-sm">
                                 <CheckCircle2 size={10} /> Connected
                               </span>
-                              <button 
-                                onClick={() => handleDeleteIntegration(active._id)}
-                                className="p-1.5 rounded-lg text-[#52525b] hover:text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors"
+                              <button
+                                onClick={() =>
+                                  handleDeleteIntegration(active._id)
+                                }
+                                className="p-1.5 rounded-lg text-purple-300 hover:text-red-400 hover:bg-red-500/20 transition-colors"
                                 title="Disconnect"
                               >
                                 <Trash2 size={14} />
@@ -235,26 +294,35 @@ export default function Integrations() {
                           )}
                         </div>
 
-                        <p className="text-[13px] text-[#71717a] leading-relaxed">
+                        <p className="text-[13px] text-purple-200 leading-relaxed">
                           {app.description}
                         </p>
                       </div>
 
                       {/* Card footer */}
-                      <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.06] bg-white/[0.015]">
-                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#52525b] uppercase tracking-[0.08em]">
-                          <Zap size={10} className={isConnected ? "text-[#22c55e]" : ""} />
-                          {app.engineType === 'database' ? "Auto-injects variables" : "Event-driven hooks"}
+                      <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-white/5">
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-purple-300 uppercase tracking-[0.08em]">
+                          <Zap
+                            size={10}
+                            className={isConnected ? "text-emerald-400" : ""}
+                          />
+                          {app.engineType === "database"
+                            ? "Auto-injects variables"
+                            : "Event-driven hooks"}
                         </div>
                         <GlassButton
                           variant={isConnected ? "secondary" : "primary"}
                           onClick={() => handleOpenModal(app)}
-                          className="h-8 px-4 text-[12px] gap-1.5"
+                          className={`h-8 px-4 text-[12px] gap-1.5 ${isConnected ? "bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20" : "bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20"}`}
                         >
                           {isConnected ? (
-                            <><Settings2 size={12} /> Configure</>
+                            <>
+                              <Settings2 size={12} /> Configure
+                            </>
                           ) : (
-                            <>Connect <ArrowRight size={12} /></>
+                            <>
+                              Connect <ArrowRight size={12} />
+                            </>
                           )}
                         </GlassButton>
                       </div>
@@ -278,12 +346,12 @@ export default function Integrations() {
               className="w-full max-w-lg bg-[#0a0a0b] border border-white/[0.08] rounded-[32px] p-8 shadow-2xl relative overflow-hidden"
             >
               {/* Background Glow */}
-              <div 
+              <div
                 className="absolute -top-24 -right-24 w-48 h-48 blur-[80px] opacity-20"
                 style={{ background: modalConfig.accent }}
               />
 
-              <button 
+              <button
                 onClick={() => setModalConfig(null)}
                 className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/[0.05] text-[#52525b] hover:text-white transition-colors"
               >
@@ -293,13 +361,23 @@ export default function Integrations() {
               <div className="flex items-center gap-4 mb-8">
                 <div
                   className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg"
-                  style={{ background: `${modalConfig.accent}20`, border: `1px solid ${modalConfig.accent}40` }}
+                  style={{
+                    background: `${modalConfig.accent}20`,
+                    border: `1px solid ${modalConfig.accent}40`,
+                  }}
                 >
-                  <modalConfig.icon size={28} style={{ color: modalConfig.accent }} />
+                  <modalConfig.icon
+                    size={28}
+                    style={{ color: modalConfig.accent }}
+                  />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">Connect {modalConfig.name}</h2>
-                  <p className="text-[13px] text-[#71717a] mt-0.5">Integration for your active deployment</p>
+                  <h2 className="text-xl font-bold text-white tracking-tight">
+                    Connect {modalConfig.name}
+                  </h2>
+                  <p className="text-[13px] text-[#71717a] mt-0.5">
+                    Integration for your active deployment
+                  </p>
                 </div>
               </div>
 
@@ -318,7 +396,11 @@ export default function Integrations() {
                     />
                   </div>
                   <p className="text-[11px] text-[#52525b] mt-3 leading-relaxed">
-                    This value will be encrypted and {modalConfig.engineType === 'database' ? 'injected as an environment variable' : 'used to send deployment triggers'}.
+                    This value will be encrypted and{" "}
+                    {modalConfig.engineType === "database"
+                      ? "injected as an environment variable"
+                      : "used to send deployment triggers"}
+                    .
                   </p>
                 </div>
 
@@ -352,13 +434,21 @@ export default function Integrations() {
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100]"
           >
-            <div className={`px-6 py-3 rounded-2xl border backdrop-blur-xl shadow-2xl flex items-center gap-3 ${
-              toast.type === "error" 
-                ? "bg-red-500/10 border-red-500/20 text-red-500" 
-                : "bg-white/10 border-white/20 text-white"
-            }`}>
-              {toast.type === "error" ? <X size={16} /> : <CheckCircle2 size={16} />}
-              <span className="text-[13px] font-bold tracking-tight">{toast.message}</span>
+            <div
+              className={`px-6 py-3 rounded-2xl border backdrop-blur-xl shadow-2xl flex items-center gap-3 ${
+                toast.type === "error"
+                  ? "bg-red-500/10 border-red-500/20 text-red-500"
+                  : "bg-white/10 border-white/20 text-white"
+              }`}
+            >
+              {toast.type === "error" ? (
+                <X size={16} />
+              ) : (
+                <CheckCircle2 size={16} />
+              )}
+              <span className="text-[13px] font-bold tracking-tight">
+                {toast.message}
+              </span>
             </div>
           </motion.div>
         )}

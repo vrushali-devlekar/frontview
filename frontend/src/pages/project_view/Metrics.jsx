@@ -21,7 +21,15 @@ const Sparkline = ({ data = [], color }) => {
 
   return (
     <svg viewBox="0 0 100 100" className="w-14 h-7" preserveAspectRatio="none">
-      <polyline fill="none" stroke={color} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" points={pts} vectorEffect="non-scaling-stroke" />
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={pts}
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   );
 };
@@ -127,8 +135,13 @@ export default function Metrics() {
   };
 
   return (
-    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
+    <div className="flex h-screen bg-black text-white font-sans overflow-hidden">
+      <Sidebar
+        isCollapsed={isCollapsed}
+        toggleSidebar={toggleSidebar}
+        navMode={navMode}
+        toggleNavMode={toggleNavMode}
+      />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
@@ -188,7 +201,6 @@ export default function Metrics() {
                         <div key={c} className={`w-2.5 h-2.5 rounded-sm ${c}`} />
                       ))}
                     </div>
-                    More
                   </div>
                 </CardHeader>
                 <CardBody>

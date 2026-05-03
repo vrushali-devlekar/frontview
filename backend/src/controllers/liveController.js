@@ -59,7 +59,7 @@ exports.proxyLiveDeployment = asyncHandler(async (req, res) => {
 
     if (deployment.status !== 'running' || !deployment.port) {
         res.status(409);
-        throw new Error('Deployment is not live yet');
+        throw new Error(`Deployment is not live. Current status: ${deployment.status || 'unknown'}`);
     }
 
     const originalPath = req.originalUrl.split('?')[0];
@@ -87,9 +87,13 @@ exports.proxyLiveDeployment = asyncHandler(async (req, res) => {
     res.status(upstreamResponse.status);
 
     upstreamResponse.headers.forEach((value, key) => {
-        if (key.toLowerCase() === 'content-length') return;
+        const lowerKey = key.toLowerCase();
+        if (lowerKey === 'content-length') return;
+        // HTML is rewritten by this proxy, so compressed body headers become invalid.
+        if (lowerKey === 'content-encoding') return;
+        if (lowerKey === 'transfer-encoding') return;
         if (key.toLowerCase() === 'content-security-policy') return;
-        if (key.toLowerCase() === 'location') {
+        if (lowerKey === 'location') {
             res.setHeader(key, rewriteUpstreamLocation(value, deployment._id));
             return;
         }

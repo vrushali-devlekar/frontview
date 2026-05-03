@@ -164,7 +164,7 @@ export default function Environments() {
 
             <Card noPad>
               <CardHeader icon={Shield} title="Secrets Vault">
-                <span className="px-2.5 py-1 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/20 text-[10.5px] font-semibold text-[#22c55e] tracking-wide">
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-[10.5px] font-semibold text-emerald-400 tracking-wide backdrop-blur-sm">
                   AES-256
                 </span>
               </CardHeader>

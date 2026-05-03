@@ -216,7 +216,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#050505] text-white font-sans">
+    <div className="flex h-screen overflow-hidden bg-black text-white font-sans">
       <Sidebar
         isCollapsed={isCollapsed}
         toggleSidebar={toggleSidebar}

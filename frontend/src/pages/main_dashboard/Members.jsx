@@ -75,8 +75,13 @@ export default function Members() {
   };
 
   return (
-    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
+    <div className="flex h-screen bg-black text-white font-sans overflow-hidden">
+      <Sidebar
+        isCollapsed={isCollapsed}
+        toggleSidebar={toggleSidebar}
+        navMode={navMode}
+        toggleNavMode={toggleNavMode}
+      />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
@@ -95,7 +100,7 @@ export default function Members() {
                   {message.text && <AlertBanner type={message.type}>{message.text}</AlertBanner>}
                   <form onSubmit={handleInvite} className="flex flex-col lg:flex-row gap-4 lg:items-end">
                     <div className="flex-1">
-                      <label className="block text-[11px] font-semibold text-[#52525b] uppercase tracking-[0.1em] mb-2">
+                      <label className="block text-[11px] font-semibold text-green-200 uppercase tracking-[0.1em] mb-2">
                         Email Address
                       </label>
                       <input
@@ -103,7 +108,7 @@ export default function Members() {
                         value={inviteEmail}
                         onChange={(e) => setInviteEmail(e.target.value)}
                         placeholder="developer@example.com"
-                        className="w-full h-11 px-4 bg-[#09090b] border border-white/[0.08] rounded-xl text-[13px] text-white placeholder:text-[#3f3f46] focus:outline-none focus:border-white/[0.18] transition-colors"
+                        className="w-full h-11 px-4 bg-transparent backdrop-blur-md border border-green-500 rounded-xl text-[13px] text-white placeholder:text-green-300 focus:outline-none focus:border-green-400 transition-colors"
                       />
                     </div>
                     <div className="w-full lg:w-44">
@@ -130,7 +135,9 @@ export default function Members() {
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
               <Card noPad>
                 <CardHeader icon={Users} title="Team Members">
-                  <Badge>{members.length} users</Badge>
+                  <Badge className="bg-white/10 backdrop-blur-md border border-white/20">
+                    {members.length} users
+                  </Badge>
                 </CardHeader>
                 {members.length ? (
                   <div className="overflow-x-auto">
