@@ -6,6 +6,8 @@ const {
     createProject,
     getUserProjects,
     getProjectById,
+    updateProject,
+    getDashboardStats,
     deleteProject
 } = require('../controllers/projectController');
 const { protect } = require('../middlewares/authMiddleware');
@@ -16,6 +18,7 @@ router.use(protect);
 
 // Repos list (GitHub se real-time)
 router.get('/repos', getUserRepos);
+router.get('/stats', getDashboardStats);
 
 // Projects CRUD (Database se)
 router.route('/')
@@ -24,6 +27,7 @@ router.route('/')
 
 router.route('/:id')
     .get(getProjectById)
+    .put(updateProject)
     .delete(deleteProject);
 
 router.post('/:id/rollback/:version', protect, rollbackDeployment);

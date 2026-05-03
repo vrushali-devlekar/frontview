@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import { X, Cpu, MessageSquare, Expand, Send, BrainCircuit } from "lucide-react";
+import { X, Cpu, MessageSquare, Expand, Send, BrainCircuit, Loader2 } from "lucide-react";
+import GlassButton from "../ui/GlassButton";
 
 export default function AIModal({ deploymentId, isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +39,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
       }
 
       try {
-        const response = await fetch(`http://localhost:5000/api/deployments/${deploymentId}/analyze/stream`, {
+        const response = await fetch(`http://localhost:4000/api/deployments/${deploymentId}/analyze/stream`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -116,7 +117,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
     setChatMessages((prev) => [...prev, { id: astMsgId, role: "assistant", text: "" }]);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/deployments/${deploymentId}/analyze/stream`, {
+      const response = await fetch(`http://localhost:4000/api/deployments/${deploymentId}/analyze/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,21 +164,21 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
 
-      <div className={`ai-modal-enter relative w-full bg-[#0c0c0c] border border-[#1a1a1a] rounded-xl flex flex-col max-h-[85vh] shadow-2xl overflow-hidden ${isChatExpanded ? "max-w-4xl" : "max-w-2xl"}`}>
+      <div className={`relative w-full bg-[#09090b] border border-white/[0.06] rounded-xl flex flex-col max-h-[85vh] shadow-elevation-2 overflow-hidden transition-all duration-300 ${isChatExpanded ? "max-w-4xl" : "max-w-2xl"}`}>
 
         {/* Header - Clean & Professional */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a] shrink-0 bg-[#0a0a0a]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0 bg-[#111113]">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#6EE7B7]/20 to-[#6EE7B7]/5 flex items-center justify-center border border-[#6EE7B7]/20">
-              <BrainCircuit size={24} className="text-[#6EE7B7]" />
+            <div className="w-10 h-10 rounded-lg bg-white/[0.04] flex items-center justify-center border border-white/[0.06]">
+              <BrainCircuit size={20} className="text-[#a1a1aa]" />
             </div>
             <div>
-              <h2 className="text-sm md:text-base font-bold text-white tracking-widest uppercase font-pixel">
-                VELORA_AI
+              <h2 className="text-[15px] font-semibold text-white tracking-tight">
+                AI Diagnostics
               </h2>
-              <p className="text-[10px] text-[#666] mt-1 font-mono tracking-widest uppercase">INTELLIGENT DIAGNOSTICS</p>
+              <p className="text-[12px] text-[#71717a] font-medium mt-0.5">Automated issue resolution</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -185,122 +186,125 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
               type="button"
               disabled={!canChat}
               onClick={() => setIsChatExpanded((v) => !v)}
-              className="p-2 rounded-lg border border-[#222] text-[#888] hover:text-white hover:bg-[#111] disabled:opacity-40 transition-all"
+              className="p-2 rounded-md text-[#71717a] hover:text-white hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
+              title={isChatExpanded ? "Collapse Chat" : "Expand Chat"}
             >
-              <Expand size={14} />
+              <Expand size={16} />
             </button>
-            <button onClick={onClose} className="p-2 rounded-lg text-[#555] hover:text-white hover:bg-[#111] transition-all">
+            <button 
+              onClick={onClose} 
+              className="p-2 rounded-md text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-colors"
+              title="Close"
+            >
               <X size={16} />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 font-mono text-[14px]" style={{ scrollbarWidth: 'thin' }}>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 font-mono text-[13px]" style={{ scrollbarWidth: 'thin' }}>
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-52 gap-5">
-              {/* Professional loading dots */}
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#6EE7B7] ai-dot-1"></div>
-                <div className="w-3 h-3 rounded-full bg-[#6EE7B7] ai-dot-2"></div>
-                <div className="w-3 h-3 rounded-full bg-[#6EE7B7] ai-dot-3"></div>
+            <div className="flex flex-col items-center justify-center h-52 gap-4">
+              <Loader2 size={24} className="text-[#a1a1aa] animate-spin" />
+              <div className="text-center">
+                <p className="text-[#d4d4d8] font-medium font-sans">
+                  Analyzing deployment logs...
+                </p>
+                <p className="text-[#71717a] text-[12px] font-sans mt-1">
+                  This usually takes a few seconds
+                </p>
               </div>
-              <p className="text-[#888] text-sm tracking-wide">
-                Analyzing deployment logs...
-              </p>
-              <p className="text-[#444] text-xs">
-                This usually takes 5–10 seconds
-              </p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-40 gap-3">
-              <div className="w-12 h-12 rounded-full bg-[#E55B5B]/10 flex items-center justify-center">
-                <X size={20} className="text-[#E55B5B]" />
+              <div className="w-10 h-10 rounded-full bg-[#ef4444]/10 flex items-center justify-center">
+                <X size={18} className="text-[#ef4444]" />
               </div>
-              <p className="text-[#E55B5B] text-sm">{error}</p>
-              <button onClick={() => setError("")} className="text-xs text-[#888] hover:text-white underline">Try again</button>
+              <p className="text-[#ef4444] font-medium font-sans text-[14px]">{error}</p>
+              <button onClick={() => setError("")} className="text-[13px] text-[#71717a] hover:text-white underline font-sans">Try again</button>
             </div>
           ) : !isChatExpanded ? (
             <div className="space-y-4">
-              <div className="bg-[#080808] border border-[#1a1a1a] rounded-lg p-5">
-                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#1a1a1a]">
-                  <Cpu size={14} className="text-[#6EE7B7]" />
-                  <span className="text-xs text-[#6EE7B7] font-bold tracking-widest uppercase">ANALYSIS RESULT</span>
+              <div className="bg-[#111113] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1">
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/[0.06]">
+                  <Cpu size={14} className="text-[#3b82f6]" />
+                  <span className="text-[12px] font-medium text-[#3b82f6] tracking-wide font-sans">Analysis Result</span>
                 </div>
-                <div className="text-[15px] leading-[1.8] text-[#ccc] whitespace-pre-wrap font-mono">
+                <div className="text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap">
                   {streamedAnalysis}
-                  {isTyping && <span className="inline-block w-2 h-5 bg-[#6EE7B7] ai-cursor-blink ml-1 align-middle rounded-sm"></span>}
+                  {isTyping && <span className="inline-block w-1.5 h-4 bg-[#a1a1aa] animate-pulse ml-1 align-middle"></span>}
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex flex-col gap-4 min-h-0 h-full">
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-2" style={{ scrollbarWidth: 'thin' }}>
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-2" style={{ scrollbarWidth: 'thin' }}>
                 {/* Initial Analysis */}
                 <div className="flex justify-start">
-                  <div className="max-w-[85%] bg-[#080808] border border-[#1a1a1a] rounded-xl px-5 py-4 text-[15px] leading-[1.8] text-[#ccc] whitespace-pre-wrap font-mono">
+                  <div className="max-w-[85%] bg-[#111113] border border-white/[0.06] rounded-2xl rounded-tl-sm px-4 py-3 text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap shadow-elevation-1">
                     {streamedAnalysis}
                   </div>
                 </div>
 
                 {chatMessages.map((m) => (
                   <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[85%] rounded-xl px-5 py-4 text-[15px] leading-[1.8] whitespace-pre-wrap font-mono ${m.role === "user"
-                        ? "bg-[#6EE7B7]/10 border border-[#6EE7B7]/20 text-[#ccc]"
-                        : "bg-[#080808] border border-[#1a1a1a] text-[#ccc]"
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap shadow-elevation-1 ${m.role === "user"
+                        ? "bg-white/[0.06] border border-white/[0.08] text-white rounded-tr-sm"
+                        : "bg-[#111113] border border-white/[0.06] text-[#d4d4d8] rounded-tl-sm"
                       }`}>
                       {m.text}
                       {(isTyping && m.id === chatMessages[chatMessages.length - 1].id && m.role === "assistant") && (
-                        <span className="inline-block w-2 h-5 bg-[#6EE7B7] ai-cursor-blink ml-1 align-middle rounded-sm"></span>
+                        <span className="inline-block w-1.5 h-4 bg-[#a1a1aa] animate-pulse ml-1 align-middle"></span>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="border-t border-[#1a1a1a] pt-4 flex items-end gap-3">
+              <div className="pt-3 flex items-end gap-3 shrink-0">
                 <div className="flex-1">
                   <textarea
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    rows={2}
-                    placeholder="ASK A FOLLOW-UP QUESTION..."
-                    className="w-full bg-[#080808] border border-[#1a1a1a] text-[#ccc] text-sm font-mono rounded-lg p-4 outline-none focus:border-[#6EE7B7]/40 placeholder:text-[#444] resize-none transition-colors uppercase"
+                    rows={1}
+                    placeholder="Ask a follow-up question..."
+                    className="w-full bg-[#111113] border border-white/[0.06] text-white text-[13px] rounded-lg p-3 outline-none focus:border-white/[0.12] placeholder:text-[#71717a] resize-none transition-colors shadow-elevation-1 font-sans"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
                   />
                 </div>
-                <button
-                  type="button"
+                <GlassButton
+                  variant="primary"
                   disabled={!chatInput.trim() || isTyping}
                   onClick={sendChat}
-                  className="h-[44px] px-5 bg-[#6EE7B7] text-[#060606] text-xs font-bold font-mono tracking-widest rounded-lg hover:bg-[#86efac] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2 uppercase"
+                  className="h-[46px] px-4 shrink-0"
                 >
-                  <Send size={14} />
-                  SEND
-                </button>
+                  <Send size={16} />
+                </GlassButton>
               </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-[#1a1a1a] bg-[#0a0a0a] shrink-0 flex justify-between items-center">
-          <p className="text-[10px] text-[#444] font-mono uppercase tracking-widest">AI RESPONSES MAY BE INACCURATE. VERIFY LOGS.</p>
+        <div className="px-6 py-3 border-t border-white/[0.06] bg-[#111113] shrink-0 flex justify-between items-center">
+          <p className="text-[11px] text-[#71717a] font-medium font-sans">AI responses may be inaccurate. Verify with logs.</p>
           <div className="flex gap-2">
             {!isLoading && !error && !isChatExpanded && (
-              <button
+              <GlassButton
+                variant="outline"
                 onClick={() => setIsChatExpanded(true)}
-                className="px-4 py-2 text-xs rounded-lg border border-[#222] text-[#888] hover:text-white hover:bg-[#111] transition-all flex items-center gap-2 font-mono uppercase tracking-widest font-bold"
+                className="h-8 px-3 text-xs"
               >
-                <MessageSquare size={12} /> ASK_FOLLOWUP
-              </button>
+                <MessageSquare size={12} className="mr-1.5" /> Ask Follow-up
+              </GlassButton>
             )}
-            <button
+            <GlassButton
+              variant="outline"
               onClick={onClose}
-              className="px-4 py-2 text-xs rounded-lg bg-[#111] border border-[#222] text-[#888] hover:text-white transition-all font-mono uppercase tracking-widest font-bold"
+              className="h-8 px-3 text-xs"
             >
-              CLOSE
-            </button>
+              Close
+            </GlassButton>
           </div>
         </div>
       </div>

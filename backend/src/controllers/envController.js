@@ -51,3 +51,17 @@ exports.getEnvVars = asyncHandler(async (req, res) => {
 
     res.status(200).json({ success: true, data: safeEnvVars });
 });
+
+// @desc    Delete Env Var
+// @route   DELETE /api/projects/:id/env/:key
+exports.deleteEnvVar = asyncHandler(async (req, res) => {
+    const project = await Project.findOneAndUpdate(
+        { _id: req.params.id, owner: req.user.id },
+        { $pull: { envVars: { key: req.params.key } } },
+        { new: true }
+    );
+
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    res.status(200).json({ success: true, message: 'Variable deleted' });
+});

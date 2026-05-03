@@ -6,6 +6,7 @@ const {
     getDeploymentStatus,
     stopActiveDeployment,
     analyzeLogs,
+    analyzeLogsStream,
     listDeploymentsForProject
 } = require('../controllers/deploymentController');
 const { protect } = require('../middlewares/authMiddleware');
@@ -19,6 +20,7 @@ router.post('/', triggerDeployment);
 router.get('/:id', getDeploymentStatus);
 router.post('/:id/stop', stopActiveDeployment);
 router.post('/:id/analyze-logs', analyzeLogs);
+router.post('/:id/analyze/stream', analyzeLogsStream);  // SSE streaming AI
 router.post('/:id/rollback/:version', protect, rollbackDeployment);
 
 module.exports = router;

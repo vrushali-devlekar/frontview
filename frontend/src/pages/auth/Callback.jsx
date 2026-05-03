@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Zap } from "lucide-react";
 
 export default function Callback() {
   const [searchParams] = useSearchParams();
@@ -16,11 +17,15 @@ export default function Callback() {
   }, [searchParams, navigate]);
 
   return (
-    <div className="h-screen bg-[#050505] flex items-center justify-center text-[#d1d1d1] font-['Minecraftia',monospace] text-sm">
-      <div className="animate-pulse">
-        Establishing secure connection...
-        <br />
-        Verifying OAuth token...
+    <div className="h-screen bg-[#09090b] flex flex-col items-center justify-center font-sans">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 rounded-xl bg-[#22c55e] flex items-center justify-center animate-pulse">
+          <Zap size={20} className="text-black" strokeWidth={3} />
+        </div>
+        <div className="text-center">
+          <p className="text-[14px] font-medium text-white mb-1">Authenticating</p>
+          <p className="text-[13px] text-[#71717a]">Please wait while we verify your session...</p>
+        </div>
       </div>
     </div>
   );

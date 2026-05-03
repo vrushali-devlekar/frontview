@@ -3,7 +3,7 @@ const path = require('path');
 
 const dirs = [
   'src/pages/main_dashboard',
-  'src/pages/project_view', 
+  'src/pages/project_view',
   'src/pages/auth',
   'src/components/layout',
   'src/components/project',
@@ -25,23 +25,23 @@ let totalUpdated = 0;
 for (const dir of dirs) {
   const fullDir = path.join(__dirname, dir);
   if (!fs.existsSync(fullDir)) continue;
-  
+
   const files = fs.readdirSync(fullDir).filter(f => f.endsWith('.jsx') || f.endsWith('.js'));
-  
+
   for (const file of files) {
     if (skipFiles.includes(file)) continue;
-    
+
     const filePath = path.join(fullDir, file);
     let content = fs.readFileSync(filePath, 'utf-8');
     let changed = false;
-    
+
     for (const [from, to] of replacements) {
       if (content.includes(from)) {
         content = content.split(from).join(to);
         changed = true;
       }
     }
-    
+
     if (changed) {
       fs.writeFileSync(filePath, content, 'utf-8');
       console.log('Updated:', file);

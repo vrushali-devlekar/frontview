@@ -15,6 +15,7 @@ import NewProjectPage from "./pages/main_dashboard/NewProject";
 import Account from "./pages/main_dashboard/Account";
 import Members from "./pages/main_dashboard/Members";
 import Integrations from "./pages/main_dashboard/Integrations";
+import Docs from "./pages/Extra/Docs";
 
 import "./App.css";
 
@@ -78,6 +79,10 @@ const router = createBrowserRouter([
   {
     path: "/integrations",
     element: <Integrations />
+  },
+  {
+    path: "/documentation",
+    element: <Docs />
   },
   {
     path: "*",

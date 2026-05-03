@@ -1,19 +1,29 @@
-import React from 'react';
+import React from "react";
 
-export default function StatusBadge({ status = "ONLINE", type = "success" }) {
-  const types = {
-    success: { dot: "bg-valora-cyan ring-valora-cyan/30", text: "text-valora-cyan" },
-    error: { dot: "bg-valora-red ring-valora-red/30", text: "text-valora-red" },
-    warning: { dot: "bg-valora-yellow ring-valora-yellow/30", text: "text-valora-yellow" },
-    neutral: { dot: "bg-gray-400 ring-gray-400/30", text: "text-gray-400" },
-  };
+const STATUS_MAP = {
+  SUCCESS: { cls: "badge-green", dot: "bg-[#22c55e]", label: "Ready" },
+  READY: { cls: "badge-green", dot: "bg-[#22c55e]", label: "Ready" },
+  RUNNING: { cls: "badge-green", dot: "bg-[#22c55e] animate-pulse", label: "Running" },
+  BUILDING: { cls: "badge-yellow", dot: "bg-[#eab308] animate-pulse", label: "Building" },
+  FAILED: { cls: "badge-red", dot: "bg-[#ef4444]", label: "Failed" },
+  ERROR: { cls: "badge-red", dot: "bg-[#ef4444]", label: "Error" },
+  QUEUED: { cls: "badge-muted", dot: "bg-[#71717a]", label: "Queued" },
+  PENDING: { cls: "badge-muted", dot: "bg-[#71717a]", label: "Pending" },
+  ACTIVE: { cls: "badge-green", dot: "bg-[#22c55e]", label: "Active" },
+  INACTIVE: { cls: "badge-muted", dot: "bg-[#71717a]", label: "Inactive" },
+  OFFLINE: { cls: "badge-muted", dot: "bg-[#71717a]", label: "Offline" },
+  ONLINE: { cls: "badge-green", dot: "bg-[#22c55e]", label: "Online" },
+};
 
-  const style = types[type] || types.neutral;
-
+export default function StatusBadge({ status = "QUEUED", label }) {
+  const key = (status || "").toUpperCase();
+  const cfg = STATUS_MAP[key] || STATUS_MAP.QUEUED;
   return (
-    <div className="flex items-center gap-2 font-mono text-[9px] md:text-[10px] uppercase tracking-widest font-bold">
-      <span className={`w-2 h-2 rounded-full animate-pulse ring-4 ${style.dot}`}></span>
-      <span className={style.text}>{status}</span>
-    </div>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium shrink-0 ${cfg.cls}`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
+      {label || cfg.label}
+    </span>
   );
 }

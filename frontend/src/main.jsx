@@ -4,11 +4,14 @@ import App from './App.jsx'
 import './App.css'
 import './index.css'
 import { AuthProvider } from './context/AuthContext'
+import { SidebarProvider } from './context/SidebarContext'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
-      <App />
+      <SidebarProvider>
+        <App />
+      </SidebarProvider>
     </AuthProvider>
   </React.StrictMode>,
 )

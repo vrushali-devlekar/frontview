@@ -83,7 +83,7 @@ const analyzeLogsWithAI = async (logs, provider = 'gemini', question = '') => {
     const isFollowUp = Boolean(question && String(question).trim());
 
     const promptText = isFollowUp
-        ? `You are a senior DevOps engineer. Using the deployment logs below, answer the user's question clearly.
+        ? `You are a senior DevOps engineer helping a junior developer. Using the deployment logs below, answer the user's question clearly in VERY SIMPLE English.
 Write in concise Markdown with headings and bullet points. Include exact commands/config where helpful.
 
 User question:
@@ -91,7 +91,11 @@ User question:
 
 Deployment Logs:
 {logs}`
-        : `You are a senior DevOps engineer. Analyze this deployment log and: 1) identify the root cause, 2) provide a step-by-step fix, 3) flag any security issues.
+        : `You are a senior DevOps engineer helping a junior developer. Analyze this deployment log and: 
+1) Identify the root cause in VERY SIMPLE English.
+2) Provide a step-by-step fix using exact commands or code changes.
+3) Flag any security issues clearly.
+
 Provide the response in the following structured JSON format:
 {{
   "rootCause": "string",

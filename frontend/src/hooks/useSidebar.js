@@ -1,19 +1,9 @@
-import { useState } from "react";
+import { useSidebar as useSidebarContext } from "../context/SidebarContext";
 
+/**
+ * Re-exporting useSidebar from the context provider to maintain 
+ * compatibility with all existing page imports.
+ */
 export function useSidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebarCollapsed");
-    // Default to false (open) if not set. User can change it.
-    return saved !== null ? JSON.parse(saved) : false;
-  });
-
-  const toggleSidebar = () => {
-    setIsCollapsed((prev) => {
-      const newState = !prev;
-      localStorage.setItem("sidebarCollapsed", JSON.stringify(newState));
-      return newState;
-    });
-  };
-
-  return { isCollapsed, toggleSidebar };
+  return useSidebarContext();
 }

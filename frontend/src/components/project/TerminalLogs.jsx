@@ -160,10 +160,10 @@ export default function TerminalLogs({
 
   const getLogColor = (type) => {
     switch (type) {
-      case "error": return "text-[#E55B5B]";
-      case "warn": return "text-[#D4A84B]";
-      case "success": return "text-[#6EE7B7]";
-      default: return "text-[#c8c8c8]";
+      case "error": return "text-[#ef4444]";
+      case "warn": return "text-[#eab308]";
+      case "success": return "text-[#22c55e]";
+      default: return "text-[#a1a1aa]";
     }
   };
 
@@ -177,72 +177,72 @@ export default function TerminalLogs({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full min-h-0">
+    <div className="flex-1 flex flex-col h-full min-h-0 bg-[#09090b] rounded-xl overflow-hidden">
       {/* Terminal Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#1a1a1a] mb-3 shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#111113] border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-[#E55B5B]/60" />
-            <div className="w-3 h-3 rounded-full bg-[#D4A84B]/60" />
-            <div className="w-3 h-3 rounded-full bg-[#6EE7B7]/60" />
+            <div className="w-3 h-3 rounded-full bg-[#ef4444]" />
+            <div className="w-3 h-3 rounded-full bg-[#eab308]" />
+            <div className="w-3 h-3 rounded-full bg-[#22c55e]" />
           </div>
-          <span className="text-xs text-[#555]" style={{ fontFamily: "'Inter', sans-serif" }}>
-            Terminal — Build Logs
+          <span className="text-[13px] font-medium text-[#71717a]">
+            Build Logs
           </span>
         </div>
         <div className="flex items-center gap-3">
           {loadError && (
-            <span className="text-xs text-[#E55B5B] max-w-[200px] truncate">
+            <span className="text-[12px] text-[#ef4444] max-w-[200px] truncate">
               {loadError}
             </span>
           )}
           {isStreaming ? (
-            <span className="flex items-center gap-2 text-[#6EE7B7] text-xs font-medium px-3 py-1 rounded-full border border-[#6EE7B7]/20 bg-[#6EE7B7]/5">
-              <RefreshCw size={11} className="animate-spin" /> Live
+            <span className="flex items-center gap-1.5 text-[#3b82f6] text-[12px] font-medium">
+              <RefreshCw size={12} className="animate-spin" /> Live
             </span>
           ) : (
-            <span className="flex items-center gap-2 text-[#555] text-xs font-medium px-3 py-1 rounded-full border border-[#222] bg-[#111]">
-              <ShieldCheck size={11} /> Complete
+            <span className="flex items-center gap-1.5 text-[#71717a] text-[12px] font-medium">
+              <ShieldCheck size={12} /> Complete
             </span>
           )}
         </div>
       </div>
 
       {/* Log Lines */}
-      <div className="flex-1 overflow-y-auto pr-2 min-h-0 bg-[#080808] rounded-lg border border-[#1a1a1a] p-4" style={{ scrollbarWidth: 'thin' }}>
+      <div className="flex-1 overflow-y-auto px-2 py-4 min-h-0" style={{ scrollbarWidth: 'thin' }}>
         {logs.map((log, index) => (
           <div
             key={`${index}-${log.time}`}
-            className="flex gap-3 mb-1.5 py-1 px-2 rounded hover:bg-[#0f0f0f] transition-colors group font-mono"
+            className="flex gap-4 mb-1 py-0.5 px-2 rounded-md hover:bg-white/[0.02] transition-colors group font-mono"
           >
             {/* Line Number */}
-            <span className="text-[11px] text-[#333] min-w-[28px] text-right select-none tabular-nums">
+            <span className="text-[12px] text-[#3f3f46] min-w-[32px] text-right select-none tabular-nums">
               {index + 1}
             </span>
 
             {/* Timestamp */}
-            <span className="text-[12px] text-[#444] min-w-[70px] opacity-60 group-hover:opacity-100 transition-opacity tabular-nums">
+            <span className="text-[12px] text-[#71717a] min-w-[70px] tabular-nums">
               {log.time}
             </span>
             
             {/* Type badge */}
-            <span className={`text-[10px] min-w-[28px] font-bold tracking-wider ${getLogColor(log.type)} opacity-70`}>
+            <span className={`text-[12px] min-w-[32px] font-medium ${getLogColor(log.type)}`}>
               {getLogPrefix(log.type)}
             </span>
 
             {/* Message */}
-            <span className={`flex-1 text-[13px] leading-relaxed ${getLogColor(log.type)} ${log.type === 'error' ? 'font-semibold' : ''}`}>
+            <span className={`flex-1 text-[13px] leading-relaxed break-all ${getLogColor(log.type)} ${log.type === 'error' ? 'font-medium text-[#ef4444]' : 'text-[#d4d4d8]'}`}>
               {log.message}
             </span>
           </div>
         ))}
 
         {isStreaming && (
-          <div className="flex gap-3 px-2 py-1">
-            <span className="text-[11px] text-[#333] min-w-[28px] text-right">{logs.length + 1}</span>
-            <span className="text-[12px] text-[#444] min-w-[70px]">--:--:--</span>
-            <span className="text-[10px] min-w-[28px] text-[#6EE7B7]">...</span>
-            <span className="inline-block w-2 h-4 bg-[#6EE7B7] ai-cursor-blink rounded-sm"></span>
+          <div className="flex gap-4 px-2 py-1 items-center">
+            <span className="text-[12px] text-[#3f3f46] min-w-[32px] text-right">{logs.length + 1}</span>
+            <span className="text-[12px] text-[#71717a] min-w-[70px]">--:--:--</span>
+            <span className="text-[12px] min-w-[32px] text-[#3b82f6]">...</span>
+            <span className="inline-block w-2 h-3.5 bg-[#3b82f6] animate-pulse rounded-sm"></span>
           </div>
         )}
 
@@ -250,10 +250,10 @@ export default function TerminalLogs({
       </div>
 
       {/* Footer stats */}
-      <div className="pt-2 mt-2 border-t border-[#1a1a1a] flex justify-between items-center shrink-0">
-        <span className="text-[11px] text-[#444]">{logs.length} lines</span>
-        <button onClick={scrollToBottom} className="text-[11px] text-[#555] hover:text-white flex items-center gap-1 transition-colors">
-          <ArrowDown size={10} /> Scroll to bottom
+      <div className="py-2 px-4 bg-[#111113] border-t border-white/[0.06] flex justify-between items-center shrink-0">
+        <span className="text-[12px] text-[#71717a]">{logs.length} lines</span>
+        <button onClick={scrollToBottom} className="text-[12px] text-[#71717a] hover:text-white flex items-center gap-1.5 transition-colors">
+          <ArrowDown size={12} /> Scroll to bottom
         </button>
       </div>
     </div>

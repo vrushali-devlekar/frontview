@@ -192,3 +192,117 @@ exports.analyzeLogs = asyncHandler(async (req, res) => {
         data: analysisResult
     });
 });
+
+// @desc    Stream AI analysis of deployment logs (SSE)
+// @route   POST /api/deployments/:id/analyze/stream
+// @access  Private
+exports.analyzeLogsStream = async (req, res) => {
+    try {
+        const deployment = await Deployment.findOne({ _id: req.params.id, userId: req.user.id });
+
+        if (!deployment) {
+            return res.status(404).json({ message: 'Deployment not found' });
+        }
+
+        if (!deployment.logs || deployment.logs.length === 0) {
+            return res.status(400).json({ message: 'No logs found for this deployment' });
+        }
+
+        const question = req.body.question || '';
+        const logsText = deployment.logs.join('\n');
+
+        // SSE Headers
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+        });
+
+        // Prompt logic
+        const prompt = question 
+            ? `Follow-up question about these logs: ${logsText}\n\nQuestion: ${question}`
+            : `Analyze these deployment logs for root cause and fix: ${logsText}`;
+
+        // PROVIDER CHAIN
+        // Start with stable providers (Cohere, Groq)
+        
+        const providers = [
+            { id: 'cohere', key: process.env.COHERE_API_KEY },
+            { id: 'groq', key: process.env.GROQ_API_KEY }
+        ].filter(p => p.key);
+
+        let success = false;
+
+        for (const provider of providers) {
+            try {
+                if (provider.id === 'cohere') {
+                    res.write(`data: ${JSON.stringify({ text: "[🔄 ENGINE: VELORA_AI_ANALYZING]\n\n" })}\n\n`);
+                    const { analyzeLogsWithAI } = require('../services/logAnalysisService');
+                    const result = await analyzeLogsWithAI(deployment.logs, 'cohere', question);
+                    
+                    let text = '';
+                    if (typeof result === 'string') text = result;
+                    else if (result.markdown) text = result.markdown;
+                    else {
+                        text = `### 🔍 Root Cause Analysis\n${result.rootCause || 'No specific root cause identified.'}\n\n`;
+                        if (result.stepByStepFix && result.stepByStepFix.length > 0) {
+                            text += `### 🛠️ How to Fix (Step-by-Step)\n`;
+                            result.stepByStepFix.forEach((step, idx) => text += `${idx + 1}. ${step}\n`);
+                            text += '\n';
+                        }
+                        if (result.securityFlags && result.securityFlags.length > 0) {
+                            text += `### 🚨 Security Warnings\n`;
+                            result.securityFlags.forEach(flag => text += `- ⚠️ **${flag}**\n`);
+                            text += '\n';
+                        }
+                    }
+                    res.write(`data: ${JSON.stringify({ text })}\n\n`);
+                } else if (provider.id === 'groq') {
+                    res.write(`data: ${JSON.stringify({ text: "[🔄 ENGINE: VELORA_AI_ANALYZING]\n\n" })}\n\n`);
+                    const { analyzeLogsWithAI } = require('../services/logAnalysisService');
+                    const result = await analyzeLogsWithAI(deployment.logs, 'groq', question);
+                    
+                    let text = '';
+                    if (typeof result === 'string') text = result;
+                    else if (result.markdown) text = result.markdown;
+                    else {
+                        text = `### 🔍 Root Cause Analysis\n${result.rootCause || 'No specific root cause identified.'}\n\n`;
+                        if (result.stepByStepFix && result.stepByStepFix.length > 0) {
+                            text += `### 🛠️ How to Fix (Step-by-Step)\n`;
+                            result.stepByStepFix.forEach((step, idx) => text += `${idx + 1}. ${step}\n`);
+                            text += '\n';
+                        }
+                        if (result.securityFlags && result.securityFlags.length > 0) {
+                            text += `### 🚨 Security Warnings\n`;
+                            result.securityFlags.forEach(flag => text += `- ⚠️ **${flag}**\n`);
+                            text += '\n';
+                        }
+                    }
+                    res.write(`data: ${JSON.stringify({ text })}\n\n`);
+                }
+                
+                success = true;
+                break;
+            } catch (err) {
+                console.error(`AI Provider ${provider.id} failed:`, err.message);
+                res.write(`data: ${JSON.stringify({ text: `\n\n[⚠️ ${provider.id.toUpperCase()}_FAILED] Trying next...\n` })}\n\n`);
+            }
+        }
+
+        if (!success) {
+            res.write(`data: ${JSON.stringify({ text: "\n\n### ❌ ALL_AI_ENGINES_EXHAUSTED\nPlease add more API keys in .env or try again later." })}\n\n`);
+        }
+
+        res.write('data: [DONE]\n\n');
+        res.end();
+
+    } catch (error) {
+        console.error("AI Global Error:", error);
+        if (!res.headersSent) {
+            res.status(500).json({ message: 'Internal Server Error' });
+        } else {
+            res.write('data: [DONE]\n\n');
+            res.end();
+        }
+    }
+};

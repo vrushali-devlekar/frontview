@@ -1,160 +1,164 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
+import Dock from "../../components/layout/Dock";
 import TopNav from "../../components/layout/TopNav";
-import CyberButton from "../../components/ui/CyberButton";
-import InputField from "../../components/ui/InputField";
-import { Users, Mail, ShieldAlert, ShieldCheck, TerminalSquare } from "lucide-react";
+import PageWrapper from "../../components/layout/PageWrapper";
+import GlassButton from "../../components/ui/GlassButton";
+import { PageShell, PageHeader, Card, CardHeader, CardBody, TableHead, Badge, AlertBanner } from "../../components/layout/PageLayout";
+import { Users, Mail, ShieldAlert, ShieldCheck, TerminalSquare, UserPlus } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { motion } from "framer-motion";
 
 export default function Members() {
-  const { isCollapsed, toggleSidebar } = useSidebar();
+  const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
   const { user } = useAuth();
-  
+
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("DEVELOPER");
   const [message, setMessage] = useState("");
 
   const [members, setMembers] = useState([
-    { id: 1, name: user?.name || "SHERYIANS_SDE", email: user?.email || "sysadmin@valora.io", role: "OWNER", status: "ACTIVE" },
-    { id: 2, name: "ALEX_M", email: "alex.m@valora.io", role: "ADMIN", status: "ACTIVE" },
-    { id: 3, name: "SAM_K", email: "sam.k@valora.io", role: "DEVELOPER", status: "OFFLINE" },
-    { id: 4, name: "JORDAN_L", email: "jordan.l@valora.io", role: "DEVELOPER", status: "ACTIVE" }
+    { id: 1, name: user?.name || "System Admin", email: user?.email || "sysadmin@velora.io", role: "OWNER", status: "ACTIVE" },
+    { id: 2, name: "Alex M",    email: "alex.m@velora.io",   role: "ADMIN",     status: "ACTIVE" },
+    { id: 3, name: "Sam K",     email: "sam.k@velora.io",    role: "DEVELOPER", status: "OFFLINE" },
+    { id: 4, name: "Jordan L",  email: "jordan.l@velora.io", role: "DEVELOPER", status: "ACTIVE" },
   ]);
 
   const handleInvite = (e) => {
     e.preventDefault();
     if (!inviteEmail) return;
-    
-    // Mock Invite
-    setMessage(`INVITATION_SENT_TO: ${inviteEmail}`);
-    setMembers([...members, {
-        id: Date.now(),
-        name: "PENDING_INVITE",
-        email: inviteEmail,
-        role: inviteRole,
-        status: "PENDING"
-    }]);
+    setMessage(`Invitation sent to ${inviteEmail}`);
+    setMembers([...members, { id: Date.now(), name: "Pending Invite", email: inviteEmail, role: inviteRole, status: "PENDING" }]);
     setInviteEmail("");
-    
     setTimeout(() => setMessage(""), 3000);
   };
 
-  const getRoleIcon = (role) => {
+  const getRoleConfig = (role) => {
     switch (role) {
-        case 'OWNER': return <ShieldAlert size={14} className="text-[#FFCC00]" />;
-        case 'ADMIN': return <ShieldCheck size={14} className="text-[#00FFCC]" />;
-        default: return <TerminalSquare size={14} className="text-[#888]" />;
+      case "OWNER": return { icon: ShieldAlert,    color: "text-[#ef4444]", bg: "bg-[#ef4444]/10 border-[#ef4444]/20" };
+      case "ADMIN": return { icon: ShieldCheck,    color: "text-[#3b82f6]", bg: "bg-[#3b82f6]/10 border-[#3b82f6]/20" };
+      default:      return { icon: TerminalSquare, color: "text-[#71717a]", bg: "bg-white/[0.04] border-white/[0.06]" };
     }
   };
 
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case "ACTIVE":  return { dot: "bg-[#22c55e]", text: "text-[#22c55e]", bg: "bg-[#22c55e]/10", label: "Active" };
+      case "PENDING": return { dot: "bg-[#eab308]", text: "text-[#eab308]", bg: "bg-[#eab308]/10", label: "Pending" };
+      default:        return { dot: "bg-[#3f3f46]", text: "text-[#71717a]", bg: "bg-white/[0.04]",  label: "Offline" };
+    }
+  };
+
+  // sidebarAttr removed in favor of PageWrapper inline styles
+
   return (
-    <div className="flex h-screen overflow-hidden bg-[#050505] text-white font-sans select-none">
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
-      
-      <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? "ml-0 md:ml-[72px]" : "ml-0 md:ml-[260px]"}`}>
+    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
+      <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
+      <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
+        <PageShell>
+          <PageHeader title="Members" subtitle="Manage organization access and developer roles" />
 
-        <div className="flex-1 overflow-y-auto p-6 md:p-12" style={{ scrollbarWidth: 'none' }}>
-            
-            <div className="max-w-5xl mx-auto flex flex-col gap-8">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-pixel text-[#FFCC00] uppercase tracking-widest mb-2">ENTERPRISE_ROSTER</h1>
-                    <p className="text-[10px] text-[#888] font-mono tracking-widest uppercase">MANAGE ORGANIZATION ACCESS AND DEVELOPER ROLES</p>
-                </div>
-
-                {/* Invite Section */}
-                <div className="bg-[#0a0a0a] border-2 border-[#222] p-6">
-                    <div className="flex items-center gap-3 mb-6">
-                        <Mail size={18} className="text-[#00FFCC]" />
-                        <h2 className="font-pixel text-[12px] text-white tracking-widest">INVITE_NEW_OPERATOR</h2>
+          <div className="space-y-5">
+            {/* ── Invite card ── */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+              <Card>
+                <CardHeader icon={UserPlus} title="Invite New Member" />
+                <CardBody>
+                  {message && <AlertBanner type="success">{message}</AlertBanner>}
+                  <form onSubmit={handleInvite} className="flex flex-col md:flex-row gap-4 items-end">
+                    <div className="flex-1">
+                      <label className="block text-[11px] font-semibold text-[#52525b] uppercase tracking-[0.1em] mb-2">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="developer@example.com"
+                        className="w-full h-11 px-4 bg-[#09090b] border border-white/[0.08] rounded-xl text-[13px] text-white placeholder:text-[#3f3f46] focus:outline-none focus:border-white/[0.18] transition-colors"
+                      />
                     </div>
-
-                    <form onSubmit={handleInvite} className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-1 w-full">
-                            <InputField 
-                                label="OPERATOR_EMAIL"
-                                type="email"
-                                value={inviteEmail}
-                                onChange={(e) => setInviteEmail(e.target.value)}
-                                placeholder="developer@example.com"
-                            />
-                        </div>
-                        <div className="w-full md:w-48">
-                            <label className="block text-[10px] text-[#888] font-mono tracking-widest mb-2">ASSIGN_ROLE</label>
-                            <select 
-                                value={inviteRole}
-                                onChange={(e) => setInviteRole(e.target.value)}
-                                className="w-full bg-[#111] border border-[#333] text-white font-mono text-[11px] p-3 focus:outline-none focus:border-[#FFCC00] uppercase"
-                            >
-                                <option value="DEVELOPER">DEVELOPER</option>
-                                <option value="ADMIN">ADMIN</option>
-                            </select>
-                        </div>
-                        <CyberButton type="submit" variant="primary" className="w-full md:w-auto mt-4 md:mt-0 px-6">
-                            SEND_INVITE
-                        </CyberButton>
-                    </form>
-
-                    {message && (
-                        <div className="mt-4 p-3 bg-[#00FFCC]/10 border border-[#00FFCC] text-[#00FFCC] font-mono text-[10px] tracking-widest uppercase">
-                            {message}
-                        </div>
-                    )}
-                </div>
-
-                {/* Team Roster Table */}
-                <div className="bg-[#0a0a0a] border-2 border-[#222]">
-                    <div className="flex items-center gap-3 p-6 border-b border-[#222]">
-                        <Users size={18} className="text-[#FFCC00]" />
-                        <h2 className="font-pixel text-[12px] text-white tracking-widest">ACTIVE_PERSONNEL ({members.length})</h2>
+                    <div className="w-full md:w-44">
+                      <label className="block text-[11px] font-semibold text-[#52525b] uppercase tracking-[0.1em] mb-2">
+                        Role
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={inviteRole}
+                          onChange={(e) => setInviteRole(e.target.value)}
+                          className="w-full h-11 px-4 pr-8 bg-[#09090b] border border-white/[0.08] rounded-xl text-[13px] text-white appearance-none focus:outline-none focus:border-white/[0.18] transition-colors"
+                        >
+                          <option value="DEVELOPER">Developer</option>
+                          <option value="ADMIN">Admin</option>
+                        </select>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#52525b] text-[9px] pointer-events-none">▼</span>
+                      </div>
                     </div>
+                    <GlassButton type="submit" variant="primary" className="h-10 px-6 shrink-0">
+                      Send Invite
+                    </GlassButton>
+                  </form>
+                </CardBody>
+              </Card>
+            </motion.div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-[#222] bg-[#111]">
-                                    <th className="p-4 font-mono text-[10px] text-[#888] tracking-widest uppercase">OPERATOR_ID</th>
-                                    <th className="p-4 font-mono text-[10px] text-[#888] tracking-widest uppercase">EMAIL_ADDRESS</th>
-                                    <th className="p-4 font-mono text-[10px] text-[#888] tracking-widest uppercase">ASSIGNED_ROLE</th>
-                                    <th className="p-4 font-mono text-[10px] text-[#888] tracking-widest uppercase">STATUS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {members.map((member, index) => (
-                                    <tr key={member.id} className="border-b border-[#222]/50 hover:bg-[#111] transition-colors">
-                                        <td className="p-4 font-mono text-[11px] text-white flex items-center gap-3">
-                                            <div className="w-6 h-6 bg-[#222] border border-[#444] flex items-center justify-center text-[9px] text-[#888]">
-                                                {index + 1}
-                                            </div>
-                                            {member.name}
-                                        </td>
-                                        <td className="p-4 font-mono text-[10px] text-[#aaa]">{member.email}</td>
-                                        <td className="p-4 font-mono text-[10px] text-white">
-                                            <div className="flex items-center gap-2 bg-[#050505] border border-[#333] px-2 py-1 w-max">
-                                                {getRoleIcon(member.role)} {member.role}
-                                            </div>
-                                        </td>
-                                        <td className="p-4 font-mono text-[10px]">
-                                            <span className={`px-2 py-1 border flex w-max items-center gap-2 ${
-                                                member.status === 'ACTIVE' ? 'text-[#00FFCC] border-[#00FFCC]/30 bg-[#00FFCC]/10' :
-                                                member.status === 'PENDING' ? 'text-[#FFCC00] border-[#FFCC00]/30 bg-[#FFCC00]/10' :
-                                                'text-[#888] border-[#888]/30 bg-[#888]/10'
-                                            }`}>
-                                                {member.status === 'ACTIVE' && <div className="w-1.5 h-1.5 rounded-full bg-[#00FFCC]" />}
-                                                {member.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+            {/* ── Members table ── */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
+              <Card noPad>
+                <CardHeader icon={Users} title="Team Members">
+                  <Badge>{members.length} users</Badge>
+                </CardHeader>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <TableHead cols={["Member", "Email", "Role", "Status"]} />
+                    <tbody className="divide-y divide-white/[0.04]">
+                      {members.map((member) => {
+                        const roleConf = getRoleConfig(member.role);
+                        const statusConf = getStatusConfig(member.status);
+                        const RoleIcon = roleConf.icon;
+                        return (
+                          <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="px-7 py-5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-[12px] font-bold text-white shrink-0">
+                                  {member.name.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="text-[13px] font-semibold text-white leading-tight">{member.name}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-7 py-5">
+                              <div className="flex items-center gap-1.5 text-[13px] text-[#71717a]">
+                                <Mail size={12} className="text-[#3f3f46] shrink-0" />
+                                {member.email}
+                              </div>
+                            </td>
+                            <td className="px-7 py-5">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${roleConf.bg} ${roleConf.color}`}>
+                                <RoleIcon size={11} /> {member.role}
+                              </span>
+                            </td>
+                            <td className="px-7 py-5">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium ${statusConf.bg} ${statusConf.text}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusConf.dot}`} />
+                                {statusConf.label}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-
-            </div>
-        </div>
-      </div>
+              </Card>
+            </motion.div>
+          </div>
+        </PageShell>
+      </PageWrapper>
     </div>
   );
 }

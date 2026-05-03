@@ -11,6 +11,7 @@ const projectRoutes = require('./routes/projectRoutes');
 const { protect } = require('./middlewares/authMiddleware');
 const deploymentRoutes = require('./routes/deploymentRoutes');
 const envRoutes = require('./routes/envRoutes');
+const integrationRoutes = require('./routes/integrationRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 
 // Express app initialize karna
@@ -72,6 +73,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/deployments', deploymentRoutes);
 app.use('/api/projects', envRoutes);
+app.use('/api/projects/:projectId/integrations', integrationRoutes);
+app.use('/api/ai', aiRoutes);
 
 // --- BASIC ROUTE ---
 app.get('/', (req, res) => {

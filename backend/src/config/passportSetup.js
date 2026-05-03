@@ -4,7 +4,6 @@ const LocalStrategy = require('passport-local').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
-require('dotenv').config();
 
 // User ki ID ko session mein pack karna
 passport.serializeUser((user, done) => {
@@ -21,9 +20,9 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
-// ==========================================
+
 // 1. LOCAL STRATEGY (Email & Password)
-// ==========================================
+
 passport.use(new LocalStrategy({ usernameField: 'email' }, 
     async (email, password, done) => {
         try {
@@ -77,7 +76,7 @@ function resolveGithubAvatar(profile) {
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: "http://localhost:5000/api/auth/github/callback"
+    callbackURL: "http://localhost:4000/api/auth/github/callback"
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         const email = resolveGithubEmail(profile);
@@ -122,7 +121,7 @@ passport.use(new GitHubStrategy({
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:5000/api/auth/google/callback"
+    callbackURL: "http://localhost:4000/api/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         let user = await User.findOne({ email: profile.emails[0].value });
