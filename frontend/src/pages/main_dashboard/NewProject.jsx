@@ -8,15 +8,15 @@ import TopNav from "../../components/layout/TopNav";
 import InputField from "../../components/ui/InputField";
 import GlassButton from "../../components/ui/GlassButton";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Rocket, 
-  FolderGit2, 
-  ChevronDown, 
-  ChevronUp, 
-  GitBranch, 
-  Search, 
-  Settings2, 
-  Globe, 
+import {
+  Rocket,
+  FolderGit2,
+  ChevronDown,
+  ChevronUp,
+  GitBranch,
+  Search,
+  Settings2,
+  Globe,
   ArrowRight,
   CheckCircle2,
   Lock,
@@ -24,10 +24,13 @@ import {
   Trash2,
   Plus,
   Zap,
-  AlertCircle
+  AlertCircle,
+  Link2
 } from "lucide-react";
 import { addEnvVar, createProject, getGithubRepos } from "../../api/api";
 import { parseGithubRepoInput } from "../../utils/githubRepo";
+import { useAuth } from "../../context/AuthContext";
+import { detectFrameworkFromFiles } from "../../utils/frameworkDetector";
 // Removed react-hot-toast import as it's missing in package.json
 
 const GitHubIcon = ({ size = 14, className = "" }) => (
@@ -46,11 +49,12 @@ const Frameworks = [
 
 export default function NewProjectPage() {
   const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   // Stepper State: 1 = Import, 2 = Configure
   const [step, setStep] = useState(1);
-  
+
   // Form State
   const [name, setName] = useState("");
   const [repoInput, setRepoInput] = useState("");
@@ -69,6 +73,64 @@ export default function NewProjectPage() {
   const [repoSearch, setRepoSearch] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showFrameworkList, setShowFrameworkList] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState(null);
+  const [isDragActive, setIsDragActive] = useState(false);
+
+  const handleFileRead = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // Base64 encoding for binary safety
+        const base64 = reader.result.split(',')[1];
+        resolve({
+          path: file.webkitRelativePath || file.name,
+          content: base64,
+          encoding: 'base64'
+        });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const processFiles = async (files) => {
+    setLoading(true);
+    try {
+      const processed = await Promise.all(Array.from(files).map(handleFileRead));
+      setUploadedFiles(processed);
+
+      // Auto-Detect Framework
+      const detected = detectFrameworkFromFiles(processed);
+      if (detected) {
+        setFramework(detected.id);
+        setInstallCommand(detected.install);
+        setStartCommand(detected.start);
+      }
+
+      // Set project name from root folder
+      if (files[0]?.webkitRelativePath) {
+        const rootFolder = files[0].webkitRelativePath.split('/')[0];
+        setName(rootFolder.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase());
+      }
+      setStep(2);
+    } catch (err) {
+      setError("Failed to read project files. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onFolderSelect = (e) => {
+    if (e.target.files.length > 0) processFiles(e.target.files);
+  };
+
+  const onDrop = (e) => {
+    e.preventDefault();
+    setIsDragActive(false);
+    const items = e.dataTransfer.items;
+    // Note: Recursive directory drop is complex with standard DataTransfer
+    // For now we handle standard file selection via the input
+  };
 
   useEffect(() => {
     fetchRepos();
@@ -108,7 +170,9 @@ export default function NewProjectPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !repoInput || !repoName) {
+
+    // Validate based on type
+    if (!uploadedFiles && (!name || !repoInput || !repoName)) {
       setError("Project configuration is incomplete. Please select a repository.");
       return;
     }
@@ -116,24 +180,46 @@ export default function NewProjectPage() {
     setLoading(true);
     setError("");
     try {
-      const { data } = await createProject({
-        name: name.trim(),
-        repoUrl: repoInput.trim(),
-        repoName: repoName.trim(),
-        branch: branch.trim() || "main",
-        installCommand: installCommand.trim(),
-        startCommand: startCommand.trim(),
-        framework: framework
-      });
-      const id = data?.data?._id;
-      if (id) {
+      let result;
+
+      if (uploadedFiles) {
+        // Handle Folder Upload
+        const { createProjectFromFolder } = await import("../../api/api");
+        result = await createProjectFromFolder({
+          name: name.trim(),
+          files: uploadedFiles,
+          framework: framework,
+          installCommand: installCommand.trim(),
+          startCommand: startCommand.trim()
+        });
+      } else {
+        // Handle GitHub Import
+        const { createProject } = await import("../../api/api");
+        result = await createProject({
+          name: name.trim(),
+          repoUrl: repoInput.trim(),
+          repoName: repoName.trim(),
+          branch: branch.trim() || "main",
+          installCommand: installCommand.trim(),
+          startCommand: startCommand.trim(),
+          framework: framework
+        });
+      }
+
+      const id = result.data?.deploymentId; // createProjectFromFolder returns deploymentId directly
+      const projectId = result.data?.data?._id;
+
+      if (projectId) {
         const pairs = envVars
           .map((p) => ({ key: p.key.trim(), value: p.value }))
           .filter((p) => p.key && p.value);
+
         await Promise.all(
-          pairs.map((p) => addEnvVar(id, p.key, p.value).catch(() => null))
+          pairs.map((p) => addEnvVar(projectId, p.key, p.value).catch(() => null))
         );
-        navigate(`/deployment-progress/${id}`);
+
+        // Always navigate to Project ID, as the progress page handles finding the deployment
+        navigate(`/deployment-progress/${projectId}`);
       } else {
         setError("Failed to create project. Please try again.");
       }
@@ -147,69 +233,100 @@ export default function NewProjectPage() {
   const selectedFramework = Frameworks.find(f => f.id === framework) || Frameworks[0];
 
   return (
-    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
+    <div className="flex h-screen bg-[var(--bg-main)] text-white font-sans overflow-hidden">
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
-        <div className="flex-1 p-6 lg:p-12 overflow-y-auto scrollbar-hide">
-          
-          <div className="max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-12">
+        <div className="flex-1 p-6 lg:p-10 overflow-y-auto scrollbar-hide">
+
+          <div className="max-w-5xl mx-auto">
+            {/* Header Area */}
+            <div className="flex items-center justify-between mb-10 pb-8 border-b border-white/[0.04]">
               <div>
-                <h1 className="text-3xl font-black tracking-tight mb-2">Create New Project</h1>
-                <p className="text-[14px] text-[#71717a]">
-                  {step === 1 ? "Connect your repository to the Velora Engine" : "Configure your project deployment settings"}
+                <h1 className="text-[22px] font-black tracking-tighter text-[#e4e4e7] mb-2 uppercase leading-none">Initialize Authority Node</h1>
+                <p className="text-[9px] text-[#52525b] font-black uppercase tracking-[0.3em] mt-2">
+                  {step === 1 ? "Uplink repository to the Velora infrastructure registry" : "Configure authority parameters and execution sequence"}
                 </p>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span key="step-dot-1" className={`w-2 h-2 rounded-full ${step >= 1 ? "bg-[#22c55e]" : "bg-white/10"}`} />
-                  <span key="step-dot-2" className={`w-2 h-2 rounded-full ${step >= 2 ? "bg-[#22c55e]" : "bg-white/10"}`} />
+              <div className="flex items-center gap-8">
+                <div className="flex items-center gap-4">
+                  <div className={`w-3 h-3 rounded-full transition-all shadow-elevation-1 ${step >= 1 ? "bg-[#22c55e]" : "bg-[#1e1e20] border border-white/5"}`} />
+                  <div className="w-12 h-px bg-white/[0.04]" />
+                  <div className={`w-3 h-3 rounded-full transition-all shadow-elevation-1 ${step >= 2 ? "bg-[#22c55e]" : "bg-[#1e1e20] border border-white/5"}`} />
                 </div>
               </div>
             </div>
 
             <AnimatePresence mode="wait">
               {step === 1 ? (
-                <motion.div 
+                <motion.div
                   key="step1"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
-                  className="space-y-8"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="space-y-10"
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                    {/* Repository List */}
-                    <div className="lg:col-span-3 bg-[#111113] border border-white/[0.06] rounded-[32px] overflow-hidden flex flex-col h-[520px] shadow-2xl relative">
-                      <div className="p-6 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.01]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                            <GitHubIcon size={18} />
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+                    {/* Repository List (Main Account Import) */}
+                    <div className="lg:col-span-3 bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden flex flex-col h-[580px] shadow-elevation-1 transition-all">
+                      <div className="px-8 py-6 border-b border-white/[0.04] flex items-center justify-between bg-[#161618]">
+                        <div className="flex items-center gap-6">
+                          <div className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center shadow-elevation-1 text-[#e4e4e7]">
+                            <GitHubIcon size={20} />
                           </div>
-                          <span className="font-bold text-[15px]">GitHub Repositories</span>
+                          <div>
+                            <span className="font-black text-[13px] block uppercase tracking-tighter text-[#e4e4e7]">Uplink Registry</span>
+                            <span className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.25em] mt-1 block">Connected authority instance</span>
+                          </div>
                         </div>
-                        <div className="relative">
-                          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525b]" />
-                          <input 
-                            type="text"
-                            placeholder="Search..."
-                            value={repoSearch}
-                            onChange={(e) => setRepoSearch(e.target.value)}
-                            className="bg-[#050505] border border-white/[0.08] rounded-full h-9 pl-9 pr-4 text-xs focus:outline-none focus:border-white/20 transition-all w-48"
-                          />
-                        </div>
+                        {user?.githubConnected && (
+                          <div className="relative">
+                            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1e1e20]" />
+                            <input
+                              type="text"
+                              placeholder="FILTER_ASSETS..."
+                              value={repoSearch}
+                              onChange={(e) => setRepoSearch(e.target.value)}
+                              className="bg-[#0d0d0f] border border-white/[0.04] rounded-xl h-12 pl-12 pr-5 text-[10px] font-black uppercase tracking-[0.2em] text-white focus:outline-none focus:border-white/10 transition-all w-64 shadow-inner placeholder:text-[#2d2d33]"
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide">
-                        {reposLoading ? (
-                          [1,2,3,4,5,6].map(i => (
-                            <div key={`skeleton-${i}`} className="flex items-center justify-between p-4 rounded-2xl border border-white/[0.02] bg-white/[0.01] animate-pulse">
-                              <div className="flex items-center gap-3">
-                                <div className="w-4 h-4 bg-white/5 rounded" />
-                                <div className="w-32 h-3 bg-white/5 rounded" />
+
+                      <div className="flex-1 overflow-y-auto p-10 space-y-4 scrollbar-hide">
+                        {!user?.githubConnected ? (
+                          <div className="h-full flex flex-col items-center justify-center text-center p-12">
+                            <div className="w-28 h-28 rounded-[48px] bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center mb-10 shadow-elevation-2">
+                              <GitHubIcon size={56} className="text-[#1e1e20]" />
+                            </div>
+                            <h4 className="text-[20px] font-black mb-4 uppercase tracking-tighter text-white">Authority Required</h4>
+                            <p className="text-[11px] text-[#52525b] mb-12 max-w-[320px] mx-auto font-black uppercase tracking-[0.3em] leading-relaxed">
+                              Uplink your GitHub credentials to synchronize remote repository assets with the Velora registry.
+                            </p>
+                            <div className="flex flex-col items-center gap-8">
+                              <a
+                                href={`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/auth/github`}
+                                className="h-16 px-12 rounded-[32px] bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-5 hover:bg-white/90 transition-all shadow-elevation-2"
+                              >
+                                <GitHubIcon size={20} /> Authorize_Registry
+                              </a>
+                              <button
+                                onClick={() => document.getElementById('folder-upload').click()}
+                                className="text-[9px] text-[#3f3f46] hover:text-white transition-colors font-black uppercase tracking-[0.4em] border-b border-white/5 pb-2"
+                              >
+                                Deploy_Local_Archive
+                              </button>
+                            </div>
+                          </div>
+                        ) : reposLoading ? (
+                          [1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={`skeleton-${i}`} className="flex items-center justify-between p-6 rounded-3xl border border-white/[0.02] bg-[#0d0d0f]/20 animate-pulse">
+                              <div className="flex items-center gap-6">
+                                <div className="w-6 h-6 bg-white/5 rounded-lg" />
+                                <div className="w-48 h-4 bg-white/5 rounded-md" />
                               </div>
-                              <div className="w-12 h-3 bg-white/5 rounded" />
+                              <div className="w-20 h-4 bg-white/5 rounded-md" />
                             </div>
                           ))
                         ) : repos.length > 0 ? (
@@ -217,131 +334,167 @@ export default function NewProjectPage() {
                             <button
                               key={repo._id || repo.id || `repo-${idx}`}
                               onClick={() => handleImport(repo)}
-                              className="w-full flex items-center justify-between p-4 rounded-2xl border border-white/[0.03] hover:border-white/[0.1] hover:bg-white/[0.03] transition-all group"
+                              className="w-full flex items-center justify-between p-6 rounded-3xl border border-white/[0.03] hover:border-white/10 bg-[#0d0d0f]/20 hover:bg-[#0d0d0f]/50 transition-all group shadow-elevation-1"
                             >
-                              <div className="flex items-center gap-3">
-                                {repo.isPrivate ? <Lock size={14} className="text-[#52525b]" /> : <Globe size={14} className="text-[#52525b]" />}
-                                <span className="text-[13.5px] font-semibold text-white/70 group-hover:text-white">{repo.name}</span>
+                              <div className="flex items-center gap-6">
+                                <div className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#1e1e20] group-hover:text-white transition-all shadow-inner">
+                                  {repo.isPrivate ? <Lock size={16} /> : <Globe size={16} />}
+                                </div>
+                                <div className="text-left">
+                                  <span className="text-[13px] font-black text-[#e4e4e7] uppercase tracking-tighter group-hover:text-[#22c55e] transition-colors leading-none block">{repo.name}</span>
+                                  <span className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.2em] mt-1.5 block">ASSET_NOMINAL</span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-3">
-                                <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-widest">{repo.defaultBranch}</span>
-                                <div className="w-7 h-7 rounded-lg bg-white/0 group-hover:bg-white/5 flex items-center justify-center transition-all">
-                                  <ArrowRight size={14} className="text-[#3f3f46] group-hover:text-white" />
+                              <div className="flex items-center gap-6">
+                                <span className="text-[10px] text-[#3f3f46] font-mono font-black uppercase tracking-widest">{repo.defaultBranch}</span>
+                                <div className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/[0.04] group-hover:text-white flex items-center justify-center transition-all shadow-elevation-1">
+                                  <ArrowRight size={18} className="text-[#1e1e20] group-hover:text-white group-hover:translate-x-1 transition-all" />
                                 </div>
                               </div>
                             </button>
                           ))
                         ) : (
-                          <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
-                            <GitHubIcon size={48} className="mb-4" />
-                            <p className="text-[13px] font-medium max-w-[200px]">No projects found. Try checking your GitHub permissions.</p>
+                          <div className="h-full flex flex-col items-center justify-center text-center p-12 opacity-20">
+                            <GitHubIcon size={64} className="mb-8" />
+                            <p className="text-[11px] font-black uppercase tracking-[0.4em] max-w-[240px]">No active assets detected in registry.</p>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Custom URL Import */}
-                    <div className="lg:col-span-2">
-                      <div className="bg-[#111113] border border-white/[0.06] rounded-[32px] p-8 shadow-2xl relative overflow-hidden h-full flex flex-col">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#22c55e]/[0.02] rounded-full -mr-16 -mt-16 blur-3xl" />
-                        
-                        <div className="mb-auto">
-                          <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
-                            <Plus size={18} className="text-[#22c55e]" />
-                            Import External
-                          </h3>
-                          <p className="text-[13px] text-[#71717a] mb-8 leading-relaxed">Paste a Git repository URL to deploy from any public provider like Bitbucket or GitLab.</p>
-                          
-                          <div className="space-y-5">
-                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.2em] ml-1">Repository URL</label>
-                              <div className="relative">
-                                <FolderGit2 size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#52525b]" />
-                                <input 
-                                  placeholder="https://github.com/user/repo"
-                                  value={repoInput}
-                                  onChange={(e) => setRepoInput(e.target.value)}
-                                  className="w-full h-12 bg-[#050505] border border-white/[0.08] rounded-2xl pl-12 pr-4 text-sm focus:outline-none focus:border-[#22c55e]/40 transition-all font-mono"
-                                />
-                              </div>
-                            </div>
+                    {/* Right Column: URL Import & Folder Upload */}
+                    <div className="lg:col-span-2 flex flex-col gap-10">
+
+                      {/* URL Import Card */}
+                      <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] p-8 shadow-elevation-1 relative overflow-hidden flex flex-col group transition-all hover:border-white/10">
+                        <div className="mb-6">
+                          <div className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center mb-5 text-[#3f3f46] group-hover:text-white transition-colors shadow-elevation-1">
+                            <Link2 size={18} />
                           </div>
+                          <h3 className="text-[15px] font-black mb-1 uppercase tracking-tighter text-[#e4e4e7]">Manual Uplink</h3>
+                          <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.3em] leading-relaxed">Import remote repository assets via direct encrypted uplink.</p>
                         </div>
 
-                        <div className="mt-8">
-                          <GlassButton 
-                            variant="primary" 
-                            className="w-full h-12 rounded-[18px]" 
+                        <div className="space-y-8">
+                          <div className="relative">
+                            <Link2 size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#1e1e20]" />
+                            <input
+                              placeholder="HTTPS://GITHUB.COM/OPERATOR/NODE"
+                              value={repoInput}
+                              onChange={(e) => setRepoInput(e.target.value)}
+                              className="w-full h-14 bg-[#0d0d0f] border border-white/[0.04] rounded-2xl pl-16 pr-6 text-[12px] font-black uppercase tracking-tight text-white focus:outline-none focus:border-white/10 transition-all font-mono placeholder:text-[#2d2d33] shadow-inner"
+                            />
+                          </div>
+                          <GlassButton
+                            variant="primary"
+                            className="w-full h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.25em] shadow-elevation-2"
                             onClick={handleCustomImport}
                             disabled={!repoInput}
                           >
-                            Continue Deployment <ArrowRight size={16} className="ml-2" />
+                            Initialize_Uplink
                           </GlassButton>
                         </div>
+                      </div>
+
+                      {/* Folder Upload Card */}
+                      <div
+                        className={`bg-[#1e1e20] border ${isDragActive ? 'border-[#22c55e]/20 bg-[#22c55e]/[0.01]' : 'border-white/[0.04]'} rounded-[32px] p-8 shadow-elevation-1 relative overflow-hidden flex-1 group transition-all hover:border-[#22c55e]/10 cursor-pointer`}
+                        onDragOver={(e) => { e.preventDefault(); setIsDragActive(true); }}
+                        onDragLeave={() => setIsDragActive(false)}
+                        onDrop={onDrop}
+                        onClick={() => document.getElementById('folder-upload').click()}
+                      >
+                        <input
+                          type="file"
+                          id="folder-upload"
+                          webkitdirectory=""
+                          directory=""
+                          className="hidden"
+                          onChange={onFolderSelect}
+                        />
+
+                        <div className="h-full flex flex-col items-center justify-center text-center relative z-10">
+                          <div className="w-12 h-12 rounded-[20px] bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center mb-5 group-hover:bg-[#22c55e]/5 group-hover:border-[#22c55e]/10 transition-all shadow-elevation-1 text-[#3f3f46]">
+                            <Rocket size={20} />
+                          </div>
+                          <h3 className="text-[14px] font-black mb-1 uppercase tracking-tighter text-[#e4e4e7]">Direct Archive</h3>
+                          <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.3em] max-w-[200px] leading-relaxed mb-6">
+                            {uploadedFiles ? `SENSING: ${uploadedFiles.length} ASSETS` : "Deploy local project directory for instant authority synchronization."}
+                          </p>
+                          <div className="px-8 py-3 rounded-2xl bg-[#22c55e]/5 border border-[#22c55e]/10 text-[9px] font-black uppercase tracking-[0.3em] text-[#22c55e] shadow-elevation-1 group-hover:bg-[#22c55e] group-hover:text-black transition-all">
+                            {loading ? "SCANNING_ASSETS..." : "SELECT_DIRECTORY"}
+                          </div>
+                        </div>
+
+                        {/* Drop Overlay */}
+                        <div className="absolute inset-4 border border-dashed border-white/[0.02] rounded-[32px] pointer-events-none group-hover:border-[#22c55e]/10 transition-colors" />
                       </div>
                     </div>
                   </div>
                 </motion.div>
               ) : (
-                <motion.div 
+                <motion.div
                   key="step2"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="max-w-3xl mx-auto pb-20"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="max-w-4xl mx-auto pb-32"
                 >
-                  <div className="space-y-6">
-                    <div className="bg-[#111113] border border-white/[0.06] rounded-[32px] p-10 shadow-2xl">
+                  <div className="space-y-10">
+                    <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[40px] p-8 shadow-elevation-1">
                       <div className="flex items-center justify-between mb-10">
-                        <div className="flex items-center gap-5">
-                          <div className="w-12 h-12 rounded-2xl bg-[#22c55e]/10 border border-[#22c55e]/20 flex items-center justify-center text-[#22c55e]">
-                            <Rocket size={22} />
+                        <div className="flex items-center gap-6">
+                          <div className="w-14 h-14 rounded-2xl bg-[#0d0d0f] border border-white/[0.08] flex items-center justify-center text-[#22c55e] shadow-elevation-1">
+                            <Rocket size={24} />
                           </div>
                           <div>
-                            <h3 className="font-bold text-lg text-white leading-tight">{name || "Configuring Project"}</h3>
+                            <h3 className="font-black text-[20px] text-[#e4e4e7] leading-tight uppercase tracking-tighter">{name || "NODE_CONFIGURATION"}</h3>
                             <div className="flex items-center gap-2 mt-1">
-                              <GitBranch size={12} className="text-[#52525b]" />
-                              <span className="text-[11px] text-[#52525b] font-mono">{branch}</span>
+                              <GitBranch size={12} className="text-[#3f3f46]" />
+                              <span className="text-[9px] text-[#3f3f46] font-mono font-black uppercase tracking-[0.3em]">{branch}</span>
                             </div>
                           </div>
                         </div>
-                        <button onClick={() => setStep(1)} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[11px] font-black uppercase tracking-widest text-[#71717a] hover:text-white transition-all">Change Repo</button>
+                        <button onClick={() => setStep(1)} className="px-6 py-2 rounded-xl bg-[#0d0d0f] border border-white/[0.04] text-[9px] font-black uppercase tracking-[0.3em] text-[#3f3f46] hover:text-white transition-all shadow-elevation-1">ABORT_SEQUENCE</button>
                       </div>
 
                       <div className="space-y-10">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.2em] ml-1">Project Name</label>
-                            <input 
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                          <div className="space-y-4">
+                            <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] ml-1">Asset Identity</label>
+                            <input
                               value={name}
                               onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s/g, '-'))}
-                              placeholder="project-name"
-                              className="w-full h-12 bg-[#050505] border border-white/[0.08] rounded-2xl px-5 text-sm focus:outline-none focus:border-[#22c55e]/40 transition-all font-semibold"
+                              placeholder="project-identifier"
+                              className="w-full h-12 bg-[#0d0d0f] border border-white/[0.04] rounded-xl px-6 text-[12px] font-black uppercase tracking-tight text-[#e4e4e7] focus:outline-none focus:border-white/10 transition-all shadow-inner placeholder:text-[#2d2d33]"
                             />
                           </div>
 
-                          <div className="space-y-2 relative">
-                            <label className="text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.2em] ml-1">Framework Preset</label>
-                            <button 
+                          <div className="space-y-4 relative">
+                            <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] ml-1">Framework Preset</label>
+                            <button
                               onClick={() => setShowFrameworkList(!showFrameworkList)}
-                              className="w-full h-12 bg-[#050505] border border-white/[0.08] rounded-2xl px-5 flex items-center justify-between group hover:border-white/20 transition-all"
+                              className="w-full h-12 bg-[#0d0d0f] border border-white/[0.04] rounded-xl px-6 flex items-center justify-between group hover:border-white/10 transition-all shadow-inner"
                             >
-                              <div className="flex items-center gap-3">
-                                <selectedFramework.icon size={16} className="text-[#a1a1aa]" />
-                                <span className="text-sm font-semibold">{selectedFramework.name}</span>
+                              <div className="flex items-center gap-4">
+                                <selectedFramework.icon size={16} className="text-[#3f3f46]" />
+                                <span className="text-[12px] font-black uppercase tracking-widest text-[#e4e4e7]">{selectedFramework.name}</span>
+                                {uploadedFiles && (
+                                  <span className="px-2.5 py-0.5 rounded-lg bg-[#22c55e]/5 border border-[#22c55e]/10 text-[#22c55e] text-[7px] font-black uppercase tracking-[0.3em] ml-3 animate-pulse shadow-elevation-1">DETECTED</span>
+                                )}
                               </div>
-                              <ChevronDown size={14} className={`text-[#52525b] transition-transform ${showFrameworkList ? 'rotate-180' : ''}`} />
+                              <ChevronDown size={14} className={`text-[#3f3f46] transition-transform ${showFrameworkList ? 'rotate-180' : ''}`} />
                             </button>
 
                             <AnimatePresence>
                               {showFrameworkList && (
                                 <>
                                   <div className="fixed inset-0 z-40" onClick={() => setShowFrameworkList(false)} />
-                                  <motion.div 
-                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    className="absolute left-0 right-0 top-full mt-2 bg-[#18181b] border border-white/10 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="absolute left-0 right-0 top-full mt-4 bg-[#161618] border border-white/[0.04] rounded-[32px] shadow-elevation-2 p-4 z-50 overflow-hidden"
                                   >
                                     {Frameworks.map((fw, idx) => (
                                       <button
@@ -352,10 +505,10 @@ export default function NewProjectPage() {
                                           setStartCommand(fw.start);
                                           setShowFrameworkList(false);
                                         }}
-                                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${framework === fw.id ? 'bg-[#22c55e] text-black' : 'hover:bg-white/5 text-[#a1a1aa] hover:text-white'}`}
+                                        className={`w-full flex items-center gap-5 p-4 rounded-2xl transition-all ${framework === fw.id ? 'bg-white text-black shadow-elevation-1' : 'hover:bg-white/[0.02] text-[#3f3f46] hover:text-white'}`}
                                       >
-                                        <fw.icon size={14} />
-                                        <span className="text-[13px] font-bold">{fw.name}</span>
+                                        <fw.icon size={16} />
+                                        <span className="text-[11px] font-black uppercase tracking-[0.25em]">{fw.name}</span>
                                       </button>
                                     ))}
                                   </motion.div>
@@ -366,41 +519,41 @@ export default function NewProjectPage() {
                         </div>
 
                         {/* Build Settings Accordion */}
-                        <div className="bg-[#050505]/50 border border-white/[0.04] rounded-3xl p-6">
-                          <button 
+                        <div className="bg-[#0d0d0f]/20 border border-white/[0.04] rounded-2xl p-6 shadow-inner">
+                          <button
                             onClick={() => setShowAdvanced(!showAdvanced)}
-                            className="w-full flex items-center justify-between text-[11px] font-black uppercase tracking-[0.2em] text-[#3f3f46] hover:text-white transition-colors"
+                            className="w-full flex items-center justify-between text-[9px] font-black uppercase tracking-[0.4em] text-[#3f3f46] hover:text-[#e4e4e7] transition-colors"
                           >
-                            <div className="flex items-center gap-3">
-                              <Settings2 size={14} />
-                              Build and Output Settings
+                            <div className="flex items-center gap-4">
+                              <Settings2 size={16} />
+                              OPERATIONAL_OVERRIDES
                             </div>
-                            {showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                           </button>
-                          
+
                           <AnimatePresence>
                             {showAdvanced && (
-                              <motion.div 
+                              <motion.div
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
                                 className="overflow-hidden"
                               >
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 mt-4 border-t border-white/[0.03]">
-                                  <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest ml-1">Install Command</label>
-                                    <input 
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-10 mt-8 border-t border-white/[0.04]">
+                                  <div className="space-y-4">
+                                    <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] ml-1">Dependency Resolution</label>
+                                    <input
                                       value={installCommand}
                                       onChange={(e) => setInstallCommand(e.target.value)}
-                                      className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-xs font-mono focus:outline-none focus:border-[#22c55e]/30 transition-all"
+                                      className="w-full h-11 bg-[#0d0d0f] border border-white/[0.04] rounded-xl px-5 text-[11px] font-mono text-[#e4e4e7] focus:outline-none focus:border-white/10 transition-all shadow-inner"
                                     />
                                   </div>
-                                  <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest ml-1">Start Command</label>
-                                    <input 
+                                  <div className="space-y-4">
+                                    <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] ml-1">Execution Sequence</label>
+                                    <input
                                       value={startCommand}
                                       onChange={(e) => setStartCommand(e.target.value)}
-                                      className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-xs font-mono focus:outline-none focus:border-[#22c55e]/30 transition-all"
+                                      className="w-full h-11 bg-[#0d0d0f] border border-white/[0.04] rounded-xl px-5 text-[11px] font-mono text-[#e4e4e7] focus:outline-none focus:border-white/10 transition-all shadow-inner"
                                     />
                                   </div>
                                 </div>
@@ -411,43 +564,43 @@ export default function NewProjectPage() {
 
                         {/* Environment Variables */}
                         <div>
-                          <div className="flex items-center justify-between mb-6">
-                            <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#3f3f46]">Environment Variables</h4>
-                            <button 
+                          <div className="flex items-center justify-between mb-10">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#3f3f46]">Authority Parameters</h4>
+                            <button
                               onClick={() => setEnvVars([...envVars, { key: "", value: "" }])}
-                              className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition-all flex items-center gap-2"
+                              className="px-6 py-2.5 rounded-xl bg-[#0d0d0f] border border-white/[0.04] text-[9px] font-black uppercase tracking-[0.3em] text-white hover:bg-white/[0.04] transition-all flex items-center gap-3 shadow-elevation-1"
                             >
-                              <Plus size={12} /> Add Variable
+                              <Plus size={14} /> ADD_PARAMETER
                             </button>
                           </div>
-                          
-                          <div className="space-y-3">
+
+                          <div className="space-y-6">
                             {envVars.map((env, i) => (
-                              <div key={`env-${i}`} className="flex gap-3">
-                                <input 
-                                  placeholder="VARIABLE_NAME"
+                              <div key={`env-${i}`} className="flex gap-6">
+                                <input
+                                  placeholder="IDENTIFIER_KEY"
                                   value={env.key}
                                   onChange={(e) => {
                                     const next = [...envVars];
                                     next[i].key = e.target.value;
                                     setEnvVars(next);
                                   }}
-                                  className="flex-1 h-12 bg-[#050505] border border-white/[0.08] rounded-2xl px-5 text-xs font-mono focus:outline-none focus:border-white/20 transition-all"
+                                  className="flex-1 h-11 bg-[#0d0d0f] border border-white/[0.04] rounded-xl px-6 text-[10px] font-mono font-black uppercase tracking-widest text-[#e4e4e7] focus:outline-none focus:border-white/10 transition-all shadow-inner placeholder:text-[#2d2d33]"
                                 />
-                                <input 
+                                <input
                                   type="password"
-                                  placeholder="••••••••"
+                                  placeholder="••••••••••••"
                                   value={env.value}
                                   onChange={(e) => {
                                     const next = [...envVars];
                                     next[i].value = e.target.value;
                                     setEnvVars(next);
                                   }}
-                                  className="flex-1 h-12 bg-[#050505] border border-white/[0.08] rounded-2xl px-5 text-xs font-mono focus:outline-none focus:border-white/20 transition-all"
+                                  className="flex-1 h-11 bg-[#0d0d0f] border border-white/[0.04] rounded-xl px-6 text-[10px] font-mono text-[#e4e4e7] focus:outline-none focus:border-white/10 transition-all shadow-inner placeholder:text-[#2d2d33]"
                                 />
-                                <button 
+                                <button
                                   onClick={() => setEnvVars(envVars.filter((_, idx) => idx !== i))}
-                                  className="w-12 h-12 rounded-2xl flex items-center justify-center bg-red-500/5 border border-red-500/10 text-red-500/40 hover:bg-red-500 hover:text-white transition-all"
+                                  className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#0d0d0f] border border-white/[0.04] text-[#1e1e20] hover:text-[#ef4444] transition-all shadow-elevation-1"
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -457,32 +610,32 @@ export default function NewProjectPage() {
                         </div>
 
                         {error && (
-                          <motion.div 
+                          <motion.div
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="p-5 bg-red-500/10 border border-red-500/20 rounded-[24px] flex items-center gap-4"
+                            className="p-8 bg-[#ef4444]/5 border border-[#ef4444]/10 rounded-[32px] flex items-center gap-6 shadow-elevation-1"
                           >
-                            <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 shrink-0">
-                              <AlertCircle size={16} />
+                            <div className="w-12 h-12 rounded-2xl bg-[#ef4444]/10 flex items-center justify-center text-[#ef4444] shrink-0">
+                              <AlertCircle size={22} />
                             </div>
-                            <p className="text-[13px] font-medium text-red-500">{error}</p>
+                            <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#ef4444]">{error}</p>
                           </motion.div>
                         )}
 
-                        <div className="pt-6">
-                          <button 
-                            className="w-full h-16 rounded-[24px] bg-[#22c55e] text-black font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.01] hover:shadow-[0_20px_40px_rgba(34,197,94,0.15)] active:scale-[0.99] transition-all disabled:opacity-50 disabled:pointer-events-none"
+                        <div className="pt-10">
+                          <button
+                            className="w-full h-14 rounded-2xl bg-[#22c55e] text-black font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 hover:scale-[1.002] hover:shadow-elevation-2 active:scale-[0.998] transition-all disabled:opacity-50 disabled:pointer-events-none"
                             onClick={handleSubmit}
                             disabled={loading || !name}
                           >
                             {loading ? (
                               <>
-                                <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                                Launching Engine...
+                                <div className="w-4 h-4 border-[2px] border-black/20 border-t-black rounded-full animate-spin" />
+                                INITIATING_SEQUENCE...
                               </>
                             ) : (
                               <>
-                                Deploy Application <ArrowRight size={20} />
+                                INITIALIZE_DEPLOYMENT <ArrowRight size={18} />
                               </>
                             )}
                           </button>

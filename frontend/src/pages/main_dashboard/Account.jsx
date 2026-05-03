@@ -9,7 +9,7 @@ import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
 import { PageShell, PageHeader, Card, CardHeader, CardBody, AlertBanner } from "../../components/layout/PageLayout";
 import { Shield, Key, User, Mail, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const GithubIcon = ({ size = 20, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -20,17 +20,35 @@ const GithubIcon = ({ size = 20, className = "" }) => (
 
 export default function Account() {
   const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
-  const { user } = useAuth();
-  const [alias, setAlias] = useState(user?.name || "SHERYIANS_SDE");
+  const { user, refreshUser } = useAuth();
+  const [alias, setAlias] = useState(user?.name || "");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState({ text: "", type: "" });
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleUpdateProfile = (e) => {
+  React.useEffect(() => {
+    if (user) {
+      setAlias(user.name || "");
+      setAvatarUrl(user.avatar || "");
+    }
+  }, [user]);
+
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setIsUpdating(true);
-    setTimeout(() => { setMessage({ text: "Profile updated successfully.", type: "success" }); setIsUpdating(false); }, 1000);
+    setMessage({ text: "", type: "" });
+    
+    try {
+      await updateCurrentUser({ username: alias, avatarUrl });
+      await refreshUser();
+      setMessage({ text: "Profile updated successfully.", type: "success" });
+    } catch (err) {
+      setMessage({ text: err.response?.data?.message || "Failed to update profile", type: "error" });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handlePasswordChange = (e) => {
@@ -43,132 +61,182 @@ export default function Account() {
     }, 1000);
   };
 
-  // sidebarAttr removed in favor of PageWrapper inline styles
-
   return (
-    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
+    <div className="flex h-screen bg-[var(--bg-main)] text-white font-sans overflow-hidden">
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
-        <PageShell>
-          <PageHeader title="Account" subtitle="Manage your profile, security, and connected services" />
+        <div className="flex-1 p-6 lg:p-10 overflow-y-auto scrollbar-hide">
+          <div className="max-w-5xl mx-auto">
+            {/* Header Area */}
+            <div className="flex items-center justify-between mb-10 pb-8 border-b border-white/[0.04]">
+              <div>
+                <h1 className="text-[22px] font-black tracking-tighter text-[#e4e4e7] mb-1.5 uppercase">Operator Registry</h1>
+                <p className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.3em]">Manage your profile, security, and connected authority services</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="px-4 py-1.5 rounded-xl bg-[#0d0d0f] border border-white/[0.04] text-[9px] font-black text-[#22c55e] uppercase tracking-widest shadow-inner flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" /> NOMINAL_AUTHORITY
+                </span>
+              </div>
+            </div>
 
-          {/* Alert */}
-          {message.text && (
-            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}>
-              <AlertBanner type={message.type}>
-                {message.type === "success" ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
-                {message.text}
-              </AlertBanner>
-            </motion.div>
-          )}
+            {/* Alert */}
+            <AnimatePresence>
+              {message.text && (
+                <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="mb-10">
+                   <div className={`px-8 py-5 rounded-2xl border backdrop-blur-3xl flex items-center gap-5 ${
+                    message.type === "error" 
+                      ? "bg-[#ef4444]/5 border-[#ef4444]/10 text-[#ef4444]" 
+                      : "bg-[#22c55e]/5 border-[#22c55e]/10 text-[#22c55e]"
+                  }`}>
+                    {message.type === "success" ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em]">{message.text}</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
 
-            {/* ── Profile card ── */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-              <Card className="h-fit">
-                <CardHeader icon={User} title="Profile" />
-                <CardBody>
-                  {/* Avatar row */}
-                  <div className="flex items-center gap-5 mb-7 pb-6 border-b border-white/[0.06]">
-                    <div className="w-16 h-16 rounded-2xl bg-[#111113] border border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden">
-                      {user?.avatar || user?.githubAvatarUrl || user?.googleAvatarUrl ? (
-                        <img
-                          src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl}
-                          alt="Avatar"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-tr from-[#3b82f6] to-[#22c55e] flex items-center justify-center text-xl font-bold text-white">
-                          {user?.name?.charAt(0) || "U"}
-                        </div>
-                      )}
+              {/* ── Profile card ── */}
+              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+                <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] shadow-elevation-1 overflow-hidden">
+                  <div className="px-8 py-5 border-b border-white/[0.04] flex items-center gap-5 bg-[#161618]">
+                    <div className="w-9 h-9 rounded-xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center text-[#52525b] shadow-elevation-1">
+                      <User size={16} />
                     </div>
-                    <div>
-                      <p className="text-[14px] font-bold text-white mb-1">{user?.name || "Operator"}</p>
-                      <div className="flex items-center gap-1.5 text-[12px] text-[#52525b]">
-                        <Mail size={12} className="text-[#3f3f46]" />
-                        {user?.email || "No email provided"}
+                    <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Authority Profile</h2>
+                  </div>
+                  <div className="p-8">
+                    {/* Avatar row */}
+                    <div className="flex items-center gap-6 mb-8 pb-8 border-b border-white/[0.04]">
+                      <div className="w-18 h-18 rounded-2xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center shrink-0 overflow-hidden shadow-elevation-1" style={{width:'72px',height:'72px'}}>
+                        {user?.avatar || user?.githubAvatarUrl || user?.googleAvatarUrl ? (
+                          <img
+                            src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl}
+                            alt="Avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-[#1e1e20] flex items-center justify-center text-2xl font-black text-white uppercase tracking-tighter">
+                            {user?.name?.charAt(0) || "U"}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[18px] font-black text-[#e4e4e7] uppercase tracking-tighter mb-1 leading-none">{user?.name || "Operator Unit"}</p>
+                        <div className="flex items-center gap-2.5 text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.25em]">
+                          <Mail size={11} className="opacity-50" />
+                          {user?.email || "NOT_ASSIGNED@VELORA.IO"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleUpdateProfile} className="space-y-6">
+                      <div className="space-y-3">
+                         <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.35em]">Operational Alias</label>
+                         <InputField
+                           value={alias}
+                           onChange={(e) => setAlias(e.target.value)}
+                           className="h-11 bg-[#0d0d0f] border-white/[0.04] focus:border-white/10 rounded-xl text-[13px] font-black uppercase tracking-tight text-[#e4e4e7] placeholder:text-[#2d2d33] shadow-inner"
+                         />
+                      </div>
+                      <div className="space-y-3">
+                         <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.35em]">Identifier Asset (URL)</label>
+                         <InputField
+                           value={avatarUrl}
+                           onChange={(e) => setAvatarUrl(e.target.value)}
+                           placeholder="https://registry.io/avatar.png"
+                           className="h-11 bg-[#0d0d0f] border-white/[0.04] focus:border-white/10 rounded-xl text-[12px] font-mono text-[#e4e4e7] placeholder:text-[#2d2d33] shadow-inner"
+                         />
+                      </div>
+                      <GlassButton type="submit" variant="primary" className="w-full h-11 text-[9px] font-black uppercase tracking-[0.25em] shadow-elevation-2">
+                        {isUpdating ? "SYNCHRONIZING..." : "SYNCHRONIZE_PROFILE"}
+                      </GlassButton>
+                    </form>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* ── Right column ── */}
+              <div className="flex flex-col gap-10">
+
+                {/* Connected accounts */}
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+                  <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] shadow-elevation-1 overflow-hidden">
+                    <div className="px-8 py-5 border-b border-white/[0.04] flex items-center gap-5 bg-[#161618]">
+                      <div className="w-9 h-9 rounded-xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center text-[#52525b] shadow-elevation-1">
+                        <Shield size={16} />
+                      </div>
+                      <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Uplink Registry</h2>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex items-center justify-between p-5 bg-[#0d0d0f]/40 border border-white/[0.04] rounded-2xl shadow-inner group transition-all hover:bg-[#0d0d0f]/60">
+                        <div className="flex items-center gap-4">
+                          <div className="w-11 h-11 rounded-xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center shrink-0 shadow-elevation-1 text-white group-hover:scale-105 transition-transform">
+                            <GithubIcon size={20} />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-black text-[#e4e4e7] uppercase tracking-tighter leading-tight group-hover:text-[#22c55e] transition-colors">GitHub Infrastructure</p>
+                            <p className="text-[8px] text-[#3f3f46] font-black uppercase tracking-widest mt-1">Authority Level: REPOSITORY_SCOPE</p>
+                          </div>
+                        </div>
+                        {user?.githubAccessToken ? (
+                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[8px] font-black text-[#22c55e] bg-[#22c55e]/5 border border-[#22c55e]/10 uppercase tracking-widest">
+                            <div className="w-1 h-1 rounded-full bg-[#22c55e]" /> LINKED
+                          </span>
+                        ) : (
+                          <GlassButton variant="secondary" className="h-9 px-5 text-[9px] font-black uppercase tracking-[0.2em] border-white/5">ESTABLISH_UPLINK</GlassButton>
+                        )}
                       </div>
                     </div>
                   </div>
+                </motion.div>
 
-                  <form onSubmit={handleUpdateProfile} className="flex flex-col gap-5">
-                    <InputField
-                      label="Display Name"
-                      value={alias}
-                      onChange={(e) => setAlias(e.target.value)}
-                    />
-                    <GlassButton type="submit" variant="primary" className="w-full h-10">
-                      {isUpdating ? "Saving…" : "Save Changes"}
-                    </GlassButton>
-                  </form>
-                </CardBody>
-              </Card>
-            </motion.div>
-
-            {/* ── Right column ── */}
-            <div className="flex flex-col gap-5">
-
-              {/* Connected accounts */}
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.08 }}>
-                <Card>
-                  <CardHeader icon={Shield} title="Connected Accounts" />
-                  <CardBody>
-                    <div className="flex items-center justify-between p-4 bg-[#0d0d0f] border border-white/[0.07] rounded-xl">
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center shrink-0">
-                          <GithubIcon size={17} className="text-white" />
-                        </div>
-                        <div>
-                          <p className="text-[13px] font-semibold text-white leading-tight">GitHub</p>
-                          <p className="text-[11px] text-[#52525b] mt-0.5">Required for repo imports</p>
-                        </div>
+                {/* Change password */}
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+                  <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] shadow-elevation-1 overflow-hidden">
+                    <div className="px-8 py-5 border-b border-white/[0.04] flex items-center gap-5 bg-[#161618]">
+                      <div className="w-9 h-9 rounded-xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center text-[#ef4444] shadow-elevation-1">
+                        <Key size={16} />
                       </div>
-                      {user?.githubAccessToken ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-[#22c55e] bg-[#22c55e]/10 border border-[#22c55e]/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" /> Connected
-                        </span>
-                      ) : (
-                        <GlassButton variant="secondary" className="h-8 px-4 text-xs">Connect</GlassButton>
-                      )}
+                      <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Cryptographic Override</h2>
                     </div>
-                  </CardBody>
-                </Card>
-              </motion.div>
-
-              {/* Change password */}
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.14 }}>
-                <Card className="border-[#ef4444]/10">
-                  <CardHeader icon={Key} title="Change Password" />
-                  <CardBody>
-                    <form onSubmit={handlePasswordChange} className="flex flex-col gap-5">
-                      <InputField
-                        label="Current Password"
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="Enter current password"
-                      />
-                      <InputField
-                        label="New Password"
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password"
-                      />
-                      <GlassButton type="submit" variant="danger" className="w-full h-10 border border-[#ef4444]/20">
-                        {isUpdating ? "Updating…" : "Update Password"}
-                      </GlassButton>
-                    </form>
-                  </CardBody>
-                </Card>
-              </motion.div>
+                    <div className="p-8">
+                      <form onSubmit={handlePasswordChange} className="space-y-6">
+                        <div className="space-y-3">
+                          <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.35em]">Current Keyphrase</label>
+                          <InputField
+                            type="password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="••••••••••••"
+                            className="h-11 bg-[#0d0d0f] border-white/[0.04] focus:border-white/10 rounded-xl text-[12px] font-mono text-[#e4e4e7] placeholder:text-[#2d2d33] shadow-inner"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.35em]">New Master Key</label>
+                          <InputField
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="••••••••••••"
+                            className="h-11 bg-[#0d0d0f] border-white/[0.04] focus:border-white/10 rounded-xl text-[12px] font-mono text-[#e4e4e7] placeholder:text-[#2d2d33] shadow-inner"
+                          />
+                        </div>
+                        <GlassButton type="submit" variant="danger" className="w-full h-11 text-[9px] font-black uppercase tracking-[0.25em] border-[#ef4444]/10 shadow-elevation-2">
+                          {isUpdating ? "OVERRIDING..." : "OVERRIDE_MASTER_KEY"}
+                        </GlassButton>
+                      </form>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
             </div>
           </div>
-        </PageShell>
+        </div>
       </PageWrapper>
     </div>
   );

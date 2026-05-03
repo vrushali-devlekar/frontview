@@ -59,6 +59,7 @@ deploymentSchema.virtual('url').get(function () {
 deploymentSchema.index({ projectId: 1, version: -1 });
 deploymentSchema.index({ projectId: 1, status: 1 });
 deploymentSchema.index({ userId: 1, status: 1 });
+deploymentSchema.index({ createdAt: -1 });
 
 // Pre-save hook for auto-incrementing version
 deploymentSchema.pre('save', async function () {

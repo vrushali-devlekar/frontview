@@ -44,13 +44,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Token expired or invalid — clear and redirect
+      // Token expired or invalid — clear token
       localStorage.removeItem('token');
-      // Only redirect if not already on login/register/landing
-      const path = window.location.pathname;
-      if (!['/login', '/register', '/', '/auth/success'].includes(path)) {
-        window.location.href = '/login';
-      }
+      // Emit an event so AuthContext can handle the logout/redirect gracefully
+      window.dispatchEvent(new Event('auth-unauthorized'));
     }
     return Promise.reject(error);
   }
@@ -73,8 +70,8 @@ export const getUserRepos = (search = '') =>
 export const getUserProjects = () => api.get('/projects');
 export const getDashboardStats = () => api.get('/projects/stats');
 
-export const createProject = (projectData) =>
-  api.post('/projects', projectData);
+export const createProject = (projectData) => api.post('/projects', projectData);
+export const createProjectFromFolder = (formData) => api.post('/projects/upload', formData);
 
 export const getProjectById = (id) => api.get(`/projects/${id}`);
 

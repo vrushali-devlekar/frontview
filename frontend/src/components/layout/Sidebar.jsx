@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Grid3X3, Zap, Layers, BarChart2,
   Settings, ChevronDown, LogOut, User, Users,
-  FileText, PanelLeft, Plug, Monitor
+  FileText, PanelLeft, Plug, Monitor, History as HistoryIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -63,11 +63,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
 
   const topItems = [
     { icon: LayoutDashboard, label: "Overview", to: getPath("/dashboard") },
-    { icon: Grid3X3, label: "Applications", to: getPath("/applications") },
+    { icon: Grid3X3, label: "Projects", to: getPath("/projects") },
     { icon: Zap, label: "Deployments", to: getPath("/deploy") },
     { icon: Layers, label: "Environments", to: getPath("/environments") },
     { icon: Monitor, label: "Logs", to: getPath("/logs") },
-    { icon: BarChart2, label: "Metrics", to: getPath("/metrics") },
+    { icon: HistoryIcon, label: "History", to: getPath("/history") },
   ];
 
   const bottomItems = [
@@ -81,7 +81,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
       initial={false}
       animate={{ width: isCollapsed ? 92 : 260 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed left-0 top-0 h-screen z-50 bg-[#050505]/60 backdrop-blur-3xl border-r border-white/[0.05] flex flex-col"
+      className="fixed left-0 top-0 h-screen z-50 bg-[#161618] border-r border-white/[0.04] flex flex-col"
     >
       {/* Brand Header */}
       <div className={`h-20 flex items-center px-6 ${isCollapsed ? "justify-center" : ""}`}>
@@ -146,14 +146,25 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
             `}
           >
             {user?.avatar || user?.githubAvatarUrl || user?.googleAvatarUrl ? (
-              <img 
-                src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl} 
-                className="w-8 h-8 rounded-full object-cover shadow-[0_0_10px_rgba(255,255,255,0.1)]" 
+              <img
+                src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl}
+                className="w-8 h-8 rounded-full object-cover shadow-[0_0_10px_rgba(255,255,255,0.1)] border border-white/10"
                 alt="Avatar"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#3b82f6] to-[#22c55e] flex items-center justify-center text-[12px] font-bold text-white shrink-0 relative shadow-[0_0_10px_rgba(59,130,246,0.3)]">
-                {user?.name?.charAt(0) || "U"}
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-black text-white shrink-0 relative shadow-inner"
+                style={{
+                  backgroundColor: (() => {
+                    const colors = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
+                    const name = user?.name || "User";
+                    let hash = 0;
+                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                    return colors[Math.abs(hash) % colors.length];
+                  })()
+                }}
+              >
+                {user?.name?.charAt(0).toUpperCase() || "U"}
               </div>
             )}
             {!isCollapsed && (

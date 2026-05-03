@@ -69,15 +69,21 @@ const executeDeployment = async (deploymentId, io) => {
         io.to(`dep:${deploymentId}`).emit('deployment:status', { status: 'building' });
         await appendDeploymentLog(deploymentRecord, 'info', 'Deployment started', 'build', io);
 
-        // 3. GitHub se Repo Clone karo
-        const user = await User.findById(deploymentRecord.userId).select('+githubAccessToken');
-        const targetPath = await cloneRepo(
-            project.repoUrl,
-            deploymentRecord._id.toString(),
-            project.branch || 'main',
-            user?.githubAccessToken || null
-        );
-        await appendDeploymentLog(deploymentRecord, 'info', `Repository cloned to ${targetPath}`, 'build', io);
+        // 3. GitHub se Repo Clone karo (Sirf tab jab GitHub se ho)
+        let targetPath;
+        if (project.deploymentSource === 'upload') {
+            targetPath = path.join(__dirname, '../../deployments_temp', deploymentRecord._id.toString());
+            await appendDeploymentLog(deploymentRecord, 'info', 'Using uploaded files for deployment', 'build', io);
+        } else {
+            const user = await User.findById(deploymentRecord.userId).select('+githubAccessToken');
+            targetPath = await cloneRepo(
+                project.repoUrl,
+                deploymentRecord._id.toString(),
+                project.branch || 'main',
+                user?.githubAccessToken || null
+            );
+            await appendDeploymentLog(deploymentRecord, 'info', `Repository cloned to ${targetPath}`, 'build', io);
+        }
 
         // 🌟 INTEGRATIONS INJECTION (Category A)
         const integrations = await Integration.find({ projectId: project._id, isActive: true });
@@ -229,6 +235,12 @@ const executeDeployment = async (deploymentId, io) => {
                     latest.completedAt = new Date();
                     io.to(`dep:${deploymentRecord._id}`).emit('deployment:status', { status: 'failed' });
                     await appendDeploymentLog(latest, 'error', latest.errorMessage, 'runtime', io);
+
+                    // 🔥 Send Failure Notification
+                    notifyIntegrations(latest.projectId, { 
+                        projectName: project.name, 
+                        errorMessage: latest.errorMessage 
+                    }, 'failed').catch(e => console.log("Notification error:", e.message));
                 }
                 await latest.save();
             } catch (closeErr) {
@@ -240,6 +252,14 @@ const executeDeployment = async (deploymentId, io) => {
         deploymentRecord.status = 'running';
         deploymentRecord.port = assignedPort;
         await deploymentRecord.save();
+        
+        // 🔥 Send Success Notification
+        const { notifyIntegrations } = require('./notificationService');
+        notifyIntegrations(deploymentRecord.projectId, { 
+            projectName: project.name, 
+            version: deploymentRecord.version || '1.0.0' 
+        }, 'success').catch(e => console.log("Notification error:", e.message));
+
         io.to(`dep:${deploymentId}`).emit('deployment:status', { status: 'running', url: deploymentRecord.url });
 
         // Project ka active deployment update kar do

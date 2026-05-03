@@ -8,7 +8,8 @@ const {
     getProjectById,
     updateProject,
     getDashboardStats,
-    deleteProject
+    deleteProject,
+    createProjectFromFolder
 } = require('../controllers/projectController');
 const { protect } = require('../middlewares/authMiddleware');
 const { rollbackDeployment } = require('../controllers/deploymentController');
@@ -24,6 +25,8 @@ router.get('/stats', getDashboardStats);
 router.route('/')
     .get(getUserProjects)
     .post(createProject);
+
+router.post('/upload', createProjectFromFolder);
 
 router.route('/:id')
     .get(getProjectById)

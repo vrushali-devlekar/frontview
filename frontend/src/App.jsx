@@ -1,25 +1,35 @@
+import React, { lazy, Suspense } from "react";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 
-import Landing from "./pages/public/Landing";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import Callback from "./pages/auth/Callback";
-import Dashboard from "./pages/main_dashboard/Dashboard";
-import Deployments from "./pages/project_view/Deployments";
-import Overview from "./pages/project_view/Overview";
-import Metrics from "./pages/project_view/Metrics";
-import Settings from "./pages/project_view/Settings";
-import Environments from "./pages/project_view/Environments";
-import DeploymentLogsPage from "./pages/project_view/Terminal";
-import NewProjectPage from "./pages/main_dashboard/NewProject";
-import Account from "./pages/main_dashboard/Account";
-import Members from "./pages/main_dashboard/Members";
-import Integrations from "./pages/main_dashboard/Integrations";
-import LogsExplorer from "./pages/main_dashboard/LogsExplorer";
-import DeploymentProgress from "./pages/main_dashboard/DeploymentProgress";
-import Docs from "./pages/Extra/Docs";
+// Lazy loading all pages for God-level speed 🚀
+const Landing = lazy(() => import("./pages/public/Landing"));
+const Login = lazy(() => import("./pages/auth/Login"));
+const Register = lazy(() => import("./pages/auth/Register"));
+const Callback = lazy(() => import("./pages/auth/Callback"));
+const Dashboard = lazy(() => import("./pages/main_dashboard/Dashboard"));
+const Deployments = lazy(() => import("./pages/project_view/Deployments"));
+const Projects = lazy(() => import("./pages/project_view/Projects"));
+const Settings = lazy(() => import("./pages/project_view/Settings"));
+const Environments = lazy(() => import("./pages/project_view/Environments"));
+const DeploymentLogsPage = lazy(() => import("./pages/project_view/Terminal"));
+const NewProjectPage = lazy(() => import("./pages/main_dashboard/NewProject"));
+const Account = lazy(() => import("./pages/main_dashboard/Account"));
+const Members = lazy(() => import("./pages/main_dashboard/Members"));
+const Integrations = lazy(() => import("./pages/main_dashboard/Integrations"));
+const LogsExplorer = lazy(() => import("./pages/main_dashboard/LogsExplorer"));
+const DeploymentProgress = lazy(() => import("./pages/main_dashboard/DeploymentProgress"));
+const Docs = lazy(() => import("./pages/Extra/Docs"));
 
 import "./App.css";
+
+// Loading Skeleton component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a]">
+    <div className="w-12 h-12 border-4 border-slate-800 border-t-indigo-500 rounded-full animate-spin"></div>
+  </div>
+);
+
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const router = createBrowserRouter([
   {
@@ -40,55 +50,59 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <Dashboard />
+    element: <ProtectedRoute><Dashboard /></ProtectedRoute>
   },
   {
     path: "/projects/new",
-    element: <NewProjectPage />
+    element: <ProtectedRoute><NewProjectPage /></ProtectedRoute>
   },
   {
     path: "/deploy",
-    element: <Deployments />
+    element: <ProtectedRoute><Deployments /></ProtectedRoute>
   },
   {
     path: "/deployment-progress/:projectId",
-    element: <DeploymentProgress />
+    element: <ProtectedRoute><DeploymentProgress /></ProtectedRoute>
   },
   {
     path: "/deploy/logs/:deploymentId",
-    element: <DeploymentLogsPage />
+    element: <ProtectedRoute><DeploymentLogsPage /></ProtectedRoute>
   },
   {
     path: "/applications",
-    element: <Overview />
+    element: <ProtectedRoute><Projects /></ProtectedRoute>
+  },
+  {
+    path: "/projects",
+    element: <ProtectedRoute><Projects /></ProtectedRoute>
   },
   {
     path: "/environments",
-    element: <Environments />
+    element: <ProtectedRoute><Environments /></ProtectedRoute>
   },
   {
     path: "/logs",
-    element: <LogsExplorer />
+    element: <ProtectedRoute><LogsExplorer /></ProtectedRoute>
   },
   {
-    path: "/metrics",
-    element: <Metrics />
+    path: "/history",
+    element: <ProtectedRoute><Projects /></ProtectedRoute>
   },
   {
     path: "/settings",
-    element: <Settings />
+    element: <ProtectedRoute><Settings /></ProtectedRoute>
   },
   {
     path: "/account",
-    element: <Account />
+    element: <ProtectedRoute><Account /></ProtectedRoute>
   },
   {
     path: "/members",
-    element: <Members />
+    element: <ProtectedRoute><Members /></ProtectedRoute>
   },
   {
     path: "/integrations",
-    element: <Integrations />
+    element: <ProtectedRoute><Integrations /></ProtectedRoute>
   },
   {
     path: "/documentation",
@@ -101,7 +115,11 @@ const router = createBrowserRouter([
 ]);
 
 const App = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <RouterProvider router={router} />
+    </Suspense>
+  );
 };
 
 export default App;

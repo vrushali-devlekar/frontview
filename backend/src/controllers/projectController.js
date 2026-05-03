@@ -12,8 +12,11 @@ exports.getUserRepos = asyncHandler(async (req, res) => {
 
     const user = await User.findById(userId).select('+githubAccessToken');
     if (!user || !user.githubAccessToken) {
-        res.status(401);
-        throw new Error('Not authorized or GitHub token missing');
+        // Return 400 instead of 401 to prevent global auth interceptor from redirecting
+        return res.status(400).json({ 
+            success: false, 
+            message: 'GitHub account not linked. Please connect your GitHub account to import repositories.' 
+        });
     }
 
     let repos = await fetchUserRepos(user.githubAccessToken);
@@ -90,25 +93,42 @@ exports.createProject = asyncHandler(async (req, res) => {
 });
 
 // @desc    User ke saare active projects lana
-// @route   GET /api/projects
 exports.getUserProjects = asyncHandler(async (req, res) => {
-    const Deployment = require('../models/Deployment');
+    const userId = req.user._id || req.user.id;
     
-    const projects = await Project.find({ 
-        owner: req.user.id, 
-        isDeleted: false 
-    }).sort({ createdAt: -1 });
+    // Using Aggregation to fetch projects and their LATEST deployment in ONE query 🚀
+    const projectsWithDeployment = await Project.aggregate([
+        { 
+            $match: { 
+                owner: new (require('mongoose').Types.ObjectId)(userId), 
+                isDeleted: false 
+            } 
+        },
+        { $sort: { createdAt: -1 } },
+        {
+            $lookup: {
+                from: 'deployments',
+                let: { pid: '$_id' },
+                pipeline: [
+                    { $match: { $expr: { $eq: ['$projectId', '$$pid'] } } },
+                    { $sort: { createdAt: -1 } },
+                    { $limit: 1 }
+                ],
+                as: 'latestDeployment'
+            }
+        },
+        {
+            $addFields: {
+                latestDeployment: { $arrayElemAt: ['$latestDeployment', 0] }
+            }
+        }
+    ]);
 
-    const projectsWithDeployment = await Promise.all(projects.map(async (project) => {
-        const latestDeployment = await Deployment.findOne({ projectId: project._id })
-            .sort({ createdAt: -1 });
-        
-        const projectObj = project.toObject();
-        projectObj.latestDeployment = latestDeployment;
-        return projectObj;
-    }));
-
-    res.status(200).json({ success: true, count: projectsWithDeployment.length, data: projectsWithDeployment });
+    res.status(200).json({ 
+        success: true, 
+        count: projectsWithDeployment.length, 
+        data: projectsWithDeployment 
+    });
 });
 
 // @desc    Single project detail lana
@@ -149,35 +169,70 @@ exports.updateProject = asyncHandler(async (req, res) => {
 });
 
 exports.getDashboardStats = asyncHandler(async (req, res) => {
-    const userId = req.user.id;
+    const userId = req.user._id || req.user.id;
+    const mongoose = require('mongoose');
     const Project = require('../models/Project');
     const Deployment = require('../models/Deployment');
-
-    const projectIds = (await Project.find({ owner: userId }).select('_id')).map(p => p._id);
-    const totalProjects = await Project.countDocuments({ owner: userId });
-    const deploymentsCount = await Deployment.countDocuments({ project: { $in: projectIds } });
-    const successCount = await Deployment.countDocuments({ project: { $in: projectIds }, status: 'SUCCESS' });
-    const successRate = deploymentsCount > 0 ? ((successCount / deploymentsCount) * 100).toFixed(1) : "0";
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const activityData = await Deployment.aggregate([
-        {
-            $match: {
-                project: { $in: projectIds },
-                createdAt: { $gt: thirtyDaysAgo }
+    // 🚀 Parallel Execution for speed
+    const [counts, activityData] = await Promise.all([
+        // 1. Projects and Deployments Stats
+        Project.aggregate([
+            { $match: { owner: new mongoose.Types.ObjectId(userId), isDeleted: false } },
+            {
+                $lookup: {
+                    from: 'deployments',
+                    localField: '_id',
+                    foreignField: 'projectId',
+                    as: 'deployments'
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalProjects: { $sum: 1 },
+                    totalDeployments: { $sum: { $size: '$deployments' } },
+                    successCount: {
+                        $sum: {
+                            $size: {
+                                $filter: {
+                                    input: '$deployments',
+                                    as: 'd',
+                                    cond: { $eq: ['$$d.status', 'running'] } // Adjusted to 'running' based on your previous logic
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        },
-        {
-            $group: {
-                _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-                count: { $sum: 1 }
-            }
-        },
-        { $sort: { "_id": 1 } }
+        ]),
+        // 2. Activity Data
+        Deployment.aggregate([
+            {
+                $match: {
+                    userId: new mongoose.Types.ObjectId(userId),
+                    createdAt: { $gt: thirtyDaysAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id": 1 } }
+        ])
     ]);
 
+    const statsResult = counts[0] || { totalProjects: 0, totalDeployments: 0, successCount: 0 };
+    const successRate = statsResult.totalDeployments > 0 
+        ? ((statsResult.successCount / statsResult.totalDeployments) * 100).toFixed(1) 
+        : "0";
+
+    // Build activity bars
     const activityBars = [];
     const dateMap = new Map(activityData.map(d => [d._id, d.count]));
     for (let i = 29; i >= 0; i--) {
@@ -190,8 +245,8 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
     res.status(200).json({
         success: true,
         stats: {
-            totalProjects,
-            totalDeployments: deploymentsCount,
+            totalProjects: statsResult.totalProjects,
+            totalDeployments: statsResult.totalDeployments,
             successRate: successRate + "%",
             avgBuildTime: "42s",
             activityBars
@@ -251,6 +306,55 @@ exports.deployProject = asyncHandler(async (req, res) => {
     console.log(`✅ Deployment ${deployment._id} queued successfully`);
     res.status(201).json({ 
         success: true, 
+        deploymentId: deployment._id 
+    });
+});
+
+// @desc    Folder upload se project create karna
+// @route   POST /api/projects/upload
+exports.createProjectFromFolder = asyncHandler(async (req, res) => {
+    const { name, files, framework, installCommand, startCommand } = req.body;
+
+    if (!name || !files || !Array.isArray(files)) {
+        res.status(400);
+        throw new Error('Please provide project name and files');
+    }
+
+    // 1. Create Project Record in DB
+    const project = await Project.create({
+        name,
+        repoName: `upload/${name}`, // Placeholder for uploaded projects
+        deploymentSource: 'upload',
+        owner: req.user.id,
+        framework: framework || 'other',
+        installCommand: installCommand || 'npm install',
+        startCommand: startCommand || 'npm start'
+    });
+
+    // 2. Create Initial Deployment Record
+    const Deployment = require('../models/Deployment');
+    const { executeDeployment } = require('../services/deploymentService');
+    const { writeProjectFiles } = require('../services/fsManager');
+    
+    const deployment = await Deployment.create({
+        projectId: project._id,
+        userId: req.user.id,
+        status: 'queued',
+        startedAt: new Date()
+    });
+
+    // 3. Physical files ko disk pe likho (build hone se pehle)
+    await writeProjectFiles(deployment._id.toString(), files);
+
+    // 4. Deployment Engine ko trigger karo
+    const io = req.app.get('io');
+    executeDeployment(deployment._id, io).catch(err => {
+        console.error(`❌ Upload-based deployment failed for ${deployment._id}:`, err);
+    });
+
+    res.status(201).json({ 
+        success: true, 
+        data: project,
         deploymentId: deployment._id 
     });
 });

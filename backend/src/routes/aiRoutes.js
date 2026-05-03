@@ -58,7 +58,6 @@ router.post('/diagnose', protect, async (req, res) => {
 });
 
 // @desc    General AI Chat for debugging and questions
-// @route   POST /api/ai/chat
 router.post('/chat', protect, async (req, res) => {
     const { message, context } = req.body;
 
@@ -73,13 +72,48 @@ router.post('/chat', protect, async (req, res) => {
     });
 
     try {
-        const { analyzeLogsWithAI } = require('../services/logAnalysisService');
-        // We'll repurpose analyzeLogsWithAI for chat by passing the message as the 'question'
-        const result = await analyzeLogsWithAI(context || [], 'cohere', message);
+        const { PromptTemplate } = require('@langchain/core/prompts');
+        const { ChatMistralAI } = require('@langchain/mistralai');
         
-        const text = typeof result === 'string' ? result : (result.markdown || result.rootCause || "I'm not sure how to answer that.");
+        // Switching to Mistral for stability as requested
+        const model = new ChatMistralAI({
+            apiKey: process.env.MISTRAL_API_KEY,
+            model: 'mistral-large-latest',
+            temperature: 0.5
+        });
+
+        const promptTemplate = PromptTemplate.fromTemplate(`
+            You are Velora AI, a friendly and expert Cloud Assistant. 
+            
+            TONE: 
+            - Conversational, clear, and very helpful. 
+            - Explain things like you are talking to a friend who is a developer.
+            - Use simple language (Layman's terms) for complex errors.
+            
+            STRICT RULES:
+            1. Be CONCISE but don't be robotic. 
+            2. Do NOT repeat the user's question.
+            3. If the user says 'hlw', 'hi', or 'hello', just respond with a friendly greeting and ask how you can help.
+            4. Use Markdown for structure only where it makes things easier to read.
+            
+            Context Logs: {context}
+            User Question: {question}
+        `);
+
+        const logsText = Array.isArray(context) ? context.join('\n') : context;
+        const chain = promptTemplate.pipe(model);
         
-        res.write(`data: ${JSON.stringify({ text })}\n\n`);
+        const stream = await chain.stream({
+            context: logsText || "No logs available",
+            question: message
+        });
+
+        for await (const chunk of stream) {
+            if (chunk?.content) {
+                res.write(`data: ${JSON.stringify({ text: chunk.content })}\n\n`);
+            }
+        }
+        
         res.write('data: [DONE]\n\n');
         res.end();
     } catch (error) {

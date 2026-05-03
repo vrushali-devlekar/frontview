@@ -116,14 +116,14 @@ export default function Settings() {
 
     if (loading) {
         return (
-            <div className="flex h-screen bg-[#050505] text-white font-sans items-center justify-center">
-                <Loader2 size={32} className="animate-spin text-[#22c55e]" />
+            <div className="flex h-screen bg-[var(--bg-main)] text-white font-sans items-center justify-center">
+                <Loader2 size={32} className="animate-spin text-[var(--accent-primary)]" />
             </div>
         );
     }
 
     return (
-        <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
+        <div className="flex h-screen bg-[var(--bg-main)] text-white font-sans overflow-hidden">
             <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
             <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
 
@@ -131,114 +131,116 @@ export default function Settings() {
                 <TopNav />
 
                 {/* Page header */}
-                <div className="px-8 py-6 border-b border-white/[0.06] shrink-0">
-                    <div className="max-w-[1200px] mx-auto">
-                        <div className="flex items-center gap-2 mb-1">
-                             <h1 className="text-2xl font-bold tracking-tight text-white">
-                                {projectId ? "Project Settings" : "Workspace Settings"}
-                            </h1>
-                            {projectId && (
-                                <>
-                                    <span className="text-[#3f3f46]">/</span>
-                                    <span className="text-[14px] font-bold text-[#22c55e] bg-[#22c55e]/10 px-2 py-0.5 rounded-md border border-[#22c55e]/20">
-                                        {project?.name}
-                                    </span>
-                                </>
-                            )}
+                <div className="px-8 py-6 border-b border-white/[0.04] shrink-0 bg-[#0d0d0f]/20">
+                    <div className="max-w-[1000px] mx-auto flex items-end justify-between">
+                        <div>
+                            <div className="flex items-center gap-5 mb-3">
+                                <h1 className="text-[20px] font-black tracking-tighter text-[#e4e4e7] uppercase leading-none">
+                                    {projectId ? "Project Configuration" : "Workspace Registry"}
+                                </h1>
+                                {projectId && (
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#1e1e20]" />
+                                        <span className="text-[9px] font-black text-[#22c55e] bg-[#22c55e]/5 px-3 py-1 rounded-lg border border-[#22c55e]/10 uppercase tracking-[0.3em] shadow-elevation-1">
+                                            {project?.name}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-[10px] text-[#52525b] font-black uppercase tracking-[0.4em]">
+                                {projectId 
+                                    ? "Infrastructure Tuning & Runtime Parameters" 
+                                    : "Personal Environment Control & Identity Registry"}
+                            </p>
                         </div>
-                        <p className="text-[13px] text-[#71717a]">
-                            {projectId 
-                                ? "Manage your project configuration and infrastructure" 
-                                : "Manage your personal workspace and account preferences"}
-                        </p>
+                        {projectId && (
+                            <button 
+                                onClick={() => navigate("/settings")}
+                                className="h-12 px-8 rounded-2xl bg-[#1e1e20] border border-white/[0.04] text-[9px] font-black uppercase tracking-[0.3em] text-[#3f3f46] hover:text-white transition-all shadow-elevation-1 flex items-center gap-3"
+                            >
+                                <ChevronRight size={14} className="rotate-180" /> Return
+                            </button>
+                        )}
                     </div>
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-hidden max-w-[1200px] mx-auto w-full flex">
+                <div className="flex-1 overflow-hidden max-w-[1000px] mx-auto w-full flex">
 
                     {/* Tab sidebar */}
-                    <div className="w-64 shrink-0 py-6 pr-6 border-r border-white/[0.06] flex flex-col gap-0.5 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-                        <p className="text-[10px] font-bold text-[#3f3f46] uppercase tracking-widest mb-2 px-3">Sections</p>
+                    <div className="w-56 shrink-0 py-8 pr-8 border-r border-white/[0.04] flex flex-col gap-1.5 overflow-y-auto scrollbar-hide">
+                        <p className="text-[8px] font-black text-[#1e1e20] uppercase tracking-[0.5em] mb-4 px-4">System Index</p>
                         {currentTabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium rounded-lg transition-colors text-left ${activeTab === tab.id
-                                        ? "bg-white/[0.08] text-white"
-                                        : "text-[#71717a] hover:text-white hover:bg-white/[0.04]"
-                                    } ${tab.id === "DANGER" ? "text-[#ef4444] hover:text-[#ef4444] hover:bg-[#ef4444]/[0.06] mt-auto" : ""}`}
+                                className={`flex items-center gap-4 px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.3em] rounded-xl transition-all ${activeTab === tab.id
+                                        ? "bg-[#1e1e20] text-white shadow-elevation-1 border border-white/[0.04]"
+                                        : "text-[#3f3f46] hover:text-[#52525b] hover:bg-white/[0.01]"
+                                    } ${tab.id === "DANGER" ? "text-[#ef4444] hover:text-[#ef4444] hover:bg-[#ef4444]/5 mt-auto border border-transparent hover:border-[#ef4444]/10" : ""}`}
                             >
-                                <tab.icon size={15} className={tab.id === "DANGER" && activeTab !== "DANGER" ? "text-[#ef4444]" : ""} />
+                                <tab.icon size={14} className={tab.id === "DANGER" && activeTab !== "DANGER" ? "text-[#ef4444]" : ""} />
                                 {tab.label}
                             </button>
                         ))}
-                        
-                        {projectId && (
-                            <button
-                                onClick={() => navigate("/settings")}
-                                className="flex items-center gap-3 px-3 py-2.5 text-[12px] font-bold text-[#71717a] hover:text-white mt-4 border-t border-white/[0.04] pt-6"
-                            >
-                                <ChevronRight size={14} className="rotate-180" />
-                                Back to Workspace
-                            </button>
-                        )}
                     </div>
 
                     {/* Tab content */}
-                    <div className="flex-1 overflow-y-auto py-6 pl-8" style={{ scrollbarWidth: "none" }}>
-                        <div className="max-w-[680px]">
-                            {error && <AlertBanner type="error">{error}</AlertBanner>}
-                            {successMsg && <AlertBanner type="success">{successMsg}</AlertBanner>}
+                    <div className="flex-1 overflow-y-auto py-10 pl-10 scrollbar-hide">
+                        <div className="max-w-[640px]">
+                            {error && <AlertBanner type="error" className="mb-10">{error}</AlertBanner>}
+                            {successMsg && <AlertBanner type="success" className="mb-10">{successMsg}</AlertBanner>}
 
                             {/* ── PROJECT SETTINGS ── */}
                             {projectId ? (
-                                <>
+                                <div className="space-y-10">
                                     {activeTab === "GENERAL" && (
-                                        <motion.div key="general" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-5">
-                                            <div className="bg-[#111113] border border-white/[0.06] rounded-xl overflow-hidden shadow-elevation-1">
-                                                <div className="px-6 py-5 border-b border-white/[0.06]">
-                                                    <h2 className="text-[14px] font-semibold text-white mb-0.5">Project Name</h2>
-                                                    <p className="text-[13px] text-[#71717a]">Used to identify your project on the dashboard.</p>
+                                        <motion.div key="general" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+                                            <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden shadow-elevation-1">
+                                                <div className="px-8 py-6 border-b border-white/[0.04] bg-[#161618]">
+                                                    <h2 className="text-[11px] font-black text-[#e4e4e7] uppercase tracking-widest mb-1">Project Name</h2>
+                                                    <p className="text-[9px] font-black text-[#3f3f46] uppercase tracking-widest">Global registry identifier for this instance.</p>
                                                 </div>
-                                                <div className="px-6 py-5">
+                                                <div className="px-8 py-8">
                                                     <InputField 
                                                         value={projectName} 
                                                         onChange={(e) => setProjectName(e.target.value)}
+                                                        className="bg-[#0d0d0f] border-white/[0.04] h-14 text-[13px] font-black uppercase tracking-tight"
                                                     />
                                                 </div>
-                                                <div className="px-6 py-3.5 bg-[#0d0d0f] border-t border-white/[0.06] flex justify-end">
+                                                <div className="px-10 py-6 bg-[#0d0d0f]/50 border-t border-white/[0.04] flex justify-end">
                                                     <GlassButton 
                                                         variant="primary" 
-                                                        className="h-8 px-4 text-xs"
+                                                        className="h-10 px-8 text-[10px] font-black uppercase tracking-widest"
                                                         onClick={() => handleUpdate({ name: projectName })}
                                                         disabled={saving}
                                                     >
-                                                        {saving ? "Saving..." : "Save"}
+                                                        {saving ? "SAVING..." : "COMMIT_CHANGES"}
                                                     </GlassButton>
                                                 </div>
                                             </div>
 
-                                            <div className="bg-[#111113] border border-white/[0.06] rounded-xl overflow-hidden shadow-elevation-1">
-                                                <div className="px-6 py-5 border-b border-white/[0.06] flex items-center justify-between">
+                                            <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[40px] overflow-hidden shadow-elevation-1">
+                                                <div className="px-10 py-8 border-b border-white/[0.04] bg-[#161618] flex items-center justify-between">
                                                     <div>
-                                                        <h2 className="text-[14px] font-semibold text-white mb-0.5 flex items-center gap-2">
-                                                            <Globe size={14} className="text-[#71717a]" /> Domains
+                                                        <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1 flex items-center gap-3">
+                                                            <Globe size={16} className="text-[#3f3f46]" /> NETWORK_DOMAIN
                                                         </h2>
-                                                        <p className="text-[13px] text-[#71717a]">Manage custom domains for your project.</p>
+                                                        <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Administrative custom domains and SSL routing.</p>
                                                     </div>
                                                 </div>
-                                                <div className="px-6 py-5">
-                                                    <div className="flex items-center justify-between px-4 py-3 bg-[#0d0d0f] border border-white/[0.06] rounded-lg">
+                                                <div className="px-10 py-10">
+                                                    <div className="flex items-center justify-between px-6 py-5 bg-[#0d0d0f] border border-white/[0.04] rounded-2xl">
                                                         <div>
-                                                            <span className="text-[13px] font-medium text-white block">
+                                                            <span className="text-[14px] font-black text-white block tracking-tight">
                                                                 {project?.name?.toLowerCase().replace(/\s+/g, '-')}.velora.app
                                                             </span>
-                                                            <span className="text-[12px] text-[#22c55e] flex items-center gap-1.5 mt-1">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" /> Valid Configuration
-                                                            </span>
+                                                            <div className="flex items-center gap-3 mt-2">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
+                                                                <span className="text-[9px] font-black text-[#22c55e] uppercase tracking-[0.2em]">CONFIG_NOMINAL</span>
+                                                            </div>
                                                         </div>
-                                                        <GlassButton variant="outline" className="h-8 px-3 text-xs" disabled>Edit</GlassButton>
+                                                        <GlassButton variant="outline" className="h-10 px-6 text-[10px] font-black uppercase tracking-widest opacity-20" disabled>OVERRIDE</GlassButton>
                                                     </div>
                                                 </div>
                                             </div>
@@ -246,44 +248,46 @@ export default function Settings() {
                                     )}
 
                                     {activeTab === "VARIABLES" && (
-                                        <motion.div key="vars" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+                                        <motion.div key="vars" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                                             <EnvTable projectId={projectId} />
                                         </motion.div>
                                     )}
 
                                     {activeTab === "ADVANCED" && (
-                                        <motion.div key="advanced" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-5">
-                                            <div className="bg-[#111113] border border-white/[0.06] rounded-xl overflow-hidden shadow-elevation-1">
-                                                <div className="px-6 py-5 border-b border-white/[0.06]">
-                                                    <h2 className="text-[14px] font-semibold text-white mb-0.5">Build & Development Settings</h2>
-                                                    <p className="text-[13px] text-[#71717a]">Configure how your project is built and developed.</p>
+                                        <motion.div key="advanced" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+                                            <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[40px] overflow-hidden shadow-elevation-1">
+                                                <div className="px-10 py-8 border-b border-white/[0.04] bg-[#161618]">
+                                                    <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1">RUNTIME_OVERRIDE</h2>
+                                                    <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Configure build sequence and infrastructure commands.</p>
                                                 </div>
-                                                <div className="px-6 py-5 flex flex-col gap-5">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        <InputField label="Framework Preset" value="Auto-detect" disabled />
+                                                <div className="px-10 py-10 space-y-8">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                        <InputField label="FRAMEWORK_PRESET" value="AUTO_DETECT" disabled className="bg-[#0d0d0f]/50 border-white/[0.02] text-[#3f3f46] opacity-50" />
                                                         <InputField 
-                                                            label="Build Command" 
+                                                            label="BUILD_SEQUENCE" 
                                                             value={installCommand} 
                                                             onChange={(e) => setInstallCommand(e.target.value)}
+                                                            className="bg-[#0d0d0f] border-white/[0.04] h-12 text-[12px] font-black uppercase"
                                                         />
                                                     </div>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        <InputField label="Output Directory" defaultValue="dist" disabled />
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                        <InputField label="ASSET_DIRECTORY" defaultValue="dist" disabled className="bg-[#0d0d0f]/50 border-white/[0.02] text-[#3f3f46] opacity-50" />
                                                         <InputField 
-                                                            label="Start Command" 
+                                                            label="STARTUP_LOGIC" 
                                                             value={startCommand} 
                                                             onChange={(e) => setStartCommand(e.target.value)}
+                                                            className="bg-[#0d0d0f] border-white/[0.04] h-12 text-[12px] font-black uppercase"
                                                         />
                                                     </div>
                                                 </div>
-                                                <div className="px-6 py-3.5 bg-[#0d0d0f] border-t border-white/[0.06] flex justify-end">
+                                                <div className="px-10 py-6 bg-[#0d0d0f]/50 border-t border-white/[0.04] flex justify-end">
                                                     <GlassButton 
                                                         variant="primary" 
-                                                        className="h-8 px-4 text-xs"
+                                                        className="h-10 px-8 text-[10px] font-black uppercase tracking-widest"
                                                         onClick={() => handleUpdate({ installCommand, startCommand })}
                                                         disabled={saving}
                                                     >
-                                                        {saving ? "Saving..." : "Save Settings"}
+                                                        {saving ? "SAVING..." : "COMMIT_ADVANCED_STATE"}
                                                     </GlassButton>
                                                 </div>
                                             </div>
@@ -291,83 +295,86 @@ export default function Settings() {
                                     )}
 
                                     {activeTab === "DANGER" && (
-                                        <motion.div key="danger" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
-                                            <div className="bg-[#111113] border border-[#ef4444]/20 rounded-xl overflow-hidden shadow-elevation-1">
-                                                <div className="px-6 py-5 border-b border-[#ef4444]/10 bg-[#ef4444]/[0.02] flex items-start gap-3">
-                                                    <AlertTriangle size={16} className="text-[#ef4444] mt-0.5 shrink-0" />
+                                        <motion.div key="danger" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                                            <div className="bg-[#1e1e20] border border-[#ef4444]/20 rounded-[40px] overflow-hidden shadow-elevation-1">
+                                                <div className="px-10 py-8 border-b border-[#ef4444]/10 bg-[#ef4444]/[0.02] flex items-start gap-5">
+                                                    <AlertTriangle size={20} className="text-[#ef4444] mt-1 shrink-0" />
                                                     <div>
-                                                        <h2 className="text-[14px] font-semibold text-[#ef4444] mb-0.5">Delete Project</h2>
-                                                        <p className="text-[13px] text-[#71717a]">
-                                                            Permanently remove your project and all its deployments. This action cannot be undone.
+                                                        <h2 className="text-[13px] font-black text-[#ef4444] uppercase tracking-widest mb-1">TERMINATE_INSTANCE</h2>
+                                                        <p className="text-[10px] font-black text-[#ef4444]/60 uppercase tracking-widest leading-relaxed">
+                                                            Permanently remove your project and all its deployments from the global edge network. This action is irreversible.
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div className="px-6 py-5 flex items-center justify-between">
-                                                    <span className="text-[13px] text-white">
-                                                        Delete <span className="font-semibold font-mono">{project?.name}</span>
-                                                    </span>
+                                                <div className="px-10 py-10 flex items-center justify-between">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[11px] font-black text-[#3f3f46] uppercase tracking-widest">Confirm_Target</span>
+                                                        <span className="text-[16px] font-black font-mono text-white tracking-tight">{project?.name}</span>
+                                                    </div>
                                                     <GlassButton 
                                                         variant="danger" 
-                                                        className="h-9 px-4 text-[13px]"
+                                                        className="h-12 px-8 text-[10px] font-black uppercase tracking-[0.2em]"
                                                         onClick={handleDelete}
                                                         disabled={saving}
                                                     >
-                                                        {saving ? "Deleting..." : "Delete Project"}
+                                                        {saving ? "TERMINATING..." : "TERMINATE_NODE"}
                                                     </GlassButton>
                                                 </div>
                                             </div>
                                         </motion.div>
                                     )}
-                                </>
+                                </div>
                             ) : (
                                 /* ── GLOBAL / WORKSPACE SETTINGS ── */
-                                <motion.div key="global" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+                                <motion.div key="global" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                                     
                                     {activeTab === "WORKSPACE" && (
                                         <>
-                                            <div className="bg-[#111113] border border-white/[0.06] rounded-xl overflow-hidden shadow-elevation-1">
-                                                <div className="px-6 py-5 border-b border-white/[0.06]">
-                                                    <h2 className="text-[14px] font-semibold text-white mb-0.5">Workspace Management</h2>
-                                                    <p className="text-[13px] text-[#71717a]">Overview of all projects in your architectural workspace.</p>
+                                            <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[48px] overflow-hidden shadow-elevation-1">
+                                                <div className="px-10 py-8 border-b border-white/[0.04] bg-[#161618]">
+                                                    <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1">WORKSPACE_REGISTRY</h2>
+                                                    <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Active nodes currently under global authority.</p>
                                                 </div>
-                                                <div className="px-2 py-2">
+                                                <div className="px-4 py-4">
                                                     {allProjects.length === 0 ? (
-                                                        <div className="py-10 text-center text-[#71717a] text-[13px]">No projects found.</div>
+                                                        <div className="py-20 text-center text-[#1e1e20] font-black uppercase text-[12px] tracking-[0.5em]">NULL_REGISTRY_FOUND</div>
                                                     ) : (
-                                                        allProjects.map((p) => (
-                                                            <div 
-                                                                key={p._id}
-                                                                onClick={() => navigate(`/settings?projectId=${p._id}`)}
-                                                                className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer group"
-                                                            >
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
-                                                                        <Folder size={14} className="text-[#a1a1aa]" />
+                                                        <div className="grid grid-cols-1 gap-2">
+                                                            {allProjects.map((p) => (
+                                                                <div 
+                                                                    key={p._id}
+                                                                    onClick={() => navigate(`/settings?projectId=${p._id}`)}
+                                                                    className="flex items-center justify-between px-8 py-6 rounded-[32px] hover:bg-white/[0.02] transition-all cursor-pointer group border border-transparent hover:border-white/[0.04]"
+                                                                >
+                                                                    <div className="flex items-center gap-6">
+                                                                        <div className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center group-hover:border-[#22c55e]/30 transition-colors">
+                                                                            <Folder size={18} className="text-[#3f3f46] group-hover:text-[#22c55e] transition-colors" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[15px] font-black text-white uppercase tracking-tight group-hover:text-[#22c55e] transition-colors">{p.name}</p>
+                                                                            <p className="text-[10px] text-[#3f3f46] font-mono mt-1 group-hover:text-[#52525b] transition-colors">{p.repoName}</p>
+                                                                        </div>
                                                                     </div>
-                                                                    <div>
-                                                                        <p className="text-[13px] font-bold text-white group-hover:text-[#22c55e] transition-colors">{p.name}</p>
-                                                                        <p className="text-[11px] text-[#52525b] font-mono">{p.repoName}</p>
-                                                                    </div>
+                                                                    <ChevronRight size={18} className="text-[#1e1e20] group-hover:text-[#3f3f46] group-hover:translate-x-2 transition-all" />
                                                                 </div>
-                                                                <ChevronRight size={14} className="text-[#3f3f46] group-hover:translate-x-1 transition-transform" />
-                                                            </div>
-                                                        ))
+                                                            ))}
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            <div className="bg-[#111113] border border-white/[0.06] rounded-xl overflow-hidden shadow-elevation-1">
-                                                <div className="px-6 py-5 border-b border-white/[0.06]">
-                                                    <h2 className="text-[14px] font-semibold text-white mb-0.5">Platform Usage</h2>
-                                                    <p className="text-[13px] text-[#71717a]">Monitor your workspace resource allocation.</p>
+                                            <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[48px] overflow-hidden shadow-elevation-1">
+                                                <div className="px-10 py-8 border-b border-white/[0.04] bg-[#161618]">
+                                                    <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1">PLATFORM_QUOTA</h2>
+                                                    <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Workspace resource allocation and compute usage.</p>
                                                 </div>
-                                                <div className="px-6 py-5">
-                                                    <div className="flex justify-between items-center mb-2">
-                                                        <span className="text-[12px] text-[#a1a1aa]">Build Minutes</span>
-                                                        <span className="text-[12px] font-bold text-white">124 / 500 min</span>
+                                                <div className="px-10 py-10">
+                                                    <div className="flex justify-between items-center mb-5">
+                                                        <span className="text-[11px] font-black text-[#52525b] uppercase tracking-widest">BUILD_CAPACITY</span>
+                                                        <span className="text-[11px] font-black text-white uppercase tracking-widest">124_/_500_MIN</span>
                                                     </div>
-                                                    <div className="w-full h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
-                                                        <div className="h-full bg-[#22c55e] w-[25%]" />
+                                                    <div className="w-full h-2.5 bg-[#0d0d0f] rounded-full overflow-hidden border border-white/[0.04]">
+                                                        <div className="h-full bg-[#22c55e] w-[25%] shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -375,14 +382,14 @@ export default function Settings() {
                                     )}
 
                                     {(activeTab === "PROFILE" || activeTab === "SECURITY") && (
-                                        <div className="py-10 text-center">
-                                            <div className="w-12 h-12 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
-                                                <User size={20} className="text-[#3f3f46]" />
+                                        <div className="py-20 text-center">
+                                            <div className="w-16 h-16 rounded-3xl bg-[#1e1e20] border border-white/[0.04] flex items-center justify-center mx-auto mb-8 shadow-elevation-1">
+                                                <User size={28} className="text-[#3f3f46]" />
                                             </div>
-                                            <p className="text-[14px] font-bold text-white mb-1">Redirecting to Account</p>
-                                            <p className="text-[13px] text-[#71717a] mb-6">Profile and security settings are managed in your account page.</p>
-                                            <GlassButton variant="primary" onClick={() => navigate("/account")}>
-                                                Go to Account
+                                            <p className="text-[18px] font-black text-white uppercase tracking-tighter mb-2">REDIRECT_TO_CORE</p>
+                                            <p className="text-[11px] font-black text-[#3f3f46] uppercase tracking-[0.2em] mb-10 max-w-[320px] mx-auto leading-relaxed">Identity and security registries are managed within the primary account module.</p>
+                                            <GlassButton variant="primary" className="h-12 px-10 text-[10px] font-black uppercase tracking-widest" onClick={() => navigate("/account")}>
+                                                ACCESS_ACCOUNT_NODE
                                             </GlassButton>
                                         </div>
                                     )}

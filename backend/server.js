@@ -15,17 +15,23 @@ const server = http.createServer(app);
 
 // 🌟 STEP 2: Socket.io ko HTTP server ke sath initialize karo
 const io = socketIo(server, {
+  pingTimeout: 60000,
+  pingInterval: 25000,
   cors: {
     origin: (origin, callback) => {
       const allowed = [
         process.env.FRONTEND_URL,
-        'http://localhost:5173',
-        'http://localhost:5174'
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
       ].filter(Boolean);
       if (!origin || allowed.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error("Not allowed by CORS"));
       }
     },
     methods: ["GET", "POST"],

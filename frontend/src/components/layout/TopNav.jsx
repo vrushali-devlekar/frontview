@@ -149,12 +149,6 @@ const TopNav = () => {
           />
         </div>
 
-        {/* Notifications */}
-        <button className="relative flex items-center justify-center w-8 h-8 rounded-lg text-[#52525b] hover:text-white hover:bg-white/[0.05] transition-colors">
-          <Bell size={14} />
-          <span className="absolute top-1.5 right-1.5 w-[5px] h-[5px] bg-[#22c55e] rounded-full ring-2 ring-[#09090b]" />
-        </button>
-
         {/* Divider */}
         <div className="w-px h-4 bg-white/[0.08] mx-1.5" />
 
@@ -167,15 +161,26 @@ const TopNav = () => {
             {user?.avatar || user?.githubAvatarUrl || user?.googleAvatarUrl ? (
               <img 
                 src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl} 
-                className="w-8 h-8 rounded-full object-cover" 
+                className="w-8 h-8 rounded-full object-cover border border-white/10" 
                 alt="Avatar"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[12px] font-black text-black">
-                {user?.name?.charAt(0) || "U"}
+              <div 
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-black text-white shadow-inner"
+                style={{ 
+                  backgroundColor: (() => {
+                    const colors = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
+                    const name = user?.name || "User";
+                    let hash = 0;
+                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                    return colors[Math.abs(hash) % colors.length];
+                  })()
+                }}
+              >
+                {user?.name?.charAt(0).toUpperCase() || "U"}
               </div>
             )}
-            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none">{user?.name || "User"}</span>
+            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none ml-1">{user?.name || "User"}</span>
             <ChevronDown size={12} className={`hidden md:block text-[#3f3f46] transition-transform duration-300 ${isDropdownOpen ? "rotate-180" : ""}`} />
           </button>
 

@@ -1,7 +1,19 @@
 // services/repoService.js
 
+const cache = require('../utils/cache');
+
 // Ye function GitHub API se baat karke repos layega
 const fetchUserRepos = async (accessToken) => {
+    // Generate a unique cache key based on the token
+    // Using a hash of the token would be better, but for now this works
+    const cacheKey = `repos_${accessToken.slice(-10)}`;
+    
+    const cachedRepos = cache.get(cacheKey);
+    if (cachedRepos) {
+        console.log('⚡ Serving repos from cache');
+        return cachedRepos;
+    }
+
     try {
         // GitHub API call kar rahe hain (sort=updated se sabse naye upar aayenge)
         const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100', {
@@ -33,6 +45,7 @@ const fetchUserRepos = async (accessToken) => {
             lastUpdated: repo.updated_at
         }));
 
+        cache.set(cacheKey, repos);
         return repos;
 
     } catch (error) {

@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import {
-  LayoutDashboard, Grid3X3, Zap, Layers, BarChart2,
+  LayoutDashboard, Grid3X3, Zap, Layers,
   Settings, Users, Plug, Monitor
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -23,7 +23,6 @@ const Dock = ({ navMode, toggleNavMode }) => {
     { icon: Grid3X3, label: "Apps", to: getPath("/applications") },
     { icon: Zap, label: "Deploys", to: getPath("/deploy") },
     { icon: Layers, label: "Env", to: getPath("/environments") },
-    { icon: BarChart2, label: "Metrics", to: getPath("/metrics") },
     { icon: Users, label: "Members", to: getPath("/members") },
     { icon: Plug, label: "Plugins", to: getPath("/integrations") },
     { icon: Settings, label: "Settings", to: getPath("/settings") },

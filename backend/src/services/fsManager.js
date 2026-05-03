@@ -67,4 +67,34 @@ const createEnvFile = async (targetPath, envVars = []) => {
     console.log(`🔐 .env file created at ${envPath}`);
 };
 
-module.exports = { cloneRepo, createEnvFile };
+// 3. Direct Uploaded Files likhne ka function (Folder Upload ke liye)
+const writeProjectFiles = async (deploymentId, files = []) => {
+    const targetPath = path.join(BASE_DIR, deploymentId);
+    
+    // Clean start
+    try {
+        await fs.rm(targetPath, { recursive: true, force: true });
+    } catch (err) {}
+    
+    await fs.mkdir(targetPath, { recursive: true });
+    
+    for (const file of files) {
+        // file.path format: "folder/subfolder/file.js"
+        const filePath = path.join(targetPath, file.path);
+        const dirPath = path.dirname(filePath);
+        
+        // Folder banao agar nahi hai
+        await fs.mkdir(dirPath, { recursive: true });
+        
+        // File content likho (Assuming content is base64 or raw string)
+        const content = file.encoding === 'base64' 
+            ? Buffer.from(file.content, 'base64') 
+            : file.content;
+            
+        await fs.writeFile(filePath, content);
+    }
+    
+    return targetPath;
+};
+
+module.exports = { cloneRepo, createEnvFile, writeProjectFiles };

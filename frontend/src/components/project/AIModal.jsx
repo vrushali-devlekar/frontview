@@ -166,16 +166,16 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
 
-      <div className={`relative w-full bg-[#09090b] border border-white/[0.06] rounded-xl flex flex-col max-h-[85vh] shadow-elevation-2 overflow-hidden transition-all duration-300 ${isChatExpanded ? "max-w-4xl" : "max-w-2xl"}`}>
+      <div className={`relative w-full bg-[#1e1e20] border border-white/[0.06] rounded-xl flex flex-col max-h-[85vh] shadow-elevation-2 overflow-hidden transition-all duration-300 ${isChatExpanded ? "max-w-4xl" : "max-w-2xl"}`}>
 
         {/* Header - Clean & Professional */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0 bg-[#111113]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0 bg-[#161618]">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-lg bg-white/[0.04] flex items-center justify-center border border-white/[0.06]">
               <BrainCircuit size={20} className="text-[#a1a1aa]" />
             </div>
             <div>
-              <h2 className="text-[15px] font-semibold text-white tracking-tight">
+              <h2 className="text-[15px] font-semibold text-white tracking-tight uppercase">
                 AI Diagnostics
               </h2>
               <p className="text-[12px] text-[#71717a] font-medium mt-0.5">Automated issue resolution</p>
@@ -207,7 +207,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
             <div className="flex flex-col items-center justify-center h-52 gap-4">
               <Loader2 size={24} className="text-[#a1a1aa] animate-spin" />
               <div className="text-center">
-                <p className="text-[#d4d4d8] font-medium font-sans">
+                <p className="text-[#d4d4d8] font-medium font-sans uppercase tracking-widest">
                   Analyzing deployment logs...
                 </p>
                 <p className="text-[#71717a] text-[12px] font-sans mt-1">
@@ -225,10 +225,10 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
             </div>
           ) : !isChatExpanded ? (
             <div className="space-y-4">
-              <div className="bg-[#111113] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1">
+              <div className="bg-[#161618] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1">
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/[0.06]">
                   <Cpu size={14} className="text-[#3b82f6]" />
-                  <span className="text-[12px] font-medium text-[#3b82f6] tracking-wide font-sans">Analysis Result</span>
+                  <span className="text-[12px] font-black text-[#3b82f6] tracking-widest font-sans uppercase">Analysis Result</span>
                 </div>
                 <div className="text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap">
                   {streamedAnalysis}
@@ -241,7 +241,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
               <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-2" style={{ scrollbarWidth: 'thin' }}>
                 {/* Initial Analysis */}
                 <div className="flex justify-start">
-                  <div className="max-w-[85%] bg-[#111113] border border-white/[0.06] rounded-2xl rounded-tl-sm px-4 py-3 text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap shadow-elevation-1">
+                  <div className="max-w-[85%] bg-[#161618] border border-white/[0.06] rounded-2xl rounded-tl-sm px-4 py-3 text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap shadow-elevation-1">
                     {streamedAnalysis}
                   </div>
                 </div>
@@ -249,8 +249,8 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
                 {chatMessages.map((m) => (
                   <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap shadow-elevation-1 ${m.role === "user"
-                        ? "bg-white/[0.06] border border-white/[0.08] text-white rounded-tr-sm"
-                        : "bg-[#111113] border border-white/[0.06] text-[#d4d4d8] rounded-tl-sm"
+                        ? "bg-white text-black font-semibold rounded-tr-sm shadow-xl"
+                        : "bg-[#161618] border border-white/[0.06] text-[#d4d4d8] rounded-tl-sm shadow-lg"
                       }`}>
                       {m.text}
                       {(isTyping && m.id === chatMessages[chatMessages.length - 1].id && m.role === "assistant") && (

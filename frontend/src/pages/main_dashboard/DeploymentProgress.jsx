@@ -81,7 +81,7 @@ export default function DeploymentProgress() {
         if (latest.status === 'successful') setCurrentStage(4);
         else if (latest.status === 'failed') setCurrentStage(currentStage); // Keep current
         
-        if (latest.status === 'building' || latest.status === 'pending') {
+        if (['building', 'pending', 'queued', 'running'].includes(latest.status)) {
           connectSocket(latest._id);
         }
       }
@@ -101,18 +101,25 @@ export default function DeploymentProgress() {
       const line = `[${new Date(log.timestamp).toLocaleTimeString()}] ${log.message}`;
       setLogs(prev => [...prev, line]);
       
-      // Heuristic stage detection from logs (can be improved by backend events)
-      if (log.message.toLowerCase().includes('cloning')) setCurrentStage(1);
-      if (log.message.toLowerCase().includes('building') || log.message.toLowerCase().includes('npm install')) setCurrentStage(2);
-      if (log.message.toLowerCase().includes('deploying') || log.message.toLowerCase().includes('pushing')) setCurrentStage(3);
+      const msg = log.message.toLowerCase();
+      // Heuristic stage detection from logs
+      if (msg.includes('cloning') || msg.includes('repository cloned')) setCurrentStage(1);
+      if (msg.includes('building') || msg.includes('npm install') || msg.includes('analyzing')) setCurrentStage(2);
+      if (msg.includes('starting app') || msg.includes('start command') || msg.includes('pushing')) setCurrentStage(3);
+      if (msg.includes('deployment live') || msg.includes('live at')) setCurrentStage(4);
     });
 
     socket.on('deployment:status', (data) => {
-      if (data.status === 'successful') {
+      console.log("📡 Deployment Status Update:", data);
+      const s = data.status?.toLowerCase();
+      if (s === 'successful' || s === 'running') {
         setCurrentStage(4);
         setStatus('successful');
-      } else if (data.status === 'failed') {
+      } else if (s === 'failed') {
         setStatus('failed');
+      } else if (s === 'building') {
+        setCurrentStage(2);
+        setStatus('building');
       }
     });
   };
@@ -190,28 +197,32 @@ export default function DeploymentProgress() {
   };
 
   return (
-    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
+    <div className="flex h-screen bg-[var(--bg-main)] text-white font-sans overflow-hidden">
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
-        <div className="flex-1 p-6 lg:p-12 overflow-y-auto scrollbar-hide">
+        <div className="flex-1 p-6 lg:p-10 overflow-y-auto scrollbar-hide">
           <div className="max-w-5xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-12">
-              <div className="flex items-center gap-6">
+            {/* Header Area */}
+            <div className="flex items-center justify-between mb-10 pb-8 border-b border-white/[0.04]">
+              <div className="flex items-center gap-8">
                 <button 
                   onClick={() => navigate('/dashboard')}
-                  className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"
+                  className="w-11 h-11 rounded-xl bg-[#1e1e20] border border-white/[0.04] flex items-center justify-center hover:bg-[#161618] transition-all shadow-elevation-1 group"
                 >
-                  <ArrowLeft size={18} />
+                  <ArrowLeft size={18} className="text-[#3f3f46] group-hover:text-white group-hover:-translate-x-1 transition-all" />
                 </button>
                 <div>
-                  <h1 className="text-2xl font-black tracking-tight">{project?.name || "Initializing..."}</h1>
-                  <div className="flex items-center gap-3 mt-1 text-[#52525b]">
-                    <span className="text-[12px] font-mono">{project?.repoUrl}</span>
-                    <ChevronRight size={12} />
-                    <span className="text-[12px] font-black uppercase tracking-widest text-[#22c55e]">Production</span>
+                  <div className="flex items-center gap-4 mb-2">
+                    <span className="px-2.5 py-0.5 rounded-lg bg-[#0d0d0f] border border-white/[0.04] text-[8px] font-black text-[#52525b] uppercase tracking-[0.3em]">NODE_SEQUENCE</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+                  </div>
+                  <h1 className="text-[22px] font-black tracking-tighter uppercase text-[#e4e4e7] leading-none">{project?.name || "INITIALIZING_NODE"}</h1>
+                  <div className="flex items-center gap-4 mt-3 text-[#52525b]">
+                    <span className="text-[10px] font-mono uppercase tracking-tight opacity-50">{project?.repoUrl || "SOURCE_PENDING"}</span>
+                    <div className="w-1 h-1 rounded-full bg-[#1e1e20]" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#22c55e]">AUTHORITY_NOMINAL</span>
                   </div>
                 </div>
               </div>
@@ -220,7 +231,7 @@ export default function DeploymentProgress() {
                 {(status === 'successful' || status === 'failed') && (
                   <GlassButton 
                     variant="secondary" 
-                    className="h-10 px-6 gap-2"
+                    className="h-11 px-8 gap-3 text-[9px] font-black uppercase tracking-[0.25em] shadow-elevation-1 border-white/5"
                     disabled={isDeploying || status === 'building'}
                     onClick={async () => {
                       if (isDeploying || status === 'building') return;
@@ -229,7 +240,6 @@ export default function DeploymentProgress() {
                       try {
                         const res = await triggerDeployment(project._id);
                         if (res.data.success) {
-                          // Fresh fetch to get latest deployment
                           const dRes = await getDeploymentsByProject(project._id);
                           const newDep = dRes.data.data?.[0];
                           if (newDep) {
@@ -244,131 +254,169 @@ export default function DeploymentProgress() {
                       }
                     }}
                   >
-                    <Rocket size={16} className={isDeploying ? "animate-bounce" : ""} /> {isDeploying ? "Deploying..." : "Deploy Again"}
+                    <Rocket size={14} className={isDeploying ? "animate-pulse" : ""} /> {isDeploying ? "DEPLOYING..." : "DEPLOY_NODE"}
                   </GlassButton>
                 )}
                 {status === 'successful' && (
                   <GlassButton 
                     variant="primary" 
-                    className="h-10 px-6 gap-2"
+                    className="h-11 px-8 gap-3 text-[9px] font-black uppercase tracking-[0.25em] shadow-elevation-2"
                     onClick={() => window.open(project?.liveUrl || '#', '_blank')}
                   >
-                    <Globe size={16} /> Visit App
+                    <Globe size={14} /> ACCESS_INSTANCE
                   </GlassButton>
                 )}
-                <div className={`px-4 py-2 rounded-xl border font-black text-[10px] uppercase tracking-[0.2em] ${
-                  status === 'successful' ? 'bg-[#22c55e]/10 border-[#22c55e]/20 text-[#22c55e]' :
-                  status === 'failed' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
-                  'bg-white/5 border-white/10 text-white animate-pulse'
+                <div className={`h-11 px-6 rounded-xl border flex items-center font-black text-[9px] uppercase tracking-[0.3em] shadow-elevation-1 ${
+                  status === 'successful' ? 'bg-[#22c55e]/5 border-[#22c55e]/10 text-[#22c55e]' :
+                  status === 'failed' ? 'bg-[#ef4444]/5 border-[#ef4444]/10 text-[#ef4444]' :
+                  'bg-[#1e1e20] border-white/[0.04] text-[#52525b]'
                 }`}>
-                  {status === 'successful' ? 'Deployed' : status === 'failed' ? 'Failed' : 'Building'}
+                  <div className={`w-1.5 h-1.5 rounded-full mr-3 ${
+                    status === 'successful' ? 'bg-[#22c55e]' :
+                    status === 'failed' ? 'bg-[#ef4444]' :
+                    'bg-[#52525b] animate-pulse'
+                  }`} />
+                  {status === 'successful' ? 'NOMINAL' : status === 'failed' ? 'FAULT' : 'SYNCING'}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               {/* Progress Sidebar */}
-              <div className="space-y-6">
-                <div className="bg-[#111113] border border-white/[0.06] rounded-[32px] p-8 shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#22c55e]/[0.02] rounded-full -mr-16 -mt-16 blur-3xl" />
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#3f3f46] mb-8">Deployment Progress</h3>
+              <div className="space-y-10">
+                <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] p-8 shadow-elevation-1 relative overflow-hidden">
+                  <div className="flex items-center gap-5 mb-12">
+                    <div className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center text-[#3f3f46]">
+                      <Activity size={18} />
+                    </div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#3f3f46]">Sequence Log</h3>
+                  </div>
                   
-                  <div className="relative space-y-10">
-                    <div className="absolute left-[15px] top-2 bottom-2 w-px bg-white/[0.05]" />
+                  <div className="relative pl-1">
+                    {/* Background Line */}
+                    <div className="absolute left-[21px] top-3 bottom-3 w-[1px] bg-white/[0.04]" />
                     
-                    {STAGES.map((stage, idx) => {
-                      const isCompleted = idx < currentStage || (status === 'successful' && idx === 4);
-                      const isActive = idx === currentStage && status !== 'successful' && status !== 'failed';
-                      const isFailed = status === 'failed' && idx === currentStage;
+                    {/* Animated Filling Line */}
+                    <motion.div 
+                      className="absolute left-[21px] top-3 w-[1px] bg-[#22c55e] origin-top z-[1]"
+                      initial={{ height: 0 }}
+                      animate={{ 
+                        height: `${(currentStage / (STAGES.length - 1)) * 100}%` 
+                      }}
+                      transition={{ duration: 1.5, ease: [0.4, 0, 0.2, 1] }}
+                    />
+                    
+                    <div className="relative space-y-16">
+                      {STAGES.map((stage, idx) => {
+                        const isCompleted = idx < currentStage || (status === 'successful' && idx === 4);
+                        const isActive = idx === currentStage && status !== 'successful' && status !== 'failed';
+                        const isFailed = status === 'failed' && idx === currentStage;
 
-                      return (
-                        <div key={stage.id} className="flex gap-6 relative group">
-                          <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 transition-all z-10 ${
-                            isCompleted ? 'bg-[#22c55e] border-[#22c55e] text-black shadow-[0_0_15px_rgba(34,197,94,0.3)]' :
-                            isActive ? 'bg-white/10 border-white/20 text-white animate-pulse' :
-                            isFailed ? 'bg-red-500 border-red-500 text-white' :
-                            'bg-[#050505] border-white/5 text-[#3f3f46]'
-                          }`}>
-                            {isCompleted ? <CheckCircle2 size={16} /> : 
-                             isActive ? <Loader2 size={16} className="animate-spin" /> :
-                             isFailed ? <AlertCircle size={16} /> :
-                             <Circle size={16} />}
+                        return (
+                          <div key={stage.id} className="flex gap-10 relative group">
+                            {/* Node Icon */}
+                            <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 transition-all z-10 relative shadow-elevation-1 ${
+                                isCompleted ? 'bg-[#22c55e] border-[#22c55e] text-black shadow-[0_0_30px_rgba(34,197,94,0.15)]' :
+                                isActive ? 'bg-[#0d0d0f] border-[#22c55e] text-[#22c55e] shadow-[0_0_20px_rgba(34,197,94,0.1)]' :
+                                isFailed ? 'bg-[#ef4444] border-[#ef4444] text-white' :
+                                'bg-[#0d0d0f] border-white/[0.04] text-[#1e1e20]'
+                              }`}
+                            >
+                              {isCompleted ? (
+                                <CheckCircle2 size={18} strokeWidth={3} />
+                              ) : isActive ? (
+                                <Loader2 size={18} className="animate-spin" />
+                              ) : isFailed ? (
+                                <AlertCircle size={18} />
+                              ) : (
+                                <Circle size={18} />
+                              )}
+                            </div>
+
+                            {/* Node Text */}
+                            <div className="pt-1.5">
+                              <h4 className={`text-[12px] font-black uppercase tracking-tighter mb-1.5 transition-colors ${
+                                isCompleted || isActive ? 'text-[#e4e4e7]' : 'text-[#3f3f46]'
+                              }`}>
+                                {stage.label}
+                              </h4>
+                              <p className={`text-[8px] font-black uppercase tracking-[0.25em] transition-colors ${
+                                isActive ? 'text-[#52525b]' : 'text-[#1e1e20]'
+                              }`}>
+                                {stage.description}
+                              </p>
+                            </div>
                           </div>
-                          <div className="pt-1">
-                            <h4 className={`text-[14px] font-bold mb-1 ${isCompleted || isActive ? 'text-white' : 'text-[#3f3f46]'}`}>
-                              {stage.label}
-                            </h4>
-                            <p className="text-[11px] text-[#52525b] leading-relaxed">{stage.description}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
                 {status === 'failed' && (
                   <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-red-500/10 border border-red-500/20 rounded-[24px] p-6"
+                    className="bg-[#ef4444]/5 border border-[#ef4444]/10 rounded-[40px] p-10 shadow-elevation-1"
                   >
-                    <div className="flex items-center gap-3 mb-3 text-red-500">
-                      <AlertCircle size={18} />
-                      <span className="font-bold text-[14px]">Deployment Failed</span>
+                    <div className="flex items-center gap-5 mb-6 text-[#ef4444]">
+                      <AlertCircle size={22} />
+                      <span className="font-black text-[14px] uppercase tracking-widest">Sequence_Fault</span>
                     </div>
-                    <p className="text-[12px] text-red-500/70 mb-5 leading-relaxed">The build process encountered an error. Use Velora AI to analyze the logs and find a solution.</p>
+                    <p className="text-[11px] text-[#ef4444]/60 mb-10 leading-relaxed font-black uppercase tracking-[0.2em]">Initialization logic failure detected. Deploy the Neural Engine for isolation and recovery.</p>
                     <button 
                       onClick={() => setShowAIChat(true)}
-                      className="w-full h-11 rounded-xl bg-red-500 text-white font-bold text-[12px] uppercase tracking-widest hover:bg-red-600 transition-all flex items-center justify-center gap-2"
+                      className="w-full h-14 rounded-2xl bg-[#ef4444] text-white font-black text-[10px] uppercase tracking-[0.3em] hover:bg-[#ef4444]/90 transition-all flex items-center justify-center gap-4 shadow-elevation-2"
                     >
-                      <Sparkles size={14} /> Analyze with AI
+                      <Sparkles size={18} /> DEPLOY_ANALYST
                     </button>
                   </motion.div>
                 )}
               </div>
 
               {/* Logs View */}
-              <div className="lg:col-span-2 space-y-6 flex flex-col min-h-0">
-                <div className="bg-[#111113] border border-white/[0.06] rounded-[32px] overflow-hidden flex flex-col h-[600px] shadow-2xl">
-                  <div className="p-6 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.01]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#71717a]">
-                        <TerminalIcon size={16} />
+              <div className="lg:col-span-2 flex flex-col min-h-0">
+                <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[40px] overflow-hidden flex flex-col h-[600px] shadow-elevation-2">
+                  <div className="px-8 py-6 border-b border-white/[0.04] flex items-center justify-between bg-[#161618]">
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center text-[#52525b] shadow-elevation-1">
+                        <TerminalIcon size={20} />
                       </div>
-                      <span className="font-bold text-[13px] uppercase tracking-widest">Build Logs</span>
+                      <div>
+                        <span className="font-black text-[13px] uppercase tracking-[0.4em] text-white">Stream_Log</span>
+                        <span className="text-[9px] text-[#3f3f46] font-black uppercase tracking-[0.25em] mt-1 block">ASSET_NOMINAL_TELEMETRY</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
-                      <span className="text-[10px] font-black text-[#52525b] uppercase tracking-widest">Streaming</span>
+                    <div className="flex items-center gap-4 px-5 py-2.5 rounded-xl bg-[#0d0d0f] border border-white/[0.04]">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+                      <span className="text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">LIVE_SYNC</span>
                     </div>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto p-8 font-mono text-[13px] leading-relaxed space-y-1.5 scrollbar-hide bg-black/40">
+                  <div className="flex-1 overflow-y-auto p-12 font-mono text-[13px] leading-loose space-y-3 scrollbar-hide bg-[#0d0d0f]/60 shadow-inner">
                     {logs.length > 0 ? logs.map((log, i) => {
                       const lowerLog = log.toLowerCase();
                       const isWarning = lowerLog.includes('warning') || lowerLog.includes('[warn]');
                       const isError = lowerLog.includes('error') || lowerLog.includes('[err]');
                       const isSuccess = lowerLog.includes('success') || lowerLog.includes('completed') || lowerLog.includes('live at');
-                      const isInfo = lowerLog.includes('[info]');
                       const isHttp = lowerLog.includes('[http]') || lowerLog.includes('get ') || lowerLog.includes('post ');
 
-                      let colorClass = 'text-[#a1a1aa]';
-                      if (isError) colorClass = 'text-[#ef4444] font-bold';
-                      else if (isWarning) colorClass = 'text-[#f59e0b] font-bold';
-                      else if (isSuccess) colorClass = 'text-[#22c55e] font-bold';
+                      let colorClass = 'text-[#3f3f46]';
+                      if (isError) colorClass = 'text-[#ef4444]';
+                      else if (isWarning) colorClass = 'text-[#f59e0b]';
+                      else if (isSuccess) colorClass = 'text-[#22c55e]';
                       else if (isHttp) colorClass = 'text-[#a855f7]';
-                      else if (isInfo) colorClass = 'text-[#3b82f6]';
 
                       return (
-                        <div key={i} className="flex gap-4 group">
-                          <span className="text-[#3f3f46] select-none min-w-[30px] group-hover:text-white transition-colors">{i + 1}</span>
-                          <span className={`whitespace-pre-wrap ${colorClass} transition-colors`}>{log}</span>
+                        <div key={i} className="flex gap-10 group">
+                          <span className="text-[#1e1e20] select-none min-w-[40px] group-hover:text-[#3f3f46] transition-colors">{String(i + 1).padStart(4, '0')}</span>
+                          <span className={`whitespace-pre-wrap ${colorClass} transition-colors uppercase tracking-tight font-black`}>{log}</span>
                         </div>
                       );
                     }) : (
-                      <div className="h-full flex flex-col items-center justify-center text-center opacity-20">
-                        <Activity size={40} className="mb-4" />
-                        <p className="font-bold text-[14px]">Waiting for logs...</p>
+                      <div className="h-full flex flex-col items-center justify-center text-center opacity-10">
+                        <Activity size={72} className="mb-10" />
+                        <p className="font-black text-[16px] uppercase tracking-[0.5em]">AWAITING_INIT_PACKET...</p>
                       </div>
                     )}
                     <div ref={logsEndRef} />
@@ -381,60 +429,73 @@ export default function DeploymentProgress() {
       </PageWrapper>
 
       {/* AI Chat Widget */}
-      <div className="fixed bottom-10 right-10 z-[100]">
+      <div className="fixed bottom-16 right-16 z-[100]">
         <AnimatePresence>
           {showAIChat && (
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              className="absolute bottom-20 right-0 w-96 h-[500px] bg-[#18181b] border border-white/[0.1] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-28 right-0 w-[480px] h-[640px] bg-[#1e1e20] border border-white/[0.04] rounded-[56px] shadow-elevation-2 overflow-hidden flex flex-col"
             >
-              <div className="p-6 border-b border-white/[0.06] bg-white/[0.02] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#22c55e] text-black flex items-center justify-center shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                    <Sparkles size={16} />
+              <div className="px-10 py-8 border-b border-white/[0.04] bg-[#161618] flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center shadow-elevation-2">
+                    <Sparkles size={22} />
                   </div>
                   <div>
-                    <h4 className="text-[14px] font-bold">Velora AI</h4>
-                    <p className="text-[10px] text-[#22c55e] font-bold uppercase tracking-wider">Analyzing Logs</p>
+                    <h4 className="text-[16px] font-black text-white uppercase tracking-tighter">Velora_Analyst</h4>
+                    <p className="text-[9px] text-[#22c55e] font-black uppercase tracking-[0.3em] mt-1">NEURAL_LOG_PROCESSOR</p>
                   </div>
                 </div>
-                <button onClick={() => setShowAIChat(false)} className="text-[#52525b] hover:text-white transition-colors">
-                  <ChevronRight size={18} />
+                <button onClick={() => setShowAIChat(false)} className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/5 flex items-center justify-center text-[#3f3f46] hover:text-white transition-all">
+                  <ChevronRight size={24} />
                 </button>
               </div>
               
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide bg-black/20">
+              <div className="flex-1 overflow-y-auto p-10 space-y-10 scrollbar-hide bg-[#0d0d0f]/20">
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] p-4 rounded-2xl text-[13px] leading-relaxed ${
+                    <div className={`max-w-[85%] p-6 rounded-[32px] text-[13px] leading-relaxed relative font-black uppercase tracking-tight shadow-elevation-1 ${
                       msg.role === 'user' 
-                        ? 'bg-white text-black font-semibold' 
-                        : 'bg-white/5 border border-white/10 text-white/90'
+                        ? 'bg-white text-black' 
+                        : 'bg-[#161618] border border-white/[0.04] text-[#52525b] shadow-inner'
                     }`}>
-                      {msg.text || (msg.isStreaming && <Loader2 size={14} className="animate-spin" />)}
+                      {msg.text}
+                      {msg.isStreaming && <span className="inline-block w-1 h-4 bg-[#22c55e] ml-1 animate-pulse align-middle" />}
                     </div>
                   </div>
                 ))}
+                {isTyping && (
+                  <div className="flex justify-start">
+                    <div className="bg-[#161618] border border-white/[0.04] p-6 rounded-[32px] flex items-center gap-5 shadow-inner">
+                      <div className="flex gap-2">
+                        <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className="w-2 h-2 bg-[#22c55e] rounded-full" />
+                        <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-2 h-2 bg-[#22c55e] rounded-full" />
+                        <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-2 h-2 bg-[#22c55e] rounded-full" />
+                      </div>
+                      <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.3em]">PROCESSING_NEURAL_LINK...</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="p-6 border-t border-white/[0.06] bg-black/40">
+              <div className="p-10 border-t border-white/[0.04] bg-[#161618]">
                 <div className="relative">
                   <input 
                     type="text"
                     value={userInput}
                     onChange={(e) => setUserInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Ask about the build..."
-                    className="w-full h-12 bg-[#09090b] border border-white/[0.08] rounded-2xl pl-5 pr-12 text-[13px] focus:outline-none focus:border-[#22c55e]/40 transition-all"
+                    placeholder="QUERY_NEURAL_ENGINE..."
+                    className="w-full h-16 bg-[#0d0d0f] border border-white/[0.04] rounded-[24px] pl-8 pr-20 text-[11px] font-black uppercase tracking-[0.4em] text-white focus:outline-none focus:border-white/10 transition-all shadow-inner placeholder:text-[#2d2d33]"
                   />
                   <button 
                     onClick={handleSendMessage}
                     disabled={isTyping || !userInput.trim()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 rounded-[18px] bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-20 shadow-elevation-1"
                   >
-                    <Send size={14} />
+                    <Send size={18} />
                   </button>
                 </div>
               </div>
@@ -444,11 +505,11 @@ export default function DeploymentProgress() {
 
         <button 
           onClick={() => setShowAIChat(!showAIChat)}
-          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95 ${
-            showAIChat ? 'bg-white text-black' : 'bg-[#22c55e] text-black shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+          className={`w-20 h-20 rounded-full flex items-center justify-center shadow-elevation-2 transition-all hover:scale-105 active:scale-95 z-[101] ${
+            showAIChat ? 'bg-white text-black' : 'bg-[#1e1e20] border border-white/[0.08] text-white'
           }`}
         >
-          {showAIChat ? <ArrowLeft size={24} /> : <Sparkles size={24} />}
+          {showAIChat ? <ArrowLeft size={32} /> : <Sparkles size={32} />}
         </button>
       </div>
     </div>

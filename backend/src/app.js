@@ -17,21 +17,26 @@ const aiRoutes = require('./routes/aiRoutes');
 const teamRoutes = require('./routes/teamRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 
+const compression = require('compression');
+
 // Express app initialize karna
 const app = express();
 
 // --- MIDDLEWARES ---
 
-// 1. Helmet for Security Headers
+// 1. Compression for faster responses 🚀
+app.use(compression());
+
+// 2. Helmet for Security Headers
 app.use(helmet());
 
-// 2. Global Rate Limiting
-// const globalLimiter = rateLimit({
-//     windowMs: 15 * 60 * 1000, // 15 minutes
-//     max: 100, // limit each IP to 100 requests per windowMs
-//     message: 'Too many requests from this IP, please try again after 15 minutes'
-// });
-// app.use(globalLimiter);
+// 3. Rate Limiting to prevent DDoS/Abuse 🛡️
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Max 100 requests per IP
+    message: 'Too many requests, try again later'
+});
+app.use('/api', limiter);
 
 // 3. Session sabse pehle aayega
 app.use(session({
@@ -50,7 +55,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // 5. CORS
-// Allow local dev ports (Vite may switch 5173 -> 5174 when busy)
 const allowedOrigins = new Set([
     process.env.FRONTEND_URL,
     'http://localhost:5173',
@@ -59,7 +63,6 @@ const allowedOrigins = new Set([
 
 app.use(cors({
     origin: (origin, callback) => {
-        // allow server-to-server/no-origin requests
         if (!origin) return callback(null, true);
         if (allowedOrigins.has(origin)) return callback(null, true);
         return callback(new Error(`CORS blocked for origin: ${origin}`));
@@ -68,22 +71,24 @@ app.use(cors({
 }));
 
 // 6. Body Parsers
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // 7. Routes
 app.use('/api/auth', authRoutes);
 
-// Test Route for Auth
 app.get('/api/auth/test', (req, res) => res.json({ message: "Auth router is reachable" }));
 
-// 🚩 EMERGENCY CLEANUP ROUTE (Run once in browser: http://localhost:4000/api/auth/cleanup-db)
 app.get('/api/auth/cleanup-db', async (req, res) => {
     const Project = require('./models/Project');
     const result = await Project.deleteMany({ isDeleted: true });
-    // Also delete the specific repo clashing
     const result2 = await Project.deleteMany({ repoUrl: "https://github.com/siddhartha220507/visssh-webpage.git" });
-    res.json({ message: "DB Cleaned", deletedSoft: result.deletedCount, deletedSpecific: result2.deletedCount });
+    try {
+        await Project.collection.dropIndex('repoUrl_1_owner_1');
+    } catch (e) {
+        console.log("Index already dropped or doesn't exist");
+    }
+    res.json({ message: "DB Cleaned & Index Migrated", deletedSoft: result.deletedCount, deletedSpecific: result2.deletedCount });
 });
 
 app.use('/api/projects', projectRoutes);
@@ -93,28 +98,8 @@ app.use('/api/projects/:projectId/integrations', integrationRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/ai', aiRoutes);
 
-// --- BASIC ROUTE ---
 app.get('/api/health', (req, res) => {
     res.send('DeployPilot API is running perfectly!');
-});
-
-const { analyzeLogsWithAI } = require('./services/logAnalysisService');
-
-app.post('/api/test-ai', async (req, res) => {
-    try {
-        const { logs } = req.body;
-        if (!logs) return res.status(400).json({ error: "Logs array is required for testing" });
-
-        console.log("🤖 Sending logs to AI for analysis...");
-
-        // Default gemini use kar rahe hain test ke liye
-        const aiResponse = await analyzeLogsWithAI(logs, 'cohere');
-
-        res.status(200).json({ success: true, aiAnalysis: aiResponse });
-    } catch (error) {
-        console.error("AI Error:", error);
-        res.status(500).json({ success: false, error: error.message });
-    }
 });
 
 // Serve frontend build from backend/dist when available
