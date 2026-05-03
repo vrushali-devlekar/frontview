@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { History, GitBranch, ExternalLink } from "lucide-react";
@@ -18,6 +19,8 @@ export default function DeployRow({ deployment, projectId, onRollback }) {
     if (!isSuccess) return;
     setRollbackError("");
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import React, { useState } from 'react';
 import { History, GitBranch, ShieldCheck, AlertTriangle, RefreshCw } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
@@ -31,6 +34,9 @@ export default function DeployRow({ deployment, onRollback }) {
   
   const handleRollbackClick = () => {
     if (!isSuccess) return;
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
     setIsConfirming(true);
   };
@@ -38,6 +44,7 @@ export default function DeployRow({ deployment, onRollback }) {
   const confirmRollback = async () => {
     setIsConfirming(false);
     setIsRollingBack(true);
+<<<<<<< HEAD
 <<<<<<< HEAD
     setRollbackError("");
 
@@ -51,6 +58,8 @@ export default function DeployRow({ deployment, onRollback }) {
       );
     } finally {
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 
     try {
       // SDE Mechanism: Trigger rollback to this specific version
@@ -64,11 +73,15 @@ export default function DeployRow({ deployment, onRollback }) {
       }, 1500);
     } catch (error) {
       console.error("Rollback failed", error);
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
       setIsRollingBack(false);
     }
   };
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   const goToLogs = () => {
     const q = projectId
@@ -97,6 +110,8 @@ export default function DeployRow({ deployment, onRollback }) {
       {isSuccess ? (
         <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-[#00FFCC]" />
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
   return (
     <div className={`relative p-4 border-2 mb-4 bg-valora-card transition-all ${
       isSuccess ? 'border-[#333] hover:border-valora-cyan/50' : 'border-[#333] hover:border-red-500/50'
@@ -104,12 +119,16 @@ export default function DeployRow({ deployment, onRollback }) {
       {/* Corner Accents */}
       {isSuccess ? (
         <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-valora-cyan" />
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
       ) : (
         <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-red-500" />
       )}
 
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+<<<<<<< HEAD
 <<<<<<< HEAD
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div
@@ -208,6 +227,8 @@ export default function DeployRow({ deployment, onRollback }) {
             >
               {isRollingBack ? "REVERTING..." : isSuccess ? "ROLLBACK" : "UNAVAILABLE"}
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
         
         {/* Info Column */}
         <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -258,6 +279,9 @@ export default function DeployRow({ deployment, onRollback }) {
               ) : (
                 <><History size={12} /> {isSuccess ? 'ROLLBACK' : 'UNAVAILABLE'}</>
               )}
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
             </button>
           )}

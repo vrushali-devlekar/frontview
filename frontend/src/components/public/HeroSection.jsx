@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -171,6 +172,8 @@ const VeloraLanding = () => {
 
 export default VeloraLanding;
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import React from "react";
 import { NavLink } from "react-router-dom";
 import valoBg from "../../assets/herobg.png";
@@ -268,4 +271,7 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4

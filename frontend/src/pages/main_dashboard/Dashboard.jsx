@@ -1,6 +1,10 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+=======
+import { useState } from "react";
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 import { useState } from "react";
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
@@ -16,16 +20,22 @@ import {
   BrainCircuit,
   History,
 <<<<<<< HEAD
+<<<<<<< HEAD
   Settings,
 } from "lucide-react";
 
 import heroBg from "../../assets/new-top.png";
 import { getProjects } from "../../api/api";
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
   Settings
 } from "lucide-react";
 
 import heroBg from "../../assets/new-top.png";
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 
 const StatusBadge = ({ status }) => {
@@ -36,6 +46,7 @@ const StatusBadge = ({ status }) => {
   };
 
   return (
+<<<<<<< HEAD
 <<<<<<< HEAD
     <span
       className={`text-[9px] px-2 py-1 border font-mono tracking-widest flex items-center gap-1 ${styles[status] || styles.BUILDING}`}
@@ -53,6 +64,10 @@ const StatusBadge = ({ status }) => {
     <span className={`text-[9px] px-2 py-1 border font-mono tracking-widest flex items-center gap-1 ${styles[status]}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${status === 'RUNNING' ? 'bg-[#00FFCC]' : status === 'FAILED' ? 'bg-[#FF3333]' : 'bg-[#FFCC00] animate-pulse'}`}></span>
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
+    <span className={`text-[9px] px-2 py-1 border font-mono tracking-widest flex items-center gap-1 ${styles[status]}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${status === 'RUNNING' ? 'bg-[#00FFCC]' : status === 'FAILED' ? 'bg-[#FF3333]' : 'bg-[#FFCC00] animate-pulse'}`}></span>
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
       {status}
     </span>
   );
@@ -60,6 +75,7 @@ const StatusBadge = ({ status }) => {
 
 export default function Dashboard() {
   const { isCollapsed, toggleSidebar } = useSidebar();
+<<<<<<< HEAD
 <<<<<<< HEAD
   const navigate = useNavigate();
   const [myProjects, setMyProjects] = useState([]);
@@ -114,6 +130,8 @@ export default function Dashboard() {
           style={{ backgroundImage: `url(${heroBg})` }}
         >
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 
   const myProjects = [
     {
@@ -150,11 +168,15 @@ export default function Dashboard() {
 
         {/* HEADER SECTION */}
         <div className="relative min-h-[140px] bg-cover bg-center flex flex-col justify-between border-b border-[#222]" style={{ backgroundImage: `url(${heroBg})` }}>
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
           <div className="absolute inset-0 bg-[#050505]/80 backdrop-blur-sm" />
           <TopNav />
           <div className="relative z-10 px-6 pb-4 flex justify-between items-end">
             <div>
+<<<<<<< HEAD
 <<<<<<< HEAD
               <h1
                 className="text-xl md:text-2xl text-[#FFCC00] font-bold tracking-widest"
@@ -237,6 +259,8 @@ export default function Dashboard() {
                       }}
                     >
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
               <h1 className="text-xl md:text-2xl text-[#FFCC00] font-bold tracking-widest" style={{ fontFamily: "'Press Start 2P', cursive" }}>OVERVIEW</h1>
               <p className="text-[10px] text-[#888] mt-1">YOUR PERSONAL DEPLOYMENT FLEET</p>
             </div>
@@ -268,6 +292,9 @@ export default function Dashboard() {
                 <div className="p-4 border-b border-[#111]">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-sm font-bold text-[#FFCC00] truncate pr-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: '10px', lineHeight: '1.5' }}>
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                       {project.name}
                     </h3>
@@ -281,6 +308,7 @@ export default function Dashboard() {
                 <div className="p-4 flex-1">
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-[10px] text-[#555]">LAST_DEPLOY:</span>
+<<<<<<< HEAD
 <<<<<<< HEAD
                     <span className="text-[10px] text-[#AAA]">
                       {project.lastDeploy}
@@ -299,17 +327,23 @@ export default function Dashboard() {
                       className="text-[10px] text-[#00FFCC] hover:underline flex items-center gap-1 font-bold truncate max-w-[60%]"
                     >
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                     <span className="text-[10px] text-[#AAA]">{project.lastDeploy}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] text-[#555]">DOMAIN:</span>
                     <a href={`https://${project.url}`} target="_blank" className="text-[10px] text-[#00FFCC] hover:underline flex items-center gap-1 font-bold">
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                       {project.url} <ExternalLink size={10} />
                     </a>
                   </div>
                 </div>
 
+<<<<<<< HEAD
 <<<<<<< HEAD
                 <div className="grid grid-cols-4 border-t-2 border-[#111] bg-[#050505]">
                   <button
@@ -366,6 +400,8 @@ export default function Dashboard() {
                       }
                     />
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                 {/* 🌟 THEME FIX: Action Bar styling updated to match */}
                 <div className="grid grid-cols-4 border-t-2 border-[#111] bg-[#050505]">
                   <button className="p-3 text-[#555] hover:text-[#00FFCC] hover:bg-[#111] flex justify-center border-r border-[#111] transition-colors" title="View Logs (Phase 5)">
@@ -380,6 +416,9 @@ export default function Dashboard() {
 
                   <button className={`p-3 flex justify-center transition-all ${project.status === 'FAILED' ? 'text-[#050505] bg-[#FFCC00] hover:bg-yellow-400' : 'text-[#555] hover:text-[#FFCC00] hover:bg-[#111]'}`} title="Ask AI (Phase 8)">
                     <BrainCircuit size={14} className={project.status === 'FAILED' ? 'animate-pulse' : ''} />
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                   </button>
                 </div>
@@ -387,6 +426,10 @@ export default function Dashboard() {
             ))}
           </div>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
@@ -395,7 +438,11 @@ export default function Dashboard() {
     </div>
   );
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 }
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4

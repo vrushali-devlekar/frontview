@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSidebar } from "../../hooks/useSidebar";
@@ -32,6 +33,8 @@ const Github = ({ size = 24, className = "" }) => (
     className={className}
   >
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import React, { useState } from 'react';
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
@@ -42,12 +45,16 @@ import heroBg from "../../assets/new-top.png"; // Make sure path is correct
 
 const Github = ({ size = 24, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
     <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
     <path d="M9 18c-4.51 2-5-2-7-2" />
   </svg>
 );
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 export default function DeploymentsPage() {
   const { isCollapsed, toggleSidebar } = useSidebar();
@@ -225,6 +232,8 @@ export default function DeploymentsPage() {
                   </span>
                 )}
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 const StatusBadge = ({ status }) => {
   const styles = {
     SUCCESS: "text-[#00FFCC] border-[#00FFCC]/30 bg-[#00FFCC]/10",
@@ -273,11 +282,15 @@ export default function DeploymentsPage() {
                   <Github size={12} /> VALORA_FRONTEND_CORE
                 </p>
                 <span className="text-[9px] text-[#00FFCC] bg-[#00FFCC]/10 border border-[#00FFCC]/30 px-2 py-0.5">PRODUCTION_ENV</span>
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
               </div>
             </div>
 
             <button
+<<<<<<< HEAD
 <<<<<<< HEAD
               type="button"
               disabled={!projectId || triggering}
@@ -291,6 +304,8 @@ export default function DeploymentsPage() {
               <Rocket size={14} strokeWidth={3} />{" "}
               {triggering ? "STARTING..." : "TRIGGER_BUILD"}
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
               className="bg-[#FFCC00] text-black px-5 py-3 text-[10px] font-bold transition-transform active:translate-y-1 active:shadow-none flex items-center gap-2"
               style={{
                 fontFamily: "'Press Start 2P', cursive",
@@ -298,11 +313,15 @@ export default function DeploymentsPage() {
               }}
             >
               <Rocket size={14} strokeWidth={3} /> TRIGGER_BUILD
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
             </button>
           </div>
         </div>
 
+<<<<<<< HEAD
 <<<<<<< HEAD
         <div
           className="flex-1 p-6 overflow-y-auto"
@@ -376,6 +395,8 @@ export default function DeploymentsPage() {
             </>
           )}
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
         {/* MAIN CONTENT */}
         <div className="flex-1 p-6 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
 
@@ -410,13 +431,20 @@ export default function DeploymentsPage() {
 
           </div>
 
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
         </div>
       </div>
     </div>
   );
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 }
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4

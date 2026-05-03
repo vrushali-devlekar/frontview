@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<<< HEAD:frontend/src/pages/project_view/Overview.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -8,10 +9,14 @@ import { useState } from "react";
 =======
 import { useState } from "react";
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
+import { useState } from "react";
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
 import TopNav from "../../components/layout/TopNav";
 import {
+<<<<<<< HEAD
 <<<<<<< HEAD
   Rocket,
   Folder,
@@ -38,6 +43,8 @@ const StatusBadge = ({ status }) => {
     <span className={`text-[9px] px-2 py-1 border font-mono tracking-widest flex items-center gap-1 ${styles[status]}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${status === 'RUNNING' ? 'bg-[#00FFCC]' : status === 'FAILED' ? 'bg-[#FF3333]' : 'bg-[#FFCC00] animate-pulse'}`}></span>
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
   Search,
   Star,
   MoreVertical,
@@ -62,6 +69,9 @@ const StatusBadge = ({ status }) => {
   return (
     <span className={`flex items-center gap-1.5 text-[10px] ${s.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
       {status}
     </span>
@@ -69,7 +79,10 @@ const StatusBadge = ({ status }) => {
 };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<<< HEAD:frontend/src/pages/project_view/Overview.jsx
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 const AppIcon = ({ name, color }) => (
@@ -78,6 +91,7 @@ const AppIcon = ({ name, color }) => (
   </div>
 );
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 const AppRow = ({ app, starred, onStar, onOpen }) => (
   <button
@@ -95,10 +109,15 @@ const AppRow = ({ app, starred, onStar, onOpen }) => (
         className="text-slate-600 hover:text-yellow-400 transition-colors"
       >
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 const AppRow = ({ app, starred, onStar }) => (
   <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
     <div className="flex items-center gap-3">
       <button onClick={onStar} className="text-slate-600 hover:text-yellow-400 transition-colors">
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
         <Star size={11} className={starred ? "fill-yellow-400 text-yellow-400" : ""} />
       </button>
@@ -124,6 +143,7 @@ const AppRow = ({ app, starred, onStar }) => (
       </button>
     </div>
 <<<<<<< HEAD
+<<<<<<< HEAD
   </button>
 );
 
@@ -134,11 +154,16 @@ const QuickAction = ({ icon: Icon, label, sub, onClick }) => (
     className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group"
   >
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
   </div>
 );
 
 const QuickAction = ({ icon: Icon, label, sub }) => (
   <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group">
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
     <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-white/10 transition-colors">
       <Icon size={11} className="text-slate-400" />
@@ -149,7 +174,11 @@ const QuickAction = ({ icon: Icon, label, sub }) => (
     </div>
     <ChevronRight size={10} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
 <<<<<<< HEAD
+<<<<<<< HEAD
   </button>
+=======
+  </div>
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
   </div>
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
@@ -158,7 +187,10 @@ const QuickAction = ({ icon: Icon, label, sub }) => (
 export default function Applications() {
   const { isCollapsed, toggleSidebar } = useSidebar();
 <<<<<<< HEAD
+<<<<<<< HEAD
   const navigate = useNavigate();
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
   const [activeTab, setActiveTab] = useState("all");
@@ -166,6 +198,7 @@ export default function Applications() {
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [currentPage, setCurrentPage] = useState(1);
   const [starredIds, setStarredIds] = useState(new Set([3]));
+<<<<<<< HEAD
 <<<<<<< HEAD
   const [projects, setProjects] = useState([]);
 
@@ -332,6 +365,8 @@ export default function Applications() {
               </div>
 <<<<<<<< HEAD:frontend/src/pages/project_view/Overview.jsx
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 
   const apps = [
     { id: 1, name: "User Auth Service", repo: "sheryians/auth-service", branch: "main", status: "Deployed", time: "2m ago", version: "v1.2.3", buildTime: "3m 24s", color: "bg-emerald-700" },
@@ -389,12 +424,16 @@ export default function Applications() {
                   </select>
                 </div>
               </div>
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 
               <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
                 {filtered.length === 0 ? (
                   <div className="flex items-center justify-center py-10 text-slate-600 text-[10px]">No applications found.</div>
                 ) : (
+<<<<<<< HEAD
 <<<<<<< HEAD
                   filtered.map((app) => (
                     <AppRow
@@ -409,6 +448,9 @@ export default function Applications() {
                       }
                     />
                   ))
+=======
+                  filtered.map((app) => <AppRow key={app.id} app={app} starred={starredIds.has(app.id)} onStar={() => toggleStar(app.id)} />)
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
                   filtered.map((app) => <AppRow key={app.id} app={app} starred={starredIds.has(app.id)} onStar={() => toggleStar(app.id)} />)
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
@@ -438,11 +480,15 @@ export default function Applications() {
                   <div className="flex-1 h-px bg-white/10" /><span className="text-[8px] text-slate-600">or</span><div className="flex-1 h-px bg-white/10" />
                 </div>
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <button
                   type="button"
                   onClick={() => navigate("/projects/new")}
                   className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm py-2 rounded-lg transition-colors"
                 >
+=======
+                <button className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm py-2 rounded-lg transition-colors">
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
                 <button className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm py-2 rounded-lg transition-colors">
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
@@ -454,6 +500,7 @@ export default function Applications() {
                 <h3 className="text-xl font-medium text-slate-200 mb-2 shrink-0">Quick Actions</h3>
                 <div className="flex-1 min-h-0 overflow-y-auto space-y-0.5" style={{ scrollbarWidth: 'none' }}>
 <<<<<<< HEAD
+<<<<<<< HEAD
                   <QuickAction icon={Plus} label="New Application" sub="Import a GitHub repo" onClick={() => navigate("/projects/new")} />
                   <QuickAction icon={Grid} label="Browse Templates" sub="Coming soon" onClick={() => navigate("/projects/new")} />
                   <QuickAction icon={Layers} label="Manage Environments" sub="Add or edit environments" onClick={() => navigate("/environments")} />
@@ -462,15 +509,21 @@ export default function Applications() {
                     navigate(first ? `/deploy?projectId=${encodeURIComponent(String(first))}` : "/deploy");
                   }} />
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                   <QuickAction icon={Plus} label="New Application" sub="Create from scratch" />
                   <QuickAction icon={Grid} label="Browse Templates" sub="Use pre-configured templates" />
                   <QuickAction icon={Layers} label="Manage Environments" sub="Add or edit environments" />
                   <QuickAction icon={Zap} label="View All Deployments" sub="See deployment history" />
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                 </div>
               </div>
             </div>
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 ========
             ))}
@@ -480,12 +533,19 @@ export default function Applications() {
 =======
           </div>
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
+          </div>
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
         </div>
       </div>
     </div>
   );
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 }
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4

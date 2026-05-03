@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Terminal, ArrowLeft, Square } from "lucide-react";
@@ -134,6 +135,8 @@ const DeploymentLogsPage = () => {
         </div>
       </div>
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import React, { useState } from 'react';
 import { Terminal, Activity, ArrowLeft, ShieldCheck } from 'lucide-react';
 import TerminalLogs from '../../components/project/TerminalLogs';
@@ -205,6 +208,9 @@ const DeploymentLogsPage = ({ deploymentId = "dp-003a", onBack }) => {
         errorLogs={errorLogsToAnalyze} 
       />
 
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
     </div>
   );

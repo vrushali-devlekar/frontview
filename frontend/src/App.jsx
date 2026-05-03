@@ -1,6 +1,9 @@
 <<<<<<< HEAD
 =======
 import React from "react";
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 
@@ -15,8 +18,11 @@ import Metrics from "./pages/project_view/Metrics";
 import Settings from "./pages/project_view/Settings";
 import Environments from "./pages/project_view/Environments";
 <<<<<<< HEAD
+<<<<<<< HEAD
 import DeploymentLogsPage from "./pages/project_view/Terminal";
 import NewProjectPage from "./pages/main_dashboard/NewProject";
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 
@@ -45,10 +51,13 @@ const router = createBrowserRouter([
   },
   {
 <<<<<<< HEAD
+<<<<<<< HEAD
     path: "/projects/new",
     element: <NewProjectPage />
   },
   {
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
     path: "/deploy",
@@ -56,10 +65,13 @@ const router = createBrowserRouter([
   },
   {
 <<<<<<< HEAD
+<<<<<<< HEAD
     path: "/deploy/logs/:deploymentId",
     element: <DeploymentLogsPage />
   },
   {
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
     path: "/applications",

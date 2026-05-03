@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React, { useState, useRef, useEffect } from 'react'
 import { useSidebar } from '../../hooks/useSidebar'
 import Sidebar from '../../components/layout/Sidebar'
@@ -122,6 +123,8 @@ export default function Settings () {
             <p className='text-[9px] text-[#888] mt-2 leading-loose uppercase'>
               Manage account profile, workspace and secret configuration
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import React, { useState, useRef, useEffect } from 'react';
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
@@ -171,12 +174,16 @@ export default function Settings() {
             <h1 className="text-xl md:text-2xl leading-relaxed" style={{ fontFamily: "'Press Start 2P', cursive" }}>Settings</h1>
             <p className="text-[7px] md:text-[9px] text-slate-300 mt-2 leading-loose uppercase" style={{ fontFamily: "'Press Start 2P', cursive" }}>
               Manage your account, preferences and workspace settings.
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
             </p>
           </div>
         </div>
 
         {/* CONTENT */}
+<<<<<<< HEAD
 <<<<<<< HEAD
         <div
           className='flex-1 flex flex-col p-3 md:p-6 overflow-y-auto bg-[#050505]'
@@ -199,6 +206,8 @@ export default function Settings() {
                           : 'border-transparent text-[#666] hover:text-[#ccc]'
                       }`}
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
         <div className="flex-1 flex flex-col p-2 md:p-3 overflow-y-auto bg-[#0b0f14]" style={{ scrollbarWidth: 'none' }}>
           <div className="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:h-full lg:min-h-0">
 
@@ -214,6 +223,9 @@ export default function Settings() {
                       key={tab}
                       onClick={() => setActiveTab(tab)}
                       className={`pb-2 text-sm font-medium transition-colors border-b-2 ${activeTab === tab ? "border-[#e8e3d0] text-slate-200" : "border-transparent text-slate-500 hover:text-slate-300"}`}
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                     >
                       {tab}
@@ -221,6 +233,7 @@ export default function Settings() {
                   ))}
                 </div>
 
+<<<<<<< HEAD
 <<<<<<< HEAD
                 {activeTab === 'Profile' && (
                   <div className='p-4 lg:p-5 flex flex-col flex-1 min-h-0'>
@@ -257,6 +270,8 @@ export default function Settings() {
                           >
                             <Pen size={10} className='text-[#FFCC00]' />
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                 {activeTab === "Profile" && (
                   <div className="p-4 lg:p-5 flex flex-col flex-1 min-h-0">
                     <h3 className="text-lg font-medium text-slate-200 mb-1 shrink-0">Profile Information</h3>
@@ -279,6 +294,9 @@ export default function Settings() {
                             onClick={() => setIsAvatarPickerOpen(!isAvatarPickerOpen)}
                           >
                             <Pen size={10} className="text-slate-300" />
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                           </button>
                         </div>
@@ -286,7 +304,11 @@ export default function Settings() {
                         {/* Avatar Dropdown */}
                         {isAvatarPickerOpen && (
 <<<<<<< HEAD
+<<<<<<< HEAD
                           <div className='absolute top-full mt-2 left-0 w-[140px] bg-[#0a0a0a] border-2 border-[#222] shadow-xl p-2 z-50 flex flex-wrap gap-2'>
+=======
+                          <div className="absolute top-full mt-2 left-0 w-[140px] bg-[#11151c] border border-white/10 rounded-lg shadow-xl p-2 z-50 flex flex-wrap gap-2">
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
                           <div className="absolute top-full mt-2 left-0 w-[140px] bg-[#11151c] border border-white/10 rounded-lg shadow-xl p-2 z-50 flex flex-wrap gap-2">
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
@@ -294,6 +316,7 @@ export default function Settings() {
                               <div
                                 key={idx}
                                 onClick={() => {
+<<<<<<< HEAD
 <<<<<<< HEAD
                                   setSelectedAvatar(avatar)
                                   setIsAvatarPickerOpen(false)
@@ -310,12 +333,17 @@ export default function Settings() {
                                   className='w-full h-full object-cover rounded-full'
                                 />
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                                   setSelectedAvatar(avatar);
                                   setIsAvatarPickerOpen(false);
                                 }}
                                 className={`w-12 h-12 rounded-full cursor-pointer border-2 transition-all ${selectedAvatar === avatar ? 'border-green-500 scale-105' : 'border-transparent hover:border-slate-500'}`}
                               >
                                 <img src={avatar} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover rounded-full" />
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                               </div>
                             ))}
@@ -323,6 +351,7 @@ export default function Settings() {
                         )}
                       </div>
 
+<<<<<<< HEAD
 <<<<<<< HEAD
                       <div className='flex-1 w-full border border-[#222] bg-[#050505] p-4 min-w-0'>
                         <p className='text-[9px] text-[#666] uppercase tracking-[0.2em] mb-2'>
@@ -341,6 +370,8 @@ export default function Settings() {
                           Edit profile name and preferences from the Account tab.
                         </p>
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                       {/* Form */}
                       <div className="flex-1 flex flex-col gap-3 w-full min-h-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0">
@@ -391,11 +422,15 @@ export default function Settings() {
                         <button className="mt-1 w-fit px-4 py-1.5 bg-[#e8e3d0] hover:bg-[#f0ece0] text-black text-[11px] font-medium rounded-lg transition-colors shrink-0">
                           Save Changes
                         </button>
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                       </div>
                     </div>
                   </div>
                 )}
+<<<<<<< HEAD
 <<<<<<< HEAD
                 {activeTab === 'Account' && (
                   <div className='p-4 lg:p-5 overflow-y-auto'>
@@ -517,6 +552,8 @@ export default function Settings() {
                 {activeTab === 'Secrets' && (
                   <div className='flex flex-col flex-1 min-h-[400px]'>
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                 {activeTab === "Account" && (
                   <div className="p-4 lg:p-5">
                     <h3 className="text-lg font-medium text-slate-200 mb-1">Account Settings</h3>
@@ -526,12 +563,16 @@ export default function Settings() {
                 )}
                 {activeTab === "Secrets" && (
                   <div className="flex flex-col flex-1 min-h-[400px]">
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                     <EnvTable />
                   </div>
                 )}
               </div>
 
+<<<<<<< HEAD
 <<<<<<< HEAD
             </div>
 
@@ -579,6 +620,8 @@ export default function Settings() {
                       usr_8f3a7c2d
                     </span>
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
               {/* Preferences Block */}
               {activeTab === "Profile" && (
                 <div className="bg-[#11151c] border border-white/10 rounded-xl p-4 lg:p-5 shrink-0">
@@ -667,6 +710,9 @@ export default function Settings() {
                       <UserCircle size={12} /> <span className="text-[10px]">User ID</span>
                     </div>
                     <span className="text-[10px] text-slate-300 font-mono">usr_8f3a7c2d</span>
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                   </div>
                   {/* Removed Role option here as requested */}
@@ -674,6 +720,7 @@ export default function Settings() {
               </div>
 
               {/* Workspace */}
+<<<<<<< HEAD
 <<<<<<< HEAD
               <div className='bg-[#0a0a0a] border-2 border-[#222] p-4 shrink-0'>
                 <h3 className='text-sm font-bold text-white mb-4 tracking-widest'>
@@ -700,6 +747,8 @@ export default function Settings() {
                 <button className='w-full flex items-center justify-between px-2.5 py-1.5 border border-[#333] text-xs text-[#ddd] hover:bg-[#111] transition-colors'>
                   Manage <ChevronRight size={12} className='text-[#666]' />
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
               <div className="bg-[#11151c] border border-white/10 rounded-xl p-4 shrink-0">
                 <h3 className="text-sm font-medium text-slate-200 mb-4">Workspace</h3>
                 <div className="flex items-start gap-2 mb-4">
@@ -726,11 +775,15 @@ export default function Settings() {
                 <button className="w-full flex items-center justify-between px-2.5 py-1.5 border border-red-500/30 rounded-lg text-xs text-red-400 hover:bg-red-500/10 transition-colors shrink-0 mt-4">
                   <span className="flex items-center gap-1.5"><Trash2 size={12} /> Delete Account</span>
                   <ChevronRight size={12} className="text-red-500/50" />
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                 </button>
               </div>
 
             </div>
+<<<<<<< HEAD
 <<<<<<< HEAD
           </div>
         </div>
@@ -738,11 +791,16 @@ export default function Settings() {
     </div>
   )
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 
           </div>
        </div>
      </div>
    </div>
   );
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 }

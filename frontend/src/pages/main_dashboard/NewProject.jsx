@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSidebar } from "../../hooks/useSidebar";
@@ -300,6 +301,12 @@ export default function NewProjectPage() {
     </div>
   );
 }
+=======
+// main section
+// deploy aur prj btn (jese user click karega modal ayega , uss modal me user apna github ka repo daloge , input me repo ka url jayega)
+// frame works select krne ka options like react, nextjs
+// deploy btn (repo clone hoga , install dependencies,build cmd run hoga, build ka output upload hoga, live url return) 
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
 // main section
 // deploy aur prj btn (jese user click karega modal ayega , uss modal me user apna github ka repo daloge , input me repo ka url jayega)

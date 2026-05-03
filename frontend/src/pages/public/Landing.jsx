@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React from 'react'
 // import HeroSection from "../../components/public/HeroSection";
 // import FeaturesSection from "../../components/public/Features";
@@ -37,6 +38,8 @@ const Landing = () => {
 
 export default Landing
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import React from "react";
 import HeroSection from "../../components/public/HeroSection";
 import FeaturesSection from "../../components/public/Features";
@@ -54,5 +57,9 @@ const Landing = () => {
   );
 };
 
+<<<<<<< HEAD
+export default Landing;
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 export default Landing;
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4

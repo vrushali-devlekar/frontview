@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useState, useEffect, useRef, useCallback } from "react";
 import { RefreshCw, ShieldCheck } from "lucide-react";
 import { io as socketIO } from "socket.io-client";
@@ -41,6 +42,8 @@ export default function TerminalLogs({
   const logsRef = useRef([]);
 
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import React, { useState, useEffect, useRef } from 'react';
 import { RefreshCw, ShieldCheck } from 'lucide-react';
 // import { io } from 'socket.io-client'; // User will install this
@@ -51,12 +54,16 @@ export default function TerminalLogs({ deploymentId, onErrorDetect, onComplete }
   const messagesEndRef = useRef(null);
   
   // Auto-scroll to bottom
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
+<<<<<<< HEAD
 <<<<<<< HEAD
     logsRef.current = logs;
   }, [logs]);
@@ -175,6 +182,8 @@ export default function TerminalLogs({ deploymentId, onErrorDetect, onComplete }
               <ShieldCheck size={10} /> IDLE
             </span>
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
     scrollToBottom();
   }, [logs]);
 
@@ -258,11 +267,15 @@ export default function TerminalLogs({ deploymentId, onErrorDetect, onComplete }
              <span className="flex items-center gap-2 text-[#555] text-[9px] font-bold tracking-widest px-2 py-1 border border-[#555] bg-[#111] uppercase">
                <ShieldCheck size={10} /> DISCONNECTED
              </span>
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
           )}
         </div>
       </div>
 
+<<<<<<< HEAD
 <<<<<<< HEAD
       <div className="flex-1 overflow-y-auto font-mono text-[10px] tracking-widest leading-loose pr-4 custom-scrollbar min-h-0">
         {logs.map((log, index) => (
@@ -285,6 +298,8 @@ export default function TerminalLogs({ deploymentId, onErrorDetect, onComplete }
               }`}
             >
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
       {/* Log Lines Container */}
       <div className="flex-1 overflow-y-auto font-mono text-[10px] tracking-widest leading-loose pr-4 custom-scrollbar">
         {logs.map((log, index) => (
@@ -298,11 +313,15 @@ export default function TerminalLogs({ deploymentId, onErrorDetect, onComplete }
               log.type === 'success' ? 'text-valora-cyan' : 
               'text-[#ccc]'
             }`}>
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
               {log.message}
             </span>
           </div>
         ))}
+<<<<<<< HEAD
 <<<<<<< HEAD
 
         {isStreaming && (
@@ -313,6 +332,8 @@ export default function TerminalLogs({ deploymentId, onErrorDetect, onComplete }
         )}
 
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
         
         {isStreaming && (
           <div className="flex gap-4 px-2 py-1">
@@ -322,6 +343,9 @@ export default function TerminalLogs({ deploymentId, onErrorDetect, onComplete }
         )}
         
         {/* Invisible element to scroll to */}
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
         <div ref={messagesEndRef} />
       </div>

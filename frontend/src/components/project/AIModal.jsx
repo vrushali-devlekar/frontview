@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useMemo, useState, useEffect } from "react";
 import { Activity, X, Terminal, Cpu, MessageSquare, Expand } from "lucide-react";
 import CyberButton from "../ui/CyberButton";
@@ -235,6 +236,8 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
           <button
             type="button"
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 import React, { useState, useEffect } from 'react';
 import { Activity, X, Terminal, Cpu } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
@@ -326,12 +329,16 @@ resolve: {
             </h2>
           </div>
           <button 
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
             onClick={onClose}
             className="p-2 text-[#666] hover:text-white hover:bg-[#222] transition-colors border border-transparent hover:border-[#444]"
           >
             <X size={16} />
           </button>
+<<<<<<< HEAD
 <<<<<<< HEAD
           </div>
         </div>
@@ -341,10 +348,16 @@ resolve: {
 
         {/* Body */}
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
+        </div>
+
+        {/* Body */}
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
         <div className="flex-1 overflow-y-auto p-6 font-mono text-[11px] leading-relaxed custom-scrollbar">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-48 gap-6">
               <div className="relative w-16 h-16">
+<<<<<<< HEAD
 <<<<<<< HEAD
                 <div className="absolute inset-0 border-2 border-t-[#00FFCC] border-r-transparent border-b-[#00FFCC] border-l-transparent rounded-full animate-spin" />
                 <div className="absolute inset-2 border-2 border-t-transparent border-r-[#FFCC00] border-b-transparent border-l-[#FFCC00] rounded-full animate-spin" style={{ animationDuration: "2s" }} />
@@ -420,6 +433,8 @@ resolve: {
                 </button>
               </div>
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
                 <div className="absolute inset-0 border-2 border-t-valora-cyan border-r-transparent border-b-valora-cyan border-l-transparent rounded-full animate-spin"></div>
                 <div className="absolute inset-2 border-2 border-t-transparent border-r-valora-yellow border-b-transparent border-l-valora-yellow rounded-full animate-spin-slow"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -433,12 +448,19 @@ resolve: {
           ) : (
             <div className="text-[#ccc] prose prose-invert prose-p:leading-relaxed prose-pre:bg-[#050505] prose-pre:border prose-pre:border-[#333] max-w-none">
               <ReactMarkdown>{aiResponse}</ReactMarkdown>
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
             </div>
           )}
         </div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        {/* Footer */}
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 =======
         {/* Footer */}
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
@@ -446,6 +468,7 @@ resolve: {
           <CyberButton variant="neutral" onClick={onClose}>
             DISMISS
           </CyberButton>
+<<<<<<< HEAD
 <<<<<<< HEAD
           {!isLoading && !error && (
             <CyberButton
@@ -458,6 +481,8 @@ resolve: {
           )}
         </div>
 =======
+=======
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
           {!isLoading && (
             <CyberButton variant="primary" onClick={() => alert("Auto-fix triggered!")}>
               <Terminal size={14} className="mr-2" />
@@ -466,6 +491,9 @@ resolve: {
           )}
         </div>
 
+<<<<<<< HEAD
+>>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
+=======
 >>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
       </div>
     </div>
