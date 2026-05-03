@@ -2,17 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Zap } from "lucide-react";
 import api, { githubAuthUrl, googleAuthUrl } from "../../api/api";
+import { useAuth } from "../../context/AuthContext";
 import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { githubAuthUrl, googleAuthUrl } from "../../api/api";
-
-=======
->>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
-=======
->>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
 const Login = () => {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
@@ -20,6 +13,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     const urlError = searchParams.get("error");
@@ -36,7 +30,9 @@ const Login = () => {
     try {
       const response = await api.post("/auth/login", { email, password });
       if (response.data && response.data.token) {
-        localStorage.setItem("token", response.data.token);
+        const userData = response.data.user;
+        if (userData && userData.username) userData.name = userData.username;
+        login(userData, response.data.token);
         navigate("/dashboard");
       } else {
         setError("Invalid credentials. Please try again.");
@@ -50,33 +46,11 @@ const Login = () => {
   };
 
   const handleGithubLogin = () => {
-<<<<<<< HEAD
     window.location.href = githubAuthUrl;
   };
 
   const handleGoogleLogin = () => {
     window.location.href = googleAuthUrl;
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-    window.location.href = githubAuthUrl;
-  };
-
-  const handleGoogleLogin = () => {
-    window.location.href = googleAuthUrl;
-=======
-=======
->>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
-    window.location.href = "http://localhost:5000/api/auth/github";
-  };
-
-  const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:5000/api/auth/google";
-<<<<<<< HEAD
->>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
-=======
->>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
->>>>>>> 5b94c478ee6b62a623140273e09b191633b41eb7
   };
 
   return (

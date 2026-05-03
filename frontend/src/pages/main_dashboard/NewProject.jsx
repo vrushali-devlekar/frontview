@@ -1,10 +1,4 @@
-<<<<<<< HEAD
 import { useState, useEffect } from "react";
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { useState } from "react";
->>>>>>> 5b94c478ee6b62a623140273e09b191633b41eb7
 import { Link, useNavigate } from "react-router-dom";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
@@ -29,7 +23,8 @@ import {
   Cpu,
   Trash2,
   Plus,
-  Zap
+  Zap,
+  AlertCircle
 } from "lucide-react";
 import { addEnvVar, createProject, getGithubRepos } from "../../api/api";
 import { parseGithubRepoInput } from "../../utils/githubRepo";
@@ -59,6 +54,7 @@ export default function NewProjectPage() {
   // Form State
   const [name, setName] = useState("");
   const [repoInput, setRepoInput] = useState("");
+  const [repoName, setRepoName] = useState("");
   const [branch, setBranch] = useState("main");
   const [installCommand, setInstallCommand] = useState("npm install");
   const [startCommand, setStartCommand] = useState("npm start");
@@ -72,6 +68,7 @@ export default function NewProjectPage() {
   const [reposLoading, setReposLoading] = useState(false);
   const [repoSearch, setRepoSearch] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showFrameworkList, setShowFrameworkList] = useState(false);
 
   useEffect(() => {
     fetchRepos();
@@ -92,6 +89,7 @@ export default function NewProjectPage() {
   const handleImport = (repo) => {
     const cloneUrl = `https://github.com/${repo.owner}/${repo.name}.git`;
     setRepoInput(cloneUrl);
+    setRepoName(repo.name);
     setBranch((repo.defaultBranch || "main").trim());
     setName(repo.name.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase());
     setStep(2);
@@ -104,21 +102,29 @@ export default function NewProjectPage() {
       return;
     }
     setError("");
+    setRepoName(parsed.repoName);
     setStep(2);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!name || !repoInput || !repoName) {
+      setError("Project configuration is incomplete. Please select a repository.");
+      return;
+    }
+
     setLoading(true);
+    setError("");
     try {
       const { data } = await createProject({
         name: name.trim(),
         repoUrl: repoInput.trim(),
+        repoName: repoName.trim(),
         branch: branch.trim() || "main",
         installCommand: installCommand.trim(),
         startCommand: startCommand.trim(),
+        framework: framework
       });
-      
       const id = data?.data?._id;
       if (id) {
         const pairs = envVars
@@ -127,7 +133,9 @@ export default function NewProjectPage() {
         await Promise.all(
           pairs.map((p) => addEnvVar(id, p.key, p.value).catch(() => null))
         );
-        navigate(`/deploy?projectId=${encodeURIComponent(id)}`);
+        navigate(`/deployment-progress/${id}`);
+      } else {
+        setError("Failed to create project. Please try again.");
       }
     } catch (err) {
       setError(err.response?.data?.message || "Deployment failed to initiate");
@@ -135,6 +143,8 @@ export default function NewProjectPage() {
       setLoading(false);
     }
   };
+
+  const selectedFramework = Frameworks.find(f => f.id === framework) || Frameworks[0];
 
   return (
     <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
@@ -155,8 +165,8 @@ export default function NewProjectPage() {
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${step >= 1 ? "bg-white" : "bg-white/10"}`} />
-                  <span className={`w-2.5 h-2.5 rounded-full ${step >= 2 ? "bg-white" : "bg-white/10"}`} />
+                  <span key="step-dot-1" className={`w-2 h-2 rounded-full ${step >= 1 ? "bg-[#22c55e]" : "bg-white/10"}`} />
+                  <span key="step-dot-2" className={`w-2 h-2 rounded-full ${step >= 2 ? "bg-[#22c55e]" : "bg-white/10"}`} />
                 </div>
               </div>
             </div>
@@ -165,97 +175,109 @@ export default function NewProjectPage() {
               {step === 1 ? (
                 <motion.div 
                   key="step1"
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
+                  exit={{ opacity: 0, x: 10 }}
                   className="space-y-8"
                 >
-                  {/* Import Card */}
                   <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                     {/* Repository List */}
-                    <div className="lg:col-span-3 bg-[#111113] border border-white/[0.06] rounded-[32px] overflow-hidden flex flex-col h-[500px] shadow-2xl">
+                    <div className="lg:col-span-3 bg-[#111113] border border-white/[0.06] rounded-[32px] overflow-hidden flex flex-col h-[520px] shadow-2xl relative">
                       <div className="p-6 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.01]">
                         <div className="flex items-center gap-3">
-                          <GitHubIcon size={20} />
+                          <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                            <GitHubIcon size={18} />
+                          </div>
                           <span className="font-bold text-[15px]">GitHub Repositories</span>
                         </div>
                         <div className="relative">
                           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525b]" />
                           <input 
                             type="text"
-                            placeholder="Filter..."
+                            placeholder="Search..."
                             value={repoSearch}
                             onChange={(e) => setRepoSearch(e.target.value)}
-                            className="bg-[#050505] border border-white/[0.08] rounded-full h-8 pl-9 pr-4 text-xs focus:outline-none focus:border-white/20 transition-all w-40"
+                            className="bg-[#050505] border border-white/[0.08] rounded-full h-9 pl-9 pr-4 text-xs focus:outline-none focus:border-white/20 transition-all w-48"
                           />
                         </div>
                       </div>
-                      
                       <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide">
                         {reposLoading ? (
-                          [1,2,3,4,5].map(i => <div key={i} className="h-14 bg-white/[0.02] animate-pulse rounded-2xl" />)
+                          [1,2,3,4,5,6].map(i => (
+                            <div key={`skeleton-${i}`} className="flex items-center justify-between p-4 rounded-2xl border border-white/[0.02] bg-white/[0.01] animate-pulse">
+                              <div className="flex items-center gap-3">
+                                <div className="w-4 h-4 bg-white/5 rounded" />
+                                <div className="w-32 h-3 bg-white/5 rounded" />
+                              </div>
+                              <div className="w-12 h-3 bg-white/5 rounded" />
+                            </div>
+                          ))
                         ) : repos.length > 0 ? (
-                          repos.filter(r => r.name.toLowerCase().includes(repoSearch.toLowerCase())).map(repo => (
+                          repos.filter(r => r.name.toLowerCase().includes(repoSearch.toLowerCase())).map((repo, idx) => (
                             <button
-                              key={repo.id}
+                              key={repo._id || repo.id || `repo-${idx}`}
                               onClick={() => handleImport(repo)}
-                              className="w-full flex items-center justify-between p-4 rounded-2xl border border-white/[0.03] hover:border-white/[0.1] hover:bg-white/[0.02] transition-all group"
+                              className="w-full flex items-center justify-between p-4 rounded-2xl border border-white/[0.03] hover:border-white/[0.1] hover:bg-white/[0.03] transition-all group"
                             >
                               <div className="flex items-center gap-3">
                                 {repo.isPrivate ? <Lock size={14} className="text-[#52525b]" /> : <Globe size={14} className="text-[#52525b]" />}
-                                <span className="text-[13.5px] font-medium text-white/80 group-hover:text-white">{repo.name}</span>
+                                <span className="text-[13.5px] font-semibold text-white/70 group-hover:text-white">{repo.name}</span>
                               </div>
                               <div className="flex items-center gap-3">
-                                <span className="text-[11px] text-[#3f3f46] font-mono">{repo.defaultBranch}</span>
-                                <ArrowRight size={14} className="text-[#3f3f46] group-hover:text-white transition-all transform group-hover:translate-x-1" />
+                                <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-widest">{repo.defaultBranch}</span>
+                                <div className="w-7 h-7 rounded-lg bg-white/0 group-hover:bg-white/5 flex items-center justify-center transition-all">
+                                  <ArrowRight size={14} className="text-[#3f3f46] group-hover:text-white" />
+                                </div>
                               </div>
                             </button>
                           ))
                         ) : (
-                          <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                            <GitHubIcon size={40} className="text-[#1a1a1a] mb-4" />
-                            <p className="text-[13px] text-[#52525b] max-w-[200px]">No repositories found. Connect your GitHub account.</p>
+                          <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                            <GitHubIcon size={48} className="mb-4" />
+                            <p className="text-[13px] font-medium max-w-[200px]">No projects found. Try checking your GitHub permissions.</p>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Custom URL Import */}
-                    <div className="lg:col-span-2 space-y-6">
-                      <div className="bg-[#111113] border border-white/[0.06] rounded-[32px] p-8 shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/[0.01] rounded-full -mr-16 -mt-16 border border-white/[0.05]" />
-                        <h3 className="text-lg font-bold mb-2">Import Third-Party</h3>
-                        <p className="text-[13px] text-[#71717a] mb-8 leading-relaxed">Paste a public Git URL to deploy any open-source project instantly.</p>
+                    <div className="lg:col-span-2">
+                      <div className="bg-[#111113] border border-white/[0.06] rounded-[32px] p-8 shadow-2xl relative overflow-hidden h-full flex flex-col">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#22c55e]/[0.02] rounded-full -mr-16 -mt-16 blur-3xl" />
                         
-                        <div className="space-y-4">
-                          <InputField 
-                            label="Git Repository URL"
-                            placeholder="https://github.com/user/repo"
-                            value={repoInput}
-                            onChange={(e) => setRepoInput(e.target.value)}
-                            icon={FolderGit2}
-                          />
+                        <div className="mb-auto">
+                          <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+                            <Plus size={18} className="text-[#22c55e]" />
+                            Import External
+                          </h3>
+                          <p className="text-[13px] text-[#71717a] mb-8 leading-relaxed">Paste a Git repository URL to deploy from any public provider like Bitbucket or GitLab.</p>
+                          
+                          <div className="space-y-5">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.2em] ml-1">Repository URL</label>
+                              <div className="relative">
+                                <FolderGit2 size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#52525b]" />
+                                <input 
+                                  placeholder="https://github.com/user/repo"
+                                  value={repoInput}
+                                  onChange={(e) => setRepoInput(e.target.value)}
+                                  className="w-full h-12 bg-[#050505] border border-white/[0.08] rounded-2xl pl-12 pr-4 text-sm focus:outline-none focus:border-[#22c55e]/40 transition-all font-mono"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-8">
                           <GlassButton 
                             variant="primary" 
-                            className="w-full h-12" 
+                            className="w-full h-12 rounded-[18px]" 
                             onClick={handleCustomImport}
                             disabled={!repoInput}
                           >
-                            Continue <ArrowRight size={16} className="ml-2" />
+                            Continue Deployment <ArrowRight size={16} className="ml-2" />
                           </GlassButton>
                         </div>
-                      </div>
-
-                      <div className="bg-white/[0.02] border border-white/[0.04] rounded-3xl p-6">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 rounded-full bg-[#22c55e]/10 flex items-center justify-center text-[#22c55e]">
-                            <CheckCircle2 size={16} />
-                          </div>
-                          <span className="font-bold text-[13px]">Vibe Coded Architecture</span>
-                        </div>
-                        <p className="text-[12px] text-[#52525b] leading-relaxed">
-                          Our engine automatically detects framework settings, environment requirements, and build pipelines.
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -263,62 +285,97 @@ export default function NewProjectPage() {
               ) : (
                 <motion.div 
                   key="step2"
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20"
+                  exit={{ opacity: 0, x: -10 }}
+                  className="max-w-3xl mx-auto pb-20"
                 >
-                  {/* Configuration Form */}
-                  <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-[#111113] border border-white/[0.06] rounded-[32px] p-8 shadow-2xl">
-                      <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/[0.06]">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                            <Rocket size={18} />
+                  <div className="space-y-6">
+                    <div className="bg-[#111113] border border-white/[0.06] rounded-[32px] p-10 shadow-2xl">
+                      <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center gap-5">
+                          <div className="w-12 h-12 rounded-2xl bg-[#22c55e]/10 border border-[#22c55e]/20 flex items-center justify-center text-[#22c55e]">
+                            <Rocket size={22} />
                           </div>
                           <div>
-                            <h3 className="font-bold text-white">{name || "Untitled Project"}</h3>
-                            <p className="text-[11px] text-[#52525b] font-mono truncate max-w-[200px]">{repoInput}</p>
-                          </div>
-                        </div>
-                        <button onClick={() => setStep(1)} className="text-[12px] font-bold text-[#71717a] hover:text-white transition-colors">Change Repo</button>
-                      </div>
-
-                      <div className="space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <InputField 
-                            label="Project Name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s/g, '-'))}
-                            placeholder="my-awesome-app"
-                          />
-                          <div className="space-y-2">
-                            <label className="text-[11px] font-black text-[#3f3f46] uppercase tracking-[0.2em] ml-1">Framework Preset</label>
-                            <div className="relative group">
-                              <select 
-                                value={framework}
-                                onChange={(e) => {
-                                  const fw = Frameworks.find(f => f.id === e.target.value);
-                                  setFramework(e.target.value);
-                                  setInstallCommand(fw.install);
-                                  setStartCommand(fw.start);
-                                }}
-                                className="w-full h-12 bg-[#050505] border border-white/[0.08] rounded-2xl px-5 text-sm appearance-none focus:outline-none focus:border-white/20 transition-all cursor-pointer"
-                              >
-                                {Frameworks.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-                              </select>
-                              <ChevronDown size={14} className="absolute right-5 top-1/2 -translate-y-1/2 text-[#52525b] pointer-events-none group-hover:text-white transition-colors" />
+                            <h3 className="font-bold text-lg text-white leading-tight">{name || "Configuring Project"}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <GitBranch size={12} className="text-[#52525b]" />
+                              <span className="text-[11px] text-[#52525b] font-mono">{branch}</span>
                             </div>
                           </div>
                         </div>
+                        <button onClick={() => setStep(1)} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[11px] font-black uppercase tracking-widest text-[#71717a] hover:text-white transition-all">Change Repo</button>
+                      </div>
 
-                        {/* Advanced Settings */}
-                        <div>
+                      <div className="space-y-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.2em] ml-1">Project Name</label>
+                            <input 
+                              value={name}
+                              onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s/g, '-'))}
+                              placeholder="project-name"
+                              className="w-full h-12 bg-[#050505] border border-white/[0.08] rounded-2xl px-5 text-sm focus:outline-none focus:border-[#22c55e]/40 transition-all font-semibold"
+                            />
+                          </div>
+
+                          <div className="space-y-2 relative">
+                            <label className="text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.2em] ml-1">Framework Preset</label>
+                            <button 
+                              onClick={() => setShowFrameworkList(!showFrameworkList)}
+                              className="w-full h-12 bg-[#050505] border border-white/[0.08] rounded-2xl px-5 flex items-center justify-between group hover:border-white/20 transition-all"
+                            >
+                              <div className="flex items-center gap-3">
+                                <selectedFramework.icon size={16} className="text-[#a1a1aa]" />
+                                <span className="text-sm font-semibold">{selectedFramework.name}</span>
+                              </div>
+                              <ChevronDown size={14} className={`text-[#52525b] transition-transform ${showFrameworkList ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            <AnimatePresence>
+                              {showFrameworkList && (
+                                <>
+                                  <div className="fixed inset-0 z-40" onClick={() => setShowFrameworkList(false)} />
+                                  <motion.div 
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className="absolute left-0 right-0 top-full mt-2 bg-[#18181b] border border-white/10 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
+                                  >
+                                    {Frameworks.map((fw, idx) => (
+                                      <button
+                                        key={`fw-${fw.id}-${idx}`}
+                                        onClick={() => {
+                                          setFramework(fw.id);
+                                          setInstallCommand(fw.install);
+                                          setStartCommand(fw.start);
+                                          setShowFrameworkList(false);
+                                        }}
+                                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${framework === fw.id ? 'bg-[#22c55e] text-black' : 'hover:bg-white/5 text-[#a1a1aa] hover:text-white'}`}
+                                      >
+                                        <fw.icon size={14} />
+                                        <span className="text-[13px] font-bold">{fw.name}</span>
+                                      </button>
+                                    ))}
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </div>
+
+                        {/* Build Settings Accordion */}
+                        <div className="bg-[#050505]/50 border border-white/[0.04] rounded-3xl p-6">
                           <button 
                             onClick={() => setShowAdvanced(!showAdvanced)}
-                            className="flex items-center gap-2 text-[12px] font-bold text-[#71717a] hover:text-white transition-colors mb-4"
+                            className="w-full flex items-center justify-between text-[11px] font-black uppercase tracking-[0.2em] text-[#3f3f46] hover:text-white transition-colors"
                           >
-                            <Settings2 size={14} /> Build and Output Settings {showAdvanced ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                            <div className="flex items-center gap-3">
+                              <Settings2 size={14} />
+                              Build and Output Settings
+                            </div>
+                            {showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </button>
                           
                           <AnimatePresence>
@@ -327,11 +384,25 @@ export default function NewProjectPage() {
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                className="space-y-4 overflow-hidden"
+                                className="overflow-hidden"
                               >
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                                  <InputField label="Install Command" value={installCommand} onChange={(e) => setInstallCommand(e.target.value)} />
-                                  <InputField label="Start Command" value={startCommand} onChange={(e) => setStartCommand(e.target.value)} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 mt-4 border-t border-white/[0.03]">
+                                  <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest ml-1">Install Command</label>
+                                    <input 
+                                      value={installCommand}
+                                      onChange={(e) => setInstallCommand(e.target.value)}
+                                      className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-xs font-mono focus:outline-none focus:border-[#22c55e]/30 transition-all"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest ml-1">Start Command</label>
+                                    <input 
+                                      value={startCommand}
+                                      onChange={(e) => setStartCommand(e.target.value)}
+                                      className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-xs font-mono focus:outline-none focus:border-[#22c55e]/30 transition-all"
+                                    />
+                                  </div>
                                 </div>
                               </motion.div>
                             )}
@@ -339,17 +410,20 @@ export default function NewProjectPage() {
                         </div>
 
                         {/* Environment Variables */}
-                        <div className="pt-8 border-t border-white/[0.06]">
+                        <div>
                           <div className="flex items-center justify-between mb-6">
-                            <h4 className="text-[13px] font-bold uppercase tracking-wider text-[#3f3f46]">Environment Variables</h4>
-                            <GlassButton variant="secondary" className="h-8 text-xs px-3 gap-1.5" onClick={() => setEnvVars([...envVars, { key: "", value: "" }])}>
-                              <Plus size={12} /> Add New
-                            </GlassButton>
+                            <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#3f3f46]">Environment Variables</h4>
+                            <button 
+                              onClick={() => setEnvVars([...envVars, { key: "", value: "" }])}
+                              className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition-all flex items-center gap-2"
+                            >
+                              <Plus size={12} /> Add Variable
+                            </button>
                           </div>
                           
                           <div className="space-y-3">
                             {envVars.map((env, i) => (
-                              <div key={i} className="flex gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                              <div key={`env-${i}`} className="flex gap-3">
                                 <input 
                                   placeholder="VARIABLE_NAME"
                                   value={env.key}
@@ -358,95 +432,70 @@ export default function NewProjectPage() {
                                     next[i].key = e.target.value;
                                     setEnvVars(next);
                                   }}
-                                  className="flex-1 h-11 bg-[#050505] border border-white/[0.08] rounded-xl px-4 text-xs font-mono focus:outline-none focus:border-white/20 transition-all"
+                                  className="flex-1 h-12 bg-[#050505] border border-white/[0.08] rounded-2xl px-5 text-xs font-mono focus:outline-none focus:border-white/20 transition-all"
                                 />
                                 <input 
                                   type="password"
-                                  placeholder="value"
+                                  placeholder="••••••••"
                                   value={env.value}
                                   onChange={(e) => {
                                     const next = [...envVars];
                                     next[i].value = e.target.value;
                                     setEnvVars(next);
                                   }}
-                                  className="flex-1 h-11 bg-[#050505] border border-white/[0.08] rounded-xl px-4 text-xs font-mono focus:outline-none focus:border-white/20 transition-all"
+                                  className="flex-1 h-12 bg-[#050505] border border-white/[0.08] rounded-2xl px-5 text-xs font-mono focus:outline-none focus:border-white/20 transition-all"
                                 />
                                 <button 
                                   onClick={() => setEnvVars(envVars.filter((_, idx) => idx !== i))}
-                                  className="w-11 h-11 rounded-xl flex items-center justify-center bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all"
+                                  className="w-12 h-12 rounded-2xl flex items-center justify-center bg-red-500/5 border border-red-500/10 text-red-500/40 hover:bg-red-500 hover:text-white transition-all"
                                 >
-                                  <Trash2 size={14} />
+                                  <Trash2 size={16} />
                                 </button>
                               </div>
                             ))}
                           </div>
                         </div>
 
-                        {error && <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-[13px] font-medium">{error}</div>}
+                        {error && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-5 bg-red-500/10 border border-red-500/20 rounded-[24px] flex items-center gap-4"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 shrink-0">
+                              <AlertCircle size={16} />
+                            </div>
+                            <p className="text-[13px] font-medium text-red-500">{error}</p>
+                          </motion.div>
+                        )}
 
-                        <div className="pt-8">
-                          <GlassButton 
-                            variant="primary" 
-                            className="w-full h-14 text-[15px]" 
+                        <div className="pt-6">
+                          <button 
+                            className="w-full h-16 rounded-[24px] bg-[#22c55e] text-black font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.01] hover:shadow-[0_20px_40px_rgba(34,197,94,0.15)] active:scale-[0.99] transition-all disabled:opacity-50 disabled:pointer-events-none"
                             onClick={handleSubmit}
                             disabled={loading || !name}
                           >
-                            {loading ? "Initializing Deployment..." : "Deploy Application"} <ArrowRight size={18} className="ml-2" />
-                          </GlassButton>
+                            {loading ? (
+                              <>
+                                <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                Launching Engine...
+                              </>
+                            ) : (
+                              <>
+                                Deploy Application <ArrowRight size={20} />
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Info Sidebar */}
-                  <div className="space-y-6">
-                    <div className="bg-white/[0.02] border border-white/[0.06] rounded-[32px] p-8">
-                      <h4 className="text-[12px] font-black text-[#3f3f46] uppercase tracking-[0.2em] mb-6">Build Insights</h4>
-                      <ul className="space-y-6">
-                        <li className="flex gap-4">
-                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                            <GitBranch size={14} className="text-[#71717a]" />
-                          </div>
-                          <div>
-                            <p className="text-[13px] font-bold mb-1">Production Branch</p>
-                            <p className="text-[12px] text-[#52525b]">Deployments will be automatically triggered on push to <code className="text-white bg-white/5 px-1 rounded">{branch}</code>.</p>
-                          </div>
-                        </li>
-                        <li className="flex gap-4">
-                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                            <Zap size={14} className="text-[#22c55e]" />
-                          </div>
-                          <div>
-                            <p className="text-[13px] font-bold mb-1">Instant Deployment</p>
-                            <p className="text-[12px] text-[#52525b]">Velora uses ephemeral build workers to ensure your app is live in seconds.</p>
-                          </div>
-                        </li>
-                      </ul>
                     </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-
           </div>
-
         </div>
       </PageWrapper>
     </div>
   );
 }
-<<<<<<< HEAD
-=======
-=======
-// main section
-// deploy aur prj btn (jese user click karega modal ayega , uss modal me user apna github ka repo daloge , input me repo ka url jayega)
-// frame works select krne ka options like react, nextjs
-// deploy btn (repo clone hoga , install dependencies,build cmd run hoga, build ka output upload hoga, live url return) 
->>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
-=======
-// main section
-// deploy aur prj btn (jese user click karega modal ayega , uss modal me user apna github ka repo daloge , input me repo ka url jayega)
-// frame works select krne ka options like react, nextjs
-// deploy btn (repo clone hoga , install dependencies,build cmd run hoga, build ka output upload hoga, live url return) 
->>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
->>>>>>> 5b94c478ee6b62a623140273e09b191633b41eb7

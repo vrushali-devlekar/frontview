@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Bell, User, Settings, FileText, ChevronDown } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
+import { getFrameworkIcon } from "../../utils/frameworkIcons";
 
 const routeLabels = {
   "/dashboard":    "Overview",
@@ -22,18 +25,40 @@ const TopNav = () => {
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
   const location = useLocation();
+  const { user } = useAuth();
+
+  const queryParams = new URLSearchParams(location.search);
+  const projectId = queryParams.get("projectId");
+  const [project, setProject] = useState(null);
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const projectDropdownRef = useRef(null);
 
   const pageLabel = routeLabels[location.pathname] ?? "";
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
-        setIsDropdownOpen(false);
-      if (searchRef.current && !searchRef.current.contains(e.target))
-        setIsSearchOpen(false);
+    if (projectId) {
+      const fetchProject = async () => {
+        try {
+          const { getProjectById, getUserProjects } = await import("../../api/api");
+          const pRes = await getProjectById(projectId);
+          setProject(pRes.data.data);
+          
+          const psRes = await getUserProjects();
+          setProjects(psRes.data.data || []);
+        } catch (e) { console.error(e); }
+      };
+      fetchProject();
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (projectDropdownRef.current && !projectDropdownRef.current.contains(e.target))
+        setIsProjectDropdownOpen(false);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   return (
@@ -41,11 +66,55 @@ const TopNav = () => {
 
       {/* Left — breadcrumb */}
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-[12.5px] text-[#3f3f46] font-medium select-none">Velora</span>
+        <Link to="/dashboard" className="text-[12.5px] text-[#3f3f46] font-black hover:text-white transition-colors select-none tracking-tight">VELORA</Link>
+        
+        {projectId && project && (
+          <>
+            <span className="text-[#1a1a1a] text-[12px] select-none mx-1">/</span>
+            <div className="relative" ref={projectDropdownRef}>
+              <button 
+                onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition-all group"
+              >
+                {project.framework && (
+                  <div style={{ color: getFrameworkIcon(project.framework).color }}>
+                    {React.createElement(getFrameworkIcon(project.framework).Icon, { size: 14, strokeWidth: 2 })}
+                  </div>
+                )}
+                <span className="text-[13px] font-bold text-white/90 select-none tracking-tight">{project.name}</span>
+                <ChevronDown size={12} className={`text-[#3f3f46] transition-transform duration-300 ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isProjectDropdownOpen && (
+                  <div className="absolute left-0 top-full mt-2 w-56 bg-[#111113] border border-white/[0.1] rounded-xl shadow-2xl p-1.5 z-[60]">
+                    <div className="px-3 py-2 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.2em]">Switch Project</div>
+                    <div className="space-y-0.5 max-h-60 overflow-y-auto scrollbar-hide">
+                      {projects.map(p => (
+                        <button
+                          key={p._id}
+                          onClick={() => {
+                            setIsProjectDropdownOpen(false);
+                            window.location.href = `${location.pathname}?projectId=${p._id}`;
+                          }}
+                          className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-all ${p._id === projectId ? 'bg-white text-black font-bold' : 'text-[#a1a1aa] hover:bg-white/5 hover:text-white'}`}
+                        >
+                          <span className="text-[12.5px] truncate">{p.name}</span>
+                          {p._id === projectId && <div className="w-1 h-1 rounded-full bg-black" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+          </>
+        )}
+
         {pageLabel && (
           <>
-            <span className="text-[#3f3f46] text-[10px] select-none">•</span>
-            <span className="text-[13px] font-bold text-white/80 select-none tracking-tight">{pageLabel}</span>
+            <span className="text-[#1a1a1a] text-[12px] select-none mx-1">/</span>
+            <span className="text-[13px] font-bold text-[#52525b] select-none tracking-tight">{pageLabel}</span>
           </>
         )}
       </div>
@@ -95,10 +164,18 @@ const TopNav = () => {
             onClick={() => setIsDropdownOpen((o) => !o)}
             className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-white/[0.05] transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[12px] font-black text-black">
-              S
-            </div>
-            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none">Sheryian</span>
+            {user?.avatar || user?.githubAvatarUrl || user?.googleAvatarUrl ? (
+              <img 
+                src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl} 
+                className="w-8 h-8 rounded-full object-cover" 
+                alt="Avatar"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[12px] font-black text-black">
+                {user?.name?.charAt(0) || "U"}
+              </div>
+            )}
+            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none">{user?.name || "User"}</span>
             <ChevronDown size={12} className={`hidden md:block text-[#3f3f46] transition-transform duration-300 ${isDropdownOpen ? "rotate-180" : ""}`} />
           </button>
 

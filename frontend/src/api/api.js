@@ -48,7 +48,7 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       // Only redirect if not already on login/register/landing
       const path = window.location.pathname;
-      if (!['/login', '/register', '/'].includes(path)) {
+      if (!['/login', '/register', '/', '/auth/success'].includes(path)) {
         window.location.href = '/login';
       }
     }
@@ -59,15 +59,6 @@ api.interceptors.response.use(
 // ==========================================
 // AUTH APIs
 // ==========================================
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Auth APIs
 export const login = (credentials) => api.post('/auth/login', credentials);
 export const register = (userData) => api.post('/auth/register', userData);
 export const logout = () => api.get('/auth/logout');
@@ -94,9 +85,6 @@ export const updateProject = (id, data) => api.put(`/projects/${id}`, data);
 // ==========================================
 // DEPLOYMENT APIs
 // ==========================================
-export const triggerDeployment = (projectId) =>
-  api.post('/deployments', { projectId });
-
 export const getDeploymentStatus = (deploymentId) =>
   api.get(`/deployments/${deploymentId}`);
 
@@ -105,6 +93,9 @@ export const stopDeployment = (deploymentId) =>
 
 export const analyzeDeploymentLogs = (deploymentId, logs) =>
   api.post(`/deployments/${deploymentId}/analyze-logs`, { logs });
+
+export const aiChat = (message, context) =>
+  api.post('/ai/chat', { message, context });
 
 export const rollbackDeployment = (projectId, version) =>
   api.post(`/projects/${projectId}/rollback/${version}`);
@@ -139,8 +130,15 @@ export const getProject = getProjectById;
 export const getGithubRepos = getUserRepos;
 export const listDeployments = (projectId) =>
   api.get('/deployments', { params: { projectId } });
+export const getDeploymentsByProject = listDeployments;
 export const getDeployment = getDeploymentStatus;
 export const stopDeploymentRequest = stopDeployment;
 export const rollbackProject = rollbackDeployment;
+export const triggerDeployment = (projectId) => api.post(`/projects/${projectId}/deploy`);
+
+// Teams
+export const getProjectTeam = (projectId) => api.get(`/teams/${projectId}`);
+export const inviteMember = (projectId, data) => api.post(`/teams/${projectId}/invite`, data);
+export const removeMember = (projectId, memberId) => api.delete(`/teams/${projectId}/members/${memberId}`);
 
 export default api;

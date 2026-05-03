@@ -16,16 +16,37 @@ const { notifyIntegrations } = require('./notificationService');
 // Ye Map track karega ki kaunsa deployment kis process me chal raha hai (Stop karne ke kaam aayega)
 const activeProcesses = new Map();
 
-const appendDeploymentLog = async (deploymentRecord, level, message) => {
+const appendDeploymentLog = async (deploymentRecord, level, message, logType = 'build', io = null) => {
     if (!deploymentRecord) return;
 
     const entry = `[${new Date().toISOString()}] [${level.toUpperCase()}] ${message}`;
+    const targetField = logType === 'runtime' ? 'runtimeLogs' : 'buildLogs';
+    
+    // Emit via Socket.io if available
+    if (io) {
+        const roomName = `dep:${deploymentRecord._id}`;
+        io.to(roomName).emit('log:line', {
+            timestamp: new Date(),
+            level,
+            message,
+            logType
+        });
+    }
+
     deploymentRecord.logs = deploymentRecord.logs || [];
     deploymentRecord.logs.push(entry);
-
-    if (deploymentRecord.logs.length > 5000) {
-        deploymentRecord.logs = deploymentRecord.logs.slice(-5000);
+    
+    if (logType === 'runtime') {
+        deploymentRecord.runtimeLogs = deploymentRecord.runtimeLogs || [];
+        deploymentRecord.runtimeLogs.push(entry);
+    } else {
+        deploymentRecord.buildLogs = deploymentRecord.buildLogs || [];
+        deploymentRecord.buildLogs.push(entry);
     }
+
+    if (deploymentRecord.logs.length > 5000) deploymentRecord.logs = deploymentRecord.logs.slice(-5000);
+    if (deploymentRecord.buildLogs && deploymentRecord.buildLogs.length > 5000) deploymentRecord.buildLogs = deploymentRecord.buildLogs.slice(-5000);
+    if (deploymentRecord.runtimeLogs && deploymentRecord.runtimeLogs.length > 5000) deploymentRecord.runtimeLogs = deploymentRecord.runtimeLogs.slice(-5000);
 
     await deploymentRecord.save();
 };
@@ -45,7 +66,8 @@ const executeDeployment = async (deploymentId, io) => {
         // Status update kar do ki build shuru ho gaya
         deploymentRecord.status = 'building';
         await deploymentRecord.save();
-        await appendDeploymentLog(deploymentRecord, 'info', 'Deployment started');
+        io.to(`dep:${deploymentId}`).emit('deployment:status', { status: 'building' });
+        await appendDeploymentLog(deploymentRecord, 'info', 'Deployment started', 'build', io);
 
         // 3. GitHub se Repo Clone karo
         const user = await User.findById(deploymentRecord.userId).select('+githubAccessToken');
@@ -55,7 +77,7 @@ const executeDeployment = async (deploymentId, io) => {
             project.branch || 'main',
             user?.githubAccessToken || null
         );
-        await appendDeploymentLog(deploymentRecord, 'info', `Repository cloned to ${targetPath}`);
+        await appendDeploymentLog(deploymentRecord, 'info', `Repository cloned to ${targetPath}`, 'build', io);
 
         // 🌟 INTEGRATIONS INJECTION (Category A)
         const integrations = await Integration.find({ projectId: project._id, isActive: true });
@@ -91,7 +113,7 @@ const executeDeployment = async (deploymentId, io) => {
 
         // 🌟 NEW: Auto-Detect Framework & Commands
         console.log(`🔍 Analyzing repository structure...`);
-        await appendDeploymentLog(deploymentRecord, 'info', 'Analyzing repository structure');
+        await appendDeploymentLog(deploymentRecord, 'info', 'Analyzing repository structure', 'build', io);
         const frameworkInfo = await detectFramework(targetPath);
 
         if (frameworkInfo.error) {
@@ -100,12 +122,12 @@ const executeDeployment = async (deploymentId, io) => {
 
         const appPath = frameworkInfo.projectPath || targetPath;
         console.log(`🎯 Detected Type: ${frameworkInfo.type}`);
-        await appendDeploymentLog(deploymentRecord, 'info', `Detected framework type: ${frameworkInfo.type}`);
-        await appendDeploymentLog(deploymentRecord, 'info', `Using project path: ${appPath}`);
+        await appendDeploymentLog(deploymentRecord, 'info', `Detected framework type: ${frameworkInfo.type}`, 'build', io);
+        await appendDeploymentLog(deploymentRecord, 'info', `Using project path: ${appPath}`, 'build', io);
 
         // 4. NPM Install chalao (Sirf tab jab frameworkInfo me installCmd ho)
         if (frameworkInfo.installCmd) {
-            await appendDeploymentLog(deploymentRecord, 'info', `Running install command: ${frameworkInfo.installCmd}`);
+            await appendDeploymentLog(deploymentRecord, 'info', `Running install command: ${frameworkInfo.installCmd}`, 'build', io);
             await new Promise((resolve, reject) => {
                 console.log(`📦 Running ${frameworkInfo.installCmd} for ${deploymentRecord._id}...`);
                 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
@@ -116,17 +138,17 @@ const executeDeployment = async (deploymentId, io) => {
                 });
 
                 // 🌟 JADOO YAHAN HAI: Socket.io ko Install logs bhej do
-                streamLogs(deploymentRecord._id.toString(), installProcess, io);
+                streamLogs(deploymentRecord._id.toString(), installProcess, io, 'build');
 
                 installProcess.on('close', (code) => {
                     if (code === 0) resolve();
                     else reject(new Error('npm install failed'));
                 });
             });
-            await appendDeploymentLog(deploymentRecord, 'info', 'Install completed');
+            await appendDeploymentLog(deploymentRecord, 'info', 'Install completed', 'build', io);
         } else {
             console.log(`⚡ Skipping install phase (Vanilla Frontend detected)`);
-            await appendDeploymentLog(deploymentRecord, 'info', 'Skipping install phase');
+            await appendDeploymentLog(deploymentRecord, 'info', 'Skipping install phase', 'build', io);
         }
 
         // 🌟 NEW: Agar Frontend hai, toh NPM Build chalao
@@ -143,7 +165,7 @@ const executeDeployment = async (deploymentId, io) => {
                 const buildProcess = spawn(finalBuildCmd, bArgs, { cwd: appPath, shell: true });
 
                 // 🌟 BUILD COMMAND KE LOGS BHI STREAM KARO
-                streamLogs(deploymentRecord._id.toString(), buildProcess, io);
+                streamLogs(deploymentRecord._id.toString(), buildProcess, io, 'build');
 
                 buildProcess.on('close', (code) => {
                     if (code === 0) resolve();
@@ -167,10 +189,10 @@ const executeDeployment = async (deploymentId, io) => {
             env: { ...process.env, PORT: assignedPort },
             shell: true
         });
-        await appendDeploymentLog(deploymentRecord, 'info', `Start command launched: ${startCmdString}`);
+        await appendDeploymentLog(deploymentRecord, 'info', `Start command launched: ${startCmdString}`, 'runtime');
 
         // 🌟 START COMMAND KE LOGS BHI STREAM KARO
-        streamLogs(deploymentRecord._id.toString(), startProcess, io);
+        streamLogs(deploymentRecord._id.toString(), startProcess, io, 'runtime');
 
         // Is process ko Map mein save kar lo taaki baad me Kill kar sakein
         activeProcesses.set(deploymentRecord._id.toString(), startProcess);
@@ -199,12 +221,14 @@ const executeDeployment = async (deploymentId, io) => {
                 if (code === 0) {
                     latest.status = 'stopped';
                     latest.completedAt = new Date();
-                    await appendDeploymentLog(latest, 'info', `Process exited normally (code 0${signal ? `, signal ${signal}` : ''})`);
+                    io.to(`dep:${deploymentRecord._id}`).emit('deployment:status', { status: 'stopped' });
+                    await appendDeploymentLog(latest, 'info', `Process exited normally (code 0${signal ? `, signal ${signal}` : ''})`, 'runtime', io);
                 } else {
                     latest.status = 'failed';
                     latest.errorMessage = `Process exited unexpectedly (code ${code}${signal ? `, signal ${signal}` : ''})`;
                     latest.completedAt = new Date();
-                    await appendDeploymentLog(latest, 'error', latest.errorMessage);
+                    io.to(`dep:${deploymentRecord._id}`).emit('deployment:status', { status: 'failed' });
+                    await appendDeploymentLog(latest, 'error', latest.errorMessage, 'runtime', io);
                 }
                 await latest.save();
             } catch (closeErr) {
@@ -216,13 +240,14 @@ const executeDeployment = async (deploymentId, io) => {
         deploymentRecord.status = 'running';
         deploymentRecord.port = assignedPort;
         await deploymentRecord.save();
+        io.to(`dep:${deploymentId}`).emit('deployment:status', { status: 'running', url: deploymentRecord.url });
 
         // Project ka active deployment update kar do
         project.activeDeploymentId = deploymentRecord._id;
         await project.save();
 
         console.log(`✅ Deployment ${deploymentRecord._id} is now LIVE at http://localhost:${assignedPort}`);
-        await appendDeploymentLog(deploymentRecord, 'info', `Deployment live at http://localhost:${assignedPort}`);
+        await appendDeploymentLog(deploymentRecord, 'info', `Deployment live at http://localhost:${assignedPort}`, 'runtime', io);
 
         // 🌟 NOTIFY SUCCESS (Category B)
         notifyIntegrations(project._id, { ...deploymentRecord.toObject(), projectName: project.name }, 'success');
@@ -288,7 +313,7 @@ const executeRollback = async (newDeploymentId, oldDeploymentId, io) => {
         // 🌟 HACKATHON MVP MAGIC: Build/Install skip karo!
         // Seedha purane deployment ka path nikalo
         // DHYAN DE: Yahan '/tmp/deploypilot' ko apne actual base path se replace kar lena jo cloneRepo use karta hai
-        const basePath = process.platform === 'win32' ? 'C:\\tmp\\deploypilot' : '/tmp/deploypilot';
+        const basePath = path.join(__dirname, '../../deployments_temp');
         const oldAppPath = path.join(basePath, oldDeploymentRecord._id.toString());
 
         await appendDeploymentLog(rollbackDeploymentRecord, 'info', `Located old build directory: ${oldAppPath}`);

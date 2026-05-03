@@ -41,6 +41,11 @@ const projectSchema = new mongoose.Schema({
     },
     installCommand: { type: String, default: 'npm install' },
     startCommand: { type: String, default: 'npm start' },
+    framework: { 
+        type: String, 
+        default: 'other',
+        enum: ['react', 'nextjs', 'vite', 'nodejs', 'vanilla', 'other']
+    },
     envVars: [{
         key: { type: String, required: true },
         encryptedValue: { type: String, required: true },

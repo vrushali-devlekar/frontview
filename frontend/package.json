@@ -15,13 +15,6 @@
     "lucide-react": "^1.14.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-<<<<<<< HEAD
-<<<<<<< HEAD
-    "react-icons": "^5.6.0",
-=======
->>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
-=======
->>>>>>> e8413a855b5e22591d64a2a348db30b019e104b4
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.14.2",
     "recharts": "^3.8.1",

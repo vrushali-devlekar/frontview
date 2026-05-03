@@ -36,17 +36,41 @@ export default function Environments() {
   const exportCSV = () => {
     const headers = ["Name", "Project", "Branch", "Status"];
     const rows = filtered.map(e => [e.name, e.project, e.branch, e.status]);
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n"
-      + rows.map(r => r.join(",")).join("\n");
+    const csvContent = [headers, ...rows].map(r => r.join(",")).join("\n");
     
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "velora_environments.csv");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `velora_environments_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const [newName, setNewName] = useState("");
+  const [newBranch, setNewBranch] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleCreate = () => {
+    if (!newName || !newBranch) return;
+    setIsCreating(true);
+    setTimeout(() => {
+      const newEnv = {
+        id: envs.length + 1,
+        name: newName,
+        tag: newName.toLowerCase().slice(0, 4),
+        project: "manual-project",
+        branch: newBranch,
+        variables: 0,
+        status: "ACTIVE"
+      };
+      setEnvs([newEnv, ...envs]);
+      setIsCreating(false);
+      setShowAddModal(false);
+      setNewName("");
+      setNewBranch("");
+    }, 1000);
   };
 
   return (
@@ -178,7 +202,7 @@ export default function Environments() {
         </PageShell>
       </PageWrapper>
 
-      {/* Modal Placeholder */}
+      {/* Modal */}
       <AnimatePresence>
         {showAddModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
@@ -194,17 +218,36 @@ export default function Environments() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold text-[#3f3f46] uppercase tracking-widest mb-2">Environment Name</label>
-                  <input type="text" placeholder="e.g. Staging" className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-sm focus:outline-none focus:border-white/[0.2] transition-colors" />
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Staging" 
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-sm focus:outline-none focus:border-white/[0.2] transition-colors" 
+                  />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-[#3f3f46] uppercase tracking-widest mb-2">Git Branch</label>
-                  <input type="text" placeholder="e.g. main" className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-sm focus:outline-none focus:border-white/[0.2] transition-colors" />
+                  <input 
+                    type="text" 
+                    placeholder="e.g. main" 
+                    value={newBranch}
+                    onChange={(e) => setNewBranch(e.target.value)}
+                    className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-sm focus:outline-none focus:border-white/[0.2] transition-colors" 
+                  />
                 </div>
               </div>
 
               <div className="flex gap-3 mt-8">
                 <GlassButton className="flex-1" onClick={() => setShowAddModal(false)}>Cancel</GlassButton>
-                <GlassButton variant="primary" className="flex-1" onClick={() => setShowAddModal(false)}>Create</GlassButton>
+                <GlassButton 
+                  variant="primary" 
+                  className="flex-1" 
+                  disabled={isCreating || !newName || !newBranch}
+                  onClick={handleCreate}
+                >
+                  {isCreating ? "Creating..." : "Create"}
+                </GlassButton>
               </div>
             </motion.div>
           </div>

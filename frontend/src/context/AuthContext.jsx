@@ -7,21 +7,28 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // App start hote hi check karo token hai ya nahi
-        const checkUser = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    // Tere backend ka route jo current user lata hai (e.g., /auth/me ya token verify)
-                    // Abhi ke liye hum bas token hone pe dummy user set kar rahe hain hackathon speed ke liye
-                    setUser({ name: "SHERYIAN_DEV", email: "sysadmin@valora.io", token });
-                } catch (error) {
-                    localStorage.removeItem('token');
+    const checkUser = async () => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const res = await api.get('/auth/me');
+                const userData = res.data.user;
+                if (userData && userData.username) {
+                    userData.name = userData.username;
                 }
+                setUser(userData);
+                return userData;
+            } catch (error) {
+                localStorage.removeItem('token');
+                setUser(null);
+                throw error;
             }
-            setLoading(false);
-        };
+        }
+        setLoading(false);
+        return null;
+    };
+
+    useEffect(() => {
         checkUser();
     }, []);
 
@@ -36,7 +43,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, loading, refreshUser: checkUser }}>
             {children}
         </AuthContext.Provider>
     );

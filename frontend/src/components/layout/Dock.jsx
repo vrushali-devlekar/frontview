@@ -13,15 +13,20 @@ import { motion } from "framer-motion";
 const Dock = ({ navMode, toggleNavMode }) => {
   if (navMode !== "dock") return null;
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const projectId = queryParams.get("projectId");
+
+  const getPath = (base) => projectId ? `${base}?projectId=${projectId}` : base;
+
   const items = [
-    { icon: LayoutDashboard, label: "Overview", to: "/dashboard" },
-    { icon: Grid3X3, label: "Apps", to: "/applications" },
-    { icon: Zap, label: "Deploys", to: "/deploy" },
-    { icon: Layers, label: "Env", to: "/environments" },
-    { icon: BarChart2, label: "Metrics", to: "/metrics" },
-    { icon: Users, label: "Members", to: "/members" },
-    { icon: Plug, label: "Plugins", to: "/integrations" },
-    { icon: Settings, label: "Settings", to: "/settings" },
+    { icon: LayoutDashboard, label: "Overview", to: getPath("/dashboard") },
+    { icon: Grid3X3, label: "Apps", to: getPath("/applications") },
+    { icon: Zap, label: "Deploys", to: getPath("/deploy") },
+    { icon: Layers, label: "Env", to: getPath("/environments") },
+    { icon: BarChart2, label: "Metrics", to: getPath("/metrics") },
+    { icon: Users, label: "Members", to: getPath("/members") },
+    { icon: Plug, label: "Plugins", to: getPath("/integrations") },
+    { icon: Settings, label: "Settings", to: getPath("/settings") },
   ];
 
   return (

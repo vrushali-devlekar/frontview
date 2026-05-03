@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 // IMPORTANT: Refer to your local assets folder to ensure these render.
 import bee from '../../assets/bee.png'
 import creeperImg from '../../assets/how.png' 
@@ -37,9 +38,12 @@ export default function ReadyToDeploy() {
 
             {/* Shshifted Button Section - Now aligned left under text */}
             <div className='flex flex-wrap gap-4 justify-center md:justify-start'>
-              <button className="bg-[#a3e635] text-black font-bold text-xs px-10 py-4 rounded-xl hover:bg-[#bef264] transition-all font-mono uppercase shadow-[0_0_15px_rgba(163,230,53,0.3)]">
+              <Link 
+                to="/register"
+                className="bg-[#a3e635] text-black font-bold text-xs px-10 py-4 rounded-xl hover:bg-[#bef264] transition-all font-mono uppercase shadow-[0_0_15px_rgba(163,230,53,0.3)]"
+              >
                 Deploy free →
-              </button>
+              </Link>
             </div>
           </div>
 

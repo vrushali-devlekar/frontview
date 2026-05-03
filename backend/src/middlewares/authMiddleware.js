@@ -19,8 +19,10 @@ const protect = asyncHandler(async (req, res, next) => {
             // 3. Token se User ID nikal kar database se user fetch karo
             // Password ko hatane ke liye .select('-password') use kiya hai (Security!)
             req.user = await User.findById(decoded.id).select('-password');
-
-            // 4. Sab sahi hai, toh aage badhne do (next middleware/controller pe)
+            if (!req.user) {
+                res.status(401);
+                throw new Error('Not authorized, user not found');
+            }
             next();
         } catch (error) {
             console.error(error);
@@ -28,7 +30,6 @@ const protect = asyncHandler(async (req, res, next) => {
             throw new Error('Not authorized, token failed');
         }
     }
-    console.log("Received Headers:", req.headers);
     // Agar token hi nahi mila
     if (!token) {
         res.status(401);

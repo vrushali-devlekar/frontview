@@ -1,4 +1,4 @@
-// app.js
+// app.js (v2 - restart)
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -13,6 +13,8 @@ const { protect } = require('./middlewares/authMiddleware');
 const deploymentRoutes = require('./routes/deploymentRoutes');
 const envRoutes = require('./routes/envRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
+const aiRoutes = require('./routes/aiRoutes');
+const teamRoutes = require('./routes/teamRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 
 // Express app initialize karna
@@ -71,10 +73,24 @@ app.use(express.urlencoded({ extended: true }));
 
 // 7. Routes
 app.use('/api/auth', authRoutes);
+
+// Test Route for Auth
+app.get('/api/auth/test', (req, res) => res.json({ message: "Auth router is reachable" }));
+
+// 🚩 EMERGENCY CLEANUP ROUTE (Run once in browser: http://localhost:4000/api/auth/cleanup-db)
+app.get('/api/auth/cleanup-db', async (req, res) => {
+    const Project = require('./models/Project');
+    const result = await Project.deleteMany({ isDeleted: true });
+    // Also delete the specific repo clashing
+    const result2 = await Project.deleteMany({ repoUrl: "https://github.com/siddhartha220507/visssh-webpage.git" });
+    res.json({ message: "DB Cleaned", deletedSoft: result.deletedCount, deletedSpecific: result2.deletedCount });
+});
+
 app.use('/api/projects', projectRoutes);
 app.use('/api/deployments', deploymentRoutes);
 app.use('/api/projects', envRoutes);
 app.use('/api/projects/:projectId/integrations', integrationRoutes);
+app.use('/api/teams', teamRoutes);
 app.use('/api/ai', aiRoutes);
 
 // --- BASIC ROUTE ---

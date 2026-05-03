@@ -9,7 +9,7 @@ import GlassButton from "../../components/ui/GlassButton";
 import { PageShell, PageHeader, Card } from "../../components/layout/PageLayout";
 import { Database, MessageSquare, Zap, HardDrive, CheckCircle2, ArrowRight, Settings2, Trash2, X, Plug } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getIntegrations, connectIntegration, disconnectIntegration } from "../../api/api";
+import { getIntegrations, connectIntegration, disconnectIntegration, getUserProjects } from "../../api/api";
 
 export default function Integrations() {
   const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
@@ -146,6 +146,20 @@ export default function Integrations() {
     }
   };
 
+  const [userProjects, setUserProjects] = useState([]);
+
+  useEffect(() => {
+    if (!projectId) {
+      const fetchProjects = async () => {
+        try {
+          const res = await getUserProjects();
+          setUserProjects(res.data.data || []);
+        } catch (e) { console.error(e); }
+      };
+      fetchProjects();
+    }
+  }, [projectId]);
+
   if (!projectId) {
     return (
       <div className="flex h-screen bg-[#050505] text-white overflow-hidden">
@@ -154,17 +168,42 @@ export default function Integrations() {
         <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
           <TopNav />
           <PageShell>
-            <div className="flex flex-col items-center justify-center h-[60vh] text-center px-6">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6 pt-12">
               <div className="w-16 h-16 rounded-3xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mb-6">
                 <Plug className="text-[#52525b]" size={32} />
               </div>
               <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">Select a Project First</h2>
-              <p className="text-[#71717a] text-[15px] max-w-md leading-relaxed mb-8">
-                Integrations are configured per project. Please select a project from your dashboard to manage its plugins.
+              <p className="text-[#71717a] text-[15px] max-w-md leading-relaxed mb-10">
+                Integrations are configured per project. Please select a project to manage its plugins and database connections.
               </p>
-              <GlassButton variant="primary" onClick={() => window.location.href = '/dashboard'}>
-                Back to Dashboard
-              </GlassButton>
+              
+              <div className="w-full max-w-md grid grid-cols-1 gap-3">
+                {userProjects.length > 0 ? userProjects.map(p => (
+                  <button 
+                    key={p._id}
+                    onClick={() => window.location.href = `/integrations?projectId=${p._id}`}
+                    className="flex items-center justify-between p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-2xl transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[#71717a] group-hover:text-white transition-colors">
+                        <HardDrive size={16} />
+                      </div>
+                      <span className="text-[14px] font-semibold text-white/80 group-hover:text-white transition-colors">{p.name}</span>
+                    </div>
+                    <ArrowRight size={16} className="text-[#3f3f46] group-hover:text-white group-hover:translate-x-1 transition-all" />
+                  </button>
+                )) : (
+                  <div className="p-8 bg-white/[0.02] border border-dashed border-white/[0.08] rounded-2xl text-[#52525b] text-sm">
+                    No projects found. Create one first.
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-12">
+                <GlassButton variant="secondary" onClick={() => window.location.href = '/dashboard'}>
+                  Back to Dashboard
+                </GlassButton>
+              </div>
             </div>
           </PageShell>
         </PageWrapper>
@@ -182,7 +221,15 @@ export default function Integrations() {
           <PageHeader
             title="Integrations"
             subtitle={`Power up your deployment pipeline with third-party extensions`}
-          />
+          >
+            <GlassButton 
+              variant="secondary" 
+              className="h-8 px-3 text-[11px] font-bold"
+              onClick={() => window.location.href = '/integrations'}
+            >
+              Change Project
+            </GlassButton>
+          </PageHeader>
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-pulse">

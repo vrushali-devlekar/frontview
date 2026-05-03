@@ -6,6 +6,7 @@ import {
   FileText, PanelLeft, Plug, Monitor
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
 
 const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => {
   return (
@@ -39,6 +40,7 @@ const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => {
 const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -54,18 +56,24 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
 
   if (navMode === "dock") return null;
 
+  const queryParams = new URLSearchParams(location.search);
+  const projectId = queryParams.get("projectId");
+
+  const getPath = (base) => projectId ? `${base}?projectId=${projectId}` : base;
+
   const topItems = [
-    { icon: LayoutDashboard, label: "Overview", to: "/dashboard" },
-    { icon: Grid3X3, label: "Applications", to: "/applications" },
-    { icon: Zap, label: "Deployments", to: "/deploy" },
-    { icon: Layers, label: "Environments", to: "/environments" },
-    { icon: BarChart2, label: "Metrics", to: "/metrics" },
+    { icon: LayoutDashboard, label: "Overview", to: getPath("/dashboard") },
+    { icon: Grid3X3, label: "Applications", to: getPath("/applications") },
+    { icon: Zap, label: "Deployments", to: getPath("/deploy") },
+    { icon: Layers, label: "Environments", to: getPath("/environments") },
+    { icon: Monitor, label: "Logs", to: getPath("/logs") },
+    { icon: BarChart2, label: "Metrics", to: getPath("/metrics") },
   ];
 
   const bottomItems = [
-    { icon: Users, label: "Members", to: "/members" },
-    { icon: Plug, label: "Integrations", to: "/integrations" },
-    { icon: Settings, label: "Settings", to: "/settings" },
+    { icon: Users, label: "Members", to: getPath("/members") },
+    { icon: Plug, label: "Integrations", to: getPath("/integrations") },
+    { icon: Settings, label: "Settings", to: getPath("/settings") },
   ];
 
   return (
@@ -137,13 +145,21 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
               ${isCollapsed ? "justify-center p-0 w-[48px] h-[48px] mx-auto" : "p-2.5"}
             `}
           >
-            <div className="w-8 h-8 rounded-full bg-[#ff3b30] flex items-center justify-center text-[12px] font-bold text-white shrink-0 relative shadow-[0_0_10px_rgba(255,59,48,0.3)]">
-              S
-            </div>
+            {user?.avatar || user?.githubAvatarUrl || user?.googleAvatarUrl ? (
+              <img 
+                src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl} 
+                className="w-8 h-8 rounded-full object-cover shadow-[0_0_10px_rgba(255,255,255,0.1)]" 
+                alt="Avatar"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#3b82f6] to-[#22c55e] flex items-center justify-center text-[12px] font-bold text-white shrink-0 relative shadow-[0_0_10px_rgba(59,130,246,0.3)]">
+                {user?.name?.charAt(0) || "U"}
+              </div>
+            )}
             {!isCollapsed && (
               <div className="flex-1 text-left min-w-0">
-                <p className="text-[13px] font-bold text-white truncate">Sheryian</p>
-                <p className="text-[11px] text-[#52525b] truncate">admin@velora.io</p>
+                <p className="text-[13px] font-bold text-white truncate">{user?.name || "User"}</p>
+                <p className="text-[11px] text-[#52525b] truncate">{user?.email || "No email"}</p>
               </div>
             )}
           </button>
@@ -161,7 +177,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
                   <button onClick={() => { setDropdownOpen(false); navigate("/account"); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#a1a1aa] hover:text-white hover:bg-white/[0.05] rounded-xl transition-colors">
                     <User size={16} /> Profile
                   </button>
-                  <button onClick={() => { setDropdownOpen(false); navigate("/login"); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#ef4444] hover:bg-[#ef4444]/0.1 rounded-xl transition-colors">
+                  <button onClick={() => { setDropdownOpen(false); logout(); navigate("/login"); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#ef4444] hover:bg-[#ef4444]/10 rounded-xl transition-colors">
                     <LogOut size={16} /> Sign out
                   </button>
                 </div>

@@ -74,22 +74,23 @@ export default function Account() {
                   {/* Avatar row */}
                   <div className="flex items-center gap-5 mb-7 pb-6 border-b border-white/[0.06]">
                     <div className="w-16 h-16 rounded-2xl bg-[#111113] border border-white/[0.08] flex items-center justify-center shrink-0 overflow-hidden">
-                      {user?.githubAccessToken ? (
+                      {user?.avatar || user?.githubAvatarUrl || user?.googleAvatarUrl ? (
                         <img
-                          src={`https://avatars.githubusercontent.com/${user?.githubId || "github"}`}
+                          src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl}
                           alt="Avatar"
                           className="w-full h-full object-cover"
-                          onError={(e) => { e.target.src = "https://github.com/identicons/velora.png"; }}
                         />
                       ) : (
-                        <User size={24} className="text-[#3f3f46]" />
+                        <div className="w-full h-full bg-gradient-to-tr from-[#3b82f6] to-[#22c55e] flex items-center justify-center text-xl font-bold text-white">
+                          {user?.name?.charAt(0) || "U"}
+                        </div>
                       )}
                     </div>
                     <div>
                       <p className="text-[14px] font-bold text-white mb-1">{user?.name || "Operator"}</p>
                       <div className="flex items-center gap-1.5 text-[12px] text-[#52525b]">
                         <Mail size={12} className="text-[#3f3f46]" />
-                        {user?.email || "sysadmin@velora.io"}
+                        {user?.email || "No email provided"}
                       </div>
                     </div>
                   </div>
