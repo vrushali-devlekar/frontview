@@ -10,6 +10,7 @@ import InputField from "../../components/ui/InputField";
 import { PageShell, PageHeader, Card, CardHeader, CardBody, AlertBanner } from "../../components/layout/PageLayout";
 import { Shield, Key, User, Mail, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { AVATAR_ASSET_MAP, DEFAULT_AVATAR_SRC, resolveAvatarSrc } from "../../utils/avatars";
 
 const GithubIcon = ({ size = 20, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -29,6 +30,7 @@ export default function Account() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   const availableAvatars = ["pf1.jpeg", "pf2.jpeg", "pf3.jpeg", "pf4.jpeg", "pf5.jpeg"];
+  const avatarSrc = resolveAvatarSrc(avatar || user?.avatar || user?.avatarUrl);
 
   const handleUpdateProfile = (e) => {
     e.preventDefault();
@@ -79,10 +81,13 @@ export default function Account() {
                       onClick={() => setShowAvatarPicker(!showAvatarPicker)}
                     >
                       <img
-                        src={new URL(`../../assets/${avatar}`, import.meta.url).href}
+                        src={avatarSrc}
                         alt="Avatar"
                         className="w-full h-full object-cover"
-                        onError={(e) => { e.target.src = "https://github.com/identicons/velora.png"; }}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = DEFAULT_AVATAR_SRC;
+                        }}
                       />
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                         <span className="text-[10px] font-bold">CHANGE</span>
@@ -98,7 +103,7 @@ export default function Account() {
                             className={`w-12 h-12 rounded-lg cursor-pointer overflow-hidden border-2 transition-all ${avatar === av ? 'border-[#22c55e]' : 'border-transparent hover:border-white/20'}`}
                             onClick={() => { updateAvatar(av); setShowAvatarPicker(false); }}
                           >
-                            <img src={new URL(`../../assets/${av}`, import.meta.url).href} alt={av} className="w-full h-full object-cover" />
+                            <img src={AVATAR_ASSET_MAP[av]} alt={av} className="w-full h-full object-cover" />
                           </div>
                         ))}
                       </div>

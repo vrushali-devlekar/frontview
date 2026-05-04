@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import BrandLogo from "../ui/BrandLogo";
+import { DEFAULT_AVATAR_SRC, resolveAvatarSrc } from "../../utils/avatars";
 
 const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => {
   return (
@@ -46,6 +47,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
 
   // ✅ FIXED: moved out of JSX
   const { user, avatar } = useAuth();
+  const avatarSrc = resolveAvatarSrc(avatar || user?.avatar || user?.avatarUrl);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -145,13 +147,13 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
           >
             <div className="w-8 h-8 rounded-full bg-[#111113] border border-white/[0.08] overflow-hidden">
               <img
-                src={
-                  avatar
-                    ? new URL(`../../assets/${avatar}`, import.meta.url).href
-                    : "https://github.com/identicons/velora.png"
-                }
+                src={avatarSrc}
                 alt="Profile"
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = DEFAULT_AVATAR_SRC;
+                }}
               />
             </div>
 

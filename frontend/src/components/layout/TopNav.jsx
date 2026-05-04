@@ -3,6 +3,7 @@ import { Search, Bell, User, Settings, FileText, ChevronDown } from "lucide-reac
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import BrandLogo from "../ui/BrandLogo";
+import { DEFAULT_AVATAR_SRC, resolveAvatarSrc } from "../../utils/avatars";
 
 const routeLabels = {
   "/dashboard":    "Overview",
@@ -19,7 +20,7 @@ const routeLabels = {
 };
 
 const TopNav = () => {
-  const { user } = useAuth();
+  const { user, avatar } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -27,6 +28,7 @@ const TopNav = () => {
   const location = useLocation();
 
   const pageLabel = routeLabels[location.pathname] ?? "";
+  const avatarSrc = resolveAvatarSrc(avatar || user?.avatar || user?.avatarUrl);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -103,11 +105,15 @@ const TopNav = () => {
             onClick={() => setIsDropdownOpen((o) => !o)}
             className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-white/[0.05] transition-colors"
           >
-            {user?.avatar || user?.githubAvatarUrl || user?.googleAvatarUrl ? (
+            {avatarSrc ? (
               <img 
-                src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl} 
+                src={avatarSrc}
                 className="w-8 h-8 rounded-full object-cover border border-white/10" 
                 alt="Avatar"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = DEFAULT_AVATAR_SRC;
+                }}
               />
             ) : (
               <div 
