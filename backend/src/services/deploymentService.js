@@ -11,12 +11,20 @@ const { detectFramework } = require('../utils/frameworkDetector');
 const { streamLogs } = require('../utils/logStreamer');
 const { decrypt } = require('../utils/crypto');
 const { notifyIntegrations } = require('./notificationService');
-const { backendUrl } = require('../config/runtime');
+const { backendUrl, isProduction, publicBackendUrl } = require('../config/runtime');
 
 const activeProcesses = new Map();
 const STOPPED_DEPLOYMENT_MESSAGE = 'Deployment stopped by user';
 
-const getLiveDeploymentUrl = (deploymentId) => `${backendUrl}/live/${deploymentId}`;
+const getLiveDeploymentUrl = (deploymentId) => {
+    if (isProduction) {
+        if (!publicBackendUrl) {
+            throw new Error('Production live URL is not configured. Set BACKEND_URL to your public HTTPS domain.');
+        }
+        return `${publicBackendUrl}/live/${deploymentId}`;
+    }
+    return `${backendUrl}/live/${deploymentId}`;
+};
 
 const runCommandAndWaitForExit = (command, args) =>
     new Promise((resolve, reject) => {
@@ -127,6 +135,31 @@ const waitForProcessStartup = async (childProcess, timeoutMs = 1500) => {
             reject(error);
         });
     });
+};
+
+const waitForHttpReady = async (port, timeoutMs = 20000, intervalMs = 800) => {
+    const startTime = Date.now();
+    const probeUrl = `http://127.0.0.1:${port}/`;
+
+    while (Date.now() - startTime < timeoutMs) {
+        try {
+            const response = await fetch(probeUrl, {
+                method: 'GET',
+                redirect: 'manual'
+            });
+
+            // Consider the app ready once it responds (even with auth redirect / 404).
+            if (response.status < 500) {
+                return;
+            }
+        } catch (error) {
+            // Ignore connection errors during startup retries.
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+
+    throw new Error(`Application started but did not become HTTP-ready on port ${port} within ${Math.ceil(timeoutMs / 1000)}s`);
 };
 
 const attachProcessCloseHandler = (deploymentId, port, processRef) => {
@@ -318,6 +351,8 @@ const executeDeployment = async (deploymentId, io) => {
         assignedPort = getAvailablePort();
         await appendDeploymentLog(deploymentRecord, 'info', `Starting application on port ${assignedPort}`);
         await startApplicationProcess(deploymentRecord, appPath, frameworkInfo, assignedPort, io);
+        await appendDeploymentLog(deploymentRecord, 'info', `Waiting for app readiness on port ${assignedPort}`);
+        await waitForHttpReady(assignedPort);
 
         deploymentRecord.status = 'running';
         deploymentRecord.port = assignedPort;

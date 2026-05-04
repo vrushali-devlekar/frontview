@@ -145,6 +145,42 @@ MISTRAL_API_KEY=
 
 If frontend and backend are served from the same Render service, Velora can fall back to same-origin `/api` and same-origin sockets automatically. `VITE_API_URL` and `VITE_SOCKET_URL` are mainly needed if you later split frontend into a separate service.
 
+## Production-only public deployment URLs
+
+Velora now enforces public deployment URLs in production:
+
+- Production URLs are generated as:
+  `https://<BACKEND_URL>/live/<deploymentId>`
+- `localhost` is not allowed as a production live URL.
+- A deployment is marked `running` only after an HTTP readiness probe succeeds.
+
+Required production env:
+
+```env
+NODE_ENV=production
+BACKEND_URL=https://veloraa-deploy.onrender.com
+FRONTEND_URL=https://veloraa-deploy.onrender.com
+```
+
+If `BACKEND_URL` is missing or local in production, deployment will fail fast with a clear config error so invalid public links are never shown.
+
+## Docker public stack (starter)
+
+This repo now includes:
+
+- `Dockerfile`
+- `docker-compose.public.yml`
+- `.env.public.example`
+
+Run on a Docker host:
+
+```bash
+cp .env.public.example .env.public
+docker compose --env-file .env.public -f docker-compose.public.yml up -d --build
+```
+
+This stack runs Velora behind Traefik with HTTPS certificates.
+
 ## OAuth callback URLs
 
 Use these exact values in the OAuth providers.

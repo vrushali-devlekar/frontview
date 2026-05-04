@@ -42,11 +42,20 @@ const frontendUrl = trimTrailingSlash(
 const backendUrl = trimTrailingSlash(
   process.env.BACKEND_URL || DEFAULT_BACKEND_URL
 );
+const isBackendUrlPublic = /^https?:\/\//i.test(backendUrl) && !isLocalDevOrigin(backendUrl);
+const publicBackendUrl = isProduction
+  ? (isBackendUrlPublic ? backendUrl : '')
+  : backendUrl;
+const oauthBaseUrl = isProduction && publicBackendUrl ? publicBackendUrl : backendUrl;
 const githubCallbackUrl = trimTrailingSlash(
-  process.env.GITHUB_CALLBACK_URL || `${backendUrl}/api/auth/github/callback`
+  (isProduction && publicBackendUrl)
+    ? `${oauthBaseUrl}/api/auth/github/callback`
+    : (process.env.GITHUB_CALLBACK_URL || `${oauthBaseUrl}/api/auth/github/callback`)
 );
 const googleCallbackUrl = trimTrailingSlash(
-  process.env.GOOGLE_CALLBACK_URL || `${backendUrl}/api/auth/google/callback`
+  (isProduction && publicBackendUrl)
+    ? `${oauthBaseUrl}/api/auth/google/callback`
+    : (process.env.GOOGLE_CALLBACK_URL || `${oauthBaseUrl}/api/auth/google/callback`)
 );
 
 const corsAllowedOrigins = new Set(
@@ -86,7 +95,9 @@ module.exports = {
   githubCallbackUrl,
   googleCallbackUrl,
   isAllowedOrigin,
+  isBackendUrlPublic,
   isProduction,
+  publicBackendUrl,
   sessionCookieSameSite,
   sessionCookieSecure,
   trimTrailingSlash

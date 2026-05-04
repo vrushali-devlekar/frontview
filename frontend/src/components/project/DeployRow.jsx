@@ -12,6 +12,8 @@ export default function DeployRow({ deployment, projectId, onRollback }) {
   const [rollbackError, setRollbackError] = useState("");
 
   const isSuccess = deployment.status === "SUCCESS";
+  const isRunning = deployment.status === "BUILDING" || deployment.status === "RUNNING" || deployment.status === "SUCCESS";
+  const publicUrlMissing = isRunning && !deployment.liveUrl;
 
   const handleRollbackClick = () => {
     if (!isSuccess) return;
@@ -81,6 +83,11 @@ export default function DeployRow({ deployment, projectId, onRollback }) {
                 <ExternalLink size={12} className="shrink-0" />
                 <span className="truncate">{deployment.liveUrl}</span>
               </a>
+            ) : null}
+            {publicUrlMissing ? (
+              <p className="mt-3 text-[12px] font-medium text-[#f59e0b]">
+                Public live URL is not available yet. Check production `BACKEND_URL` and wait for deployment readiness.
+              </p>
             ) : null}
             
             {rollbackError && (

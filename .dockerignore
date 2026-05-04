@@ -1,0 +1,14 @@
+.git
+.gitignore
+node_modules
+frontend/node_modules
+backend/node_modules
+frontend/dist
+backend/dist
+backend/deployments_temp
+*.log
+*.tmp
+*.local
+.env
+.env.*
+!.env.example
