@@ -37,11 +37,11 @@ export const CardHeader = ({ icon: Icon, title, children }) => (
   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 md:px-6 py-3.5 md:py-4 border-b border-white/[0.03] bg-[#161618]">
     <div className="flex items-center gap-3">
       {Icon && (
-        <div className="w-7 h-7 rounded-lg bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center shrink-0">
-          <Icon size={14} className="text-[#52525b]" />
+        <div className="w-8 h-8 rounded-full bg-white/[0.03] flex items-center justify-center shrink-0">
+          <Icon size={15} className="text-[#a1a1aa]" />
         </div>
       )}
-      <p className="text-[11px] font-black tracking-[0.1em] text-[#a1a1aa] uppercase">{title}</p>
+      <p className="text-[14px] font-medium tracking-wide text-[#e4e4e7]">{title}</p>
     </div>
     {children && <div className="flex items-center gap-2.5 flex-wrap">{children}</div>}
   </div>
@@ -59,7 +59,7 @@ export const SectionLabel = ({ children }) => (
 
 export const TableHead = ({ cols }) => (
   <thead>
-    <tr className="border-b border-white/[0.03] bg-[#161618]">
+    <tr className="border-b border-white/[0.03] bg-white/[0.01]">
       {cols.map((c) => (
         <th key={c} className="px-4 sm:px-5 md:px-6 py-3 text-left text-[10px] font-black text-[#52525b] uppercase tracking-[0.2em]">
           {c}

@@ -3,15 +3,14 @@ import { Activity, Server, Zap, Globe, Shield, Cpu } from "lucide-react";
 
 const FeaturesSection = () => {
   return (
-    <section className="bg-[#09090b] text-white font-sans py-24 px-6 md:px-12 lg:px-24 relative overflow-hidden">
+    <section className="bg-[#060606] text-white font-sans py-24 px-6 md:px-12 lg:px-24 relative overflow-hidden">
       
       <div className="relative z-10 max-w-[1200px] mx-auto">
-        {/* Section Header */}
         <div className="mb-16 text-center">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tighter text-white mb-4">
-            Infrastructure Overview
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tighter text-white mb-4 font-['Press_Start_2P'] uppercase">
+            Infrastructure <span className="text-[#facc15]">Overview</span>
           </h2>
-          <p className="text-[15px] text-[#a1a1aa] max-w-2xl mx-auto leading-relaxed">
+          <p className="text-[15px] text-[#a1a1aa] max-w-2xl mx-auto leading-relaxed mt-8">
             A comprehensive look at your global deployment network, worker nodes, and active pipeline statuses. 
             All systems are currently operating within nominal parameters.
           </p>
@@ -28,15 +27,15 @@ const FeaturesSection = () => {
             
             <div>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg bg-[#22c55e]/10 flex items-center justify-center text-[#22c55e]">
+                <div className="w-10 h-10 rounded-lg bg-[#a3e635]/10 flex items-center justify-center text-[#a3e635]">
                   <Activity size={20} />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold tracking-wide text-white">
                     Primary Global Cluster
                   </h3>
-                  <span className="text-xs text-[#22c55e] flex items-center gap-1.5 mt-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]"></span>
+                  <span className="text-xs text-[#a3e635] flex items-center gap-1.5 mt-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635]"></span>
                     Operational
                   </span>
                 </div>
@@ -74,7 +73,7 @@ const FeaturesSection = () => {
             {/* Small Card 1 */}
             <div className="bg-[#111113] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1 flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
-                <div className="w-8 h-8 rounded-lg bg-[#3b82f6]/10 flex items-center justify-center text-[#3b82f6]">
+                <div className="w-8 h-8 rounded-lg bg-[#a3e635]/10 flex items-center justify-center text-[#a3e635]">
                   <Zap size={16} />
                 </div>
               </div>
@@ -87,7 +86,7 @@ const FeaturesSection = () => {
             {/* Small Card 2 */}
             <div className="bg-[#111113] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1 flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
-                <div className="w-8 h-8 rounded-lg bg-[#06b6d4]/10 flex items-center justify-center text-[#06b6d4]">
+                <div className="w-8 h-8 rounded-lg bg-[#a3e635]/10 flex items-center justify-center text-[#a3e635]">
                   <Globe size={16} />
                 </div>
               </div>
@@ -100,7 +99,7 @@ const FeaturesSection = () => {
             {/* Small Card 3 */}
             <div className="bg-[#111113] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1 flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
-                <div className="w-8 h-8 rounded-lg bg-[#f59e0b]/10 flex items-center justify-center text-[#f59e0b]">
+                <div className="w-8 h-8 rounded-lg bg-[#a3e635]/10 flex items-center justify-center text-[#a3e635]">
                   <Shield size={16} />
                 </div>
               </div>
@@ -113,7 +112,7 @@ const FeaturesSection = () => {
             {/* Small Card 4 */}
             <div className="bg-[#111113] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1 flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
-                <div className="w-8 h-8 rounded-lg bg-[#71717a]/10 flex items-center justify-center text-[#a1a1aa]">
+                <div className="w-8 h-8 rounded-lg bg-[#a3e635]/10 flex items-center justify-center text-[#a3e635]">
                   <Cpu size={16} />
                 </div>
               </div>
@@ -137,7 +136,7 @@ const FeaturesSection = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="bg-[#09090b] text-[#71717a] border-b border-white/[0.06]">
+                <tr className="bg-[#060606] text-[#71717a] border-b border-white/[0.06]">
                   <th className="py-3 px-6 font-medium text-[11px] tracking-wider uppercase">Project</th>
                   <th className="py-3 px-6 font-medium text-[11px] tracking-wider uppercase">Status</th>
                   <th className="py-3 px-6 font-medium text-[11px] tracking-wider uppercase">Branch</th>
@@ -151,15 +150,15 @@ const FeaturesSection = () => {
                   { name: 'frontend-dashboard', status: 'Deploying', branch: 'feat/ungrid', latency: '-' },
                 ].map((row, idx) => (
                   <tr key={idx} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="py-4 px-6 border-l-2 border-transparent group-hover:border-[#22c55e] transition-colors">
+                    <td className="py-4 px-6 border-l-2 border-transparent group-hover:border-[#a3e635] transition-colors">
                       <span className="font-mono text-[13px]">{row.name}</span>
                     </td>
                     <td className="py-4 px-6">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium tracking-wide ${
-                        row.status === 'Healthy' ? 'bg-[#22c55e]/10 text-[#22c55e]' : 'bg-[#3b82f6]/10 text-[#3b82f6]'
+                        row.status === 'Healthy' ? 'bg-[#a3e635]/10 text-[#a3e635]' : 'bg-[#a3e635]/10 text-[#a3e635]'
                       }`}>
-                        {row.status === 'Healthy' && <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]"></span>}
-                        {row.status === 'Deploying' && <span className="w-1.5 h-1.5 rounded-full bg-[#3b82f6] animate-pulse"></span>}
+                        {row.status === 'Healthy' && <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635]"></span>}
+                        {row.status === 'Deploying' && <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635] animate-pulse"></span>}
                         {row.status}
                       </span>
                     </td>

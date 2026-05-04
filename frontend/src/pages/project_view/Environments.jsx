@@ -1,290 +1,338 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
 import Dock from "../../components/layout/Dock";
 import PageWrapper from "../../components/layout/PageWrapper";
 import TopNav from "../../components/layout/TopNav";
-import { Search, Plus, GitBranch, Shield, Eye, EyeOff, Trash2, Key, Download, ChevronDown, Lock } from "lucide-react";
+import { Search, Plus, GitBranch, Key, Download, Trash2, FolderKanban } from "lucide-react";
 import GlassButton from "../../components/ui/GlassButton";
-import { PageShell, PageHeader, Card, CardHeader, Badge, TableHead } from "../../components/layout/PageLayout";
+import StatusBadge from "../../components/ui/StatusBadge";
+import { PageShell, PageHeader, Card, CardHeader, Badge, TableHead, AlertBanner, EmptyState } from "../../components/layout/PageLayout";
 import { motion, AnimatePresence } from "framer-motion";
-import { getProjects, getEnvVars, addEnvVar, deleteEnvVar } from "../../api/api";
+import { addEnvVar, deleteEnvVar, getProjects, getWorkspaceEnvironments } from "../../api/api";
 
 export default function Environments() {
   const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [projectId, setProjectId] = useState(searchParams.get("projectId") || "");
-  const [projects, setProjects] = useState([]);
-  const [envVars, setEnvVars] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [revealed, setRevealed] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
-
-  // Form State
-  const [newKey, setNewKey] = useState("");
-  const [newValue, setNewValue] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [workspaceData, setWorkspaceData] = useState({ environments: [], envVars: [] });
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deletingKey, setDeletingKey] = useState("");
+  const [message, setMessage] = useState({ text: "", type: "success" });
+  const [form, setForm] = useState({ projectId: "", key: "", value: "" });
 
   useEffect(() => {
-    fetchProjects();
+    if (!message.text) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setMessage({ text: "", type: "success" });
+    }, 3500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [message]);
+
+  const loadData = async () => {
+    const [workspaceRes, projectsRes] = await Promise.all([
+      getWorkspaceEnvironments(),
+      getProjects(),
+    ]);
+
+    setWorkspaceData({
+      environments: workspaceRes.data?.data?.environments || [],
+      envVars: workspaceRes.data?.data?.envVars || [],
+    });
+    setProjects(projectsRes.data?.data || []);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [workspaceRes, projectsRes] = await Promise.all([
+          getWorkspaceEnvironments(),
+          getProjects(),
+        ]);
+
+        if (cancelled) return;
+
+        const allProjects = projectsRes.data?.data || [];
+        setWorkspaceData({
+          environments: workspaceRes.data?.data?.environments || [],
+          envVars: workspaceRes.data?.data?.envVars || [],
+        });
+        setProjects(allProjects);
+        setForm((prev) => ({
+          ...prev,
+          projectId: prev.projectId || allProjects[0]?._id || "",
+        }));
+      } catch (error) {
+        if (!cancelled) {
+          setMessage({ text: error.response?.data?.message || "Failed to load environments", type: "error" });
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    if (projectId) {
-      fetchEnvVars();
-      setSearchParams({ projectId });
-    }
-  }, [projectId]);
+  const filteredEnvironments = useMemo(() => {
+    return workspaceData.environments.filter((env) => {
+      const q = searchQuery.toLowerCase();
+      return (
+        env.name.toLowerCase().includes(q) ||
+        env.project.toLowerCase().includes(q) ||
+        env.branch.toLowerCase().includes(q)
+      );
+    });
+  }, [workspaceData.environments, searchQuery]);
 
-  const fetchProjects = async () => {
-    try {
-      const res = await getProjects();
-      const projectData = res.data.data || [];
-      setProjects(projectData);
-      if (!projectId && projectData.length > 0) {
-        setProjectId(projectData[0]._id);
-      }
-    } catch (err) {
-      console.error("Failed to fetch projects", err);
-    }
+  const filteredEnvVars = useMemo(() => {
+    return workspaceData.envVars.filter((env) => {
+      const q = searchQuery.toLowerCase();
+      return (
+        env.key.toLowerCase().includes(q) ||
+        env.projectName.toLowerCase().includes(q) ||
+        env.branch.toLowerCase().includes(q)
+      );
+    });
+  }, [workspaceData.envVars, searchQuery]);
+
+  const exportCSV = () => {
+    const headers = ["Project", "Branch", "Variables", "Status"];
+    const rows = filteredEnvironments.map((env) => [env.project, env.branch, env.variables, env.status]);
+    const csvContent = "data:text/csv;charset=utf-8,"
+      + headers.join(",") + "\n"
+      + rows.map((row) => row.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "velora_environments.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const fetchEnvVars = async () => {
-    setLoading(true);
-    try {
-      const res = await getEnvVars(projectId);
-      setEnvVars(res.data.data || []);
-    } catch (err) {
-      console.error("Failed to load environment variables", err);
-    } finally {
-      setLoading(false);
+  const handleCreateVariable = async () => {
+    if (!form.projectId || !form.key.trim() || !form.value.trim()) {
+      setMessage({ text: "Project, key, and value are required", type: "warning" });
+      return;
     }
-  };
 
-  const handleAddVar = async () => {
-    if (!newKey || !newValue) return;
-    setIsSaving(true);
     try {
-      await addEnvVar(projectId, newKey, newValue);
-      setNewKey("");
-      setNewValue("");
+      setSaving(true);
+      await addEnvVar(form.projectId, form.key.trim(), form.value);
+      await loadData();
       setShowAddModal(false);
-      fetchEnvVars();
-    } catch (err) {
-      console.error("Failed to add variable", err);
+      setForm((prev) => ({ ...prev, key: "", value: "" }));
+      setMessage({ text: "Environment variable saved", type: "success" });
+    } catch (error) {
+      setMessage({ text: error.response?.data?.message || "Failed to save variable", type: "error" });
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
-  const handleDeleteVar = async (key) => {
-    if (!window.confirm(`Delete ${key}? This will take effect on next deployment.`)) return;
+  const handleDeleteVariable = async (projectId, key) => {
     try {
+      setDeletingKey(`${projectId}:${key}`);
       await deleteEnvVar(projectId, key);
-      fetchEnvVars();
-    } catch (err) {
-      console.error("Failed to delete variable", err);
+      await loadData();
+      setMessage({ text: `Deleted ${key}`, type: "success" });
+    } catch (error) {
+      setMessage({ text: error.response?.data?.message || "Failed to delete variable", type: "error" });
+    } finally {
+      setDeletingKey("");
     }
   };
-
-  const activeProject = projects.find(p => p._id === projectId);
 
   return (
-    <div className="flex h-screen bg-[var(--bg-main)] text-white font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
-        <div className="flex-1 p-6 lg:p-10 overflow-y-auto scrollbar-hide">
-          <div className="max-w-6xl mx-auto">
-            {/* Header Area */}
-            <div className="flex items-center justify-between mb-10 pb-8 border-b border-white/[0.04]">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="px-2.5 py-0.5 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.3em]">SECURE_STORAGE</span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] opacity-80" />
-                </div>
-                <h1 className="text-[20px] font-black tracking-tighter uppercase text-[#e4e4e7] leading-none">Global_Configurations</h1>
-                <p className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.3em] mt-2">Encrypted_Registry_for_Infrastructure_Secrets_&_Runtime_Parameters</p>
-             </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="relative group">
-                  <select
-                    value={projectId}
-                    onChange={(e) => setProjectId(e.target.value)}
-                    className="appearance-none h-9 pl-4 pr-9 bg-[#0d0d0f] border border-white/[0.04] rounded-xl text-[9px] font-black uppercase tracking-[0.2em] text-[#e4e4e7] focus:outline-none focus:border-white/[0.1] transition-all cursor-pointer shadow-inner max-w-[160px] truncate"
-                  >
-                    {projects.map(p => (
-                      <option key={p._id} value={p._id} className="bg-[#1e1e20]">{p.name.toUpperCase()}</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3f3f46] pointer-events-none" />
-                </div>
-
-                <GlassButton
-                  variant="primary"
-                  className="h-9 px-5 gap-2 text-[9px] font-black uppercase tracking-[0.2em] shadow-elevation-2 shrink-0"
-                  onClick={() => setShowAddModal(true)}
-                  disabled={!projectId}
-                >
-                  <Plus size={13} /> ADD_VAR
-                </GlassButton>
-              </div>
+        <PageShell>
+          <PageHeader title="Environments" subtitle="Live project environment data from the workspace database">
+            <div className="flex items-center gap-3">
+              <GlassButton variant="secondary" onClick={exportCSV}>
+                <Download size={14} /> Export CSV
+              </GlassButton>
+              <GlassButton variant="primary" onClick={() => setShowAddModal(true)}>
+                <Plus size={14} /> Add Variable
+              </GlassButton>
             </div>
+          </PageHeader>
 
-            <motion.div
-              className="space-y-10"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              {/* AES Banner */}
-              <div className="flex items-center gap-5 p-5 bg-[#0d0d0f] border border-white/[0.04] rounded-2xl shadow-elevation-1">
-                <div className="w-10 h-10 rounded-xl bg-[#3b82f6]/5 border border-[#3b82f6]/10 flex items-center justify-center text-[#3b82f6] shrink-0">
-                  <Lock size={18} />
-                </div>
-                <div>
-                  <p className="text-[11px] font-black text-[#e4e4e7] uppercase tracking-widest">AES-256_ENCRYPTION_UPLINK</p>
-                  <p className="text-[8px] text-[#3f3f46] mt-1.5 font-black uppercase tracking-[0.2em] leading-relaxed max-w-2xl">Infrastructure secrets are strictly isolated and only available to the build runtime. Values are hashed and masked for security compliance.</p>
-                </div>
-              </div>
+          {message.text && <AlertBanner type={message.type}>{message.text}</AlertBanner>}
 
-              {/* Secrets Vault */}
-              <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden shadow-elevation-2">
-                <div className="bg-[#0d0d0f]/40 px-8 py-6 border-b border-white/[0.04] flex items-center justify-between">
-                  <div className="flex items-center gap-5">
-                    <div className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#52525b] shadow-elevation-1">
-                      <Shield size={18} />
-                    </div>
-                    <div>
-                      <h3 className="text-[13px] font-black text-[#e4e4e7] uppercase tracking-tighter mb-0.5">REGISTRY_ARTIFACTS</h3>
-                      <p className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.3em]">{activeProject?.name || 'GLOBAL'}</p>
-                    </div>
-                  </div>
-                  <div className="px-4 py-1.5 rounded-xl bg-[#22c55e]/5 border border-[#22c55e]/10 text-[8px] font-black text-[#22c55e] tracking-[0.3em] uppercase">
-                    ACTIVE_VERIFICATION
-                  </div>
+          <motion.div
+            className="space-y-5"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <Card noPad>
+              <CardHeader icon={GitBranch} title="Project Environments">
+                <Badge>{filteredEnvironments.length}</Badge>
+                <div className="relative">
+                  <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525b]" />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-8 pl-8 pr-4 text-[12px] w-48 bg-[#09090b] border border-white/[0.08] rounded-lg text-white placeholder:text-[#3f3f46] focus:outline-none focus:border-white/[0.16] transition-colors"
+                  />
                 </div>
-
-                <div className="overflow-x-auto">
+              </CardHeader>
+              {loading ? (
+                <div className="px-7 py-10 text-[13px] text-[#71717a]">Loading environments...</div>
+              ) : filteredEnvironments.length === 0 ? (
+                <EmptyState icon={FolderKanban} title="No environments yet" subtitle="Projects with saved variables and deployments will appear here." />
+              ) : (
+                <div className="overflow-x-auto scrollbar-hide">
                   <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-white/[0.02]">
-                        <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#3f3f46]">KEY_REGISTRY</th>
-                        <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#3f3f46]">MASKED_PAYLOAD</th>
-                        <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#3f3f46]">STATE</th>
-                        <th className="px-8 py-4 text-right text-[9px] font-black uppercase tracking-[0.4em] text-[#3f3f46]">CONTROL</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.02] bg-[#0d0d0f]/10">
-                      {loading ? (
-                        [1, 2, 3].map(i => (
-                          <tr key={i} className="animate-pulse">
-                            <td colSpan={4} className="px-12 py-10"><div className="h-6 bg-white/[0.02] rounded-xl w-1/2" /></td>
-                          </tr>
-                        ))
-                      ) : envVars.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="px-12 py-32 text-center">
-                            <div className="flex flex-col items-center gap-10 opacity-[0.03]">
-                              <Key size={80} />
-                              <p className="text-[14px] font-black uppercase tracking-[0.6em]">NULL_REGISTRY_RECORDS</p>
+                    <TableHead cols={["Name", "Project", "Branch", "Variables", "Status"]} />
+                    <tbody className="divide-y divide-white/[0.04]">
+                      {filteredEnvironments.map((env) => (
+                        <tr key={env.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-7 py-5">
+                            <div className="flex items-center gap-3">
+                              <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold bg-white/[0.04] border border-white/[0.07] text-[#71717a] uppercase tracking-wider">
+                                {env.tag}
+                              </span>
+                              <span className="text-[13px] font-semibold text-white">{env.name}</span>
                             </div>
                           </td>
+                          <td className="px-7 py-5 text-[13px] text-[#71717a]">{env.project}</td>
+                          <td className="px-7 py-5">
+                            <div className="flex items-center gap-1.5 text-[12px] text-[#71717a] font-mono">
+                              <GitBranch size={11} className="text-[#3f3f46] shrink-0" /> {env.branch}
+                            </div>
+                          </td>
+                          <td className="px-7 py-5 text-[13px] text-[#71717a]">{env.variables}</td>
+                          <td className="px-7 py-5">
+                            <StatusBadge status={env.status} />
+                          </td>
                         </tr>
-                      ) : (
-                        envVars.map((env, idx) => (
-                          <tr key={idx} className="hover:bg-white/[0.02] group transition-all">
-                            <td className="px-8 py-5">
-                              <code className="text-[12px] font-black text-[#22c55e] uppercase tracking-tighter">{env.key}</code>
-                            </td>
-                            <td className="px-8 py-5 text-[10px] font-black text-[#2d2d33] tracking-[0.5em] group-hover:text-[#52525b] transition-colors">
-                              ••••••••••••••••
-                            </td>
-                            <td className="px-8 py-5">
-                              <span className="text-[8px] font-black text-[#22c55e] px-3 py-1 bg-[#22c55e]/5 rounded-xl border border-[#22c55e]/10 uppercase tracking-[0.2em]">PROTECTED</span>
-                            </td>
-                            <td className="px-8 py-5 text-right">
-                              <button
-                                onClick={() => handleDeleteVar(env.key)}
-                                className="w-9 h-9 rounded-xl text-[#3f3f46] hover:text-[#ef4444] hover:bg-[#ef4444]/5 transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center ml-auto"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
+                      ))}
                     </tbody>
                   </table>
                 </div>
+              )}
+            </Card>
+
+            <Card noPad>
+              <CardHeader icon={Key} title="Secrets Vault">
+                <span className="px-2.5 py-1 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/20 text-[10.5px] font-semibold text-[#22c55e] tracking-wide">
+                  AES-256
+                </span>
+              </CardHeader>
+              {loading ? (
+                <div className="px-7 py-10 text-[13px] text-[#71717a]">Loading secrets...</div>
+              ) : filteredEnvVars.length === 0 ? (
+                <EmptyState icon={Key} title="No variables stored" subtitle="Add a variable and it will be encrypted and listed here." />
+              ) : (
+                <div className="overflow-x-auto scrollbar-hide">
+                  <table className="w-full">
+                    <TableHead cols={["Key", "Project", "Branch", "Stored Value", ""]} />
+                    <tbody className="divide-y divide-white/[0.04]">
+                      {filteredEnvVars.map((env) => (
+                        <tr key={env.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-7 py-5 text-[13px] font-mono text-[#3b82f6]">{env.key}</td>
+                          <td className="px-7 py-5 text-[13px] text-white">{env.projectName}</td>
+                          <td className="px-7 py-5 text-[12px] font-mono text-[#71717a]">{env.branch}</td>
+                          <td className="px-7 py-5 text-[13px] font-mono text-[#52525b]">{env.masked}</td>
+                          <td className="px-7 py-5 text-right">
+                            <button
+                              onClick={() => handleDeleteVariable(env.projectId, env.key)}
+                              disabled={deletingKey === `${env.projectId}:${env.key}`}
+                              className="p-1.5 rounded-lg text-[#52525b] hover:text-[#ef4444] hover:bg-[#ef4444]/[0.07] transition-all disabled:opacity-50"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div className="px-7 py-5 border-t border-white/[0.05] flex items-center gap-2.5 bg-[#09090b]/40">
+                <Key size={12} className="text-[#22c55e] shrink-0" />
+                <p className="text-[12px] text-[#3f3f46]">
+                  Values are intentionally masked in the UI. The backend stores encrypted payloads only.
+                </p>
               </div>
-            </motion.div>
-          </div>
-        </div>
+            </Card>
+          </motion.div>
+        </PageShell>
       </PageWrapper>
 
-      {/* Add Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#0d0d0f]/90 backdrop-blur-xl px-4">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg bg-[#1e1e20] border border-white/[0.04] rounded-[32px] p-10 shadow-elevation-2"
+              className="w-full max-w-md bg-[#111113] border border-white/[0.08] rounded-3xl p-8 shadow-2xl"
             >
-              <div className="flex items-center gap-6 mb-10">
-                <div className="w-12 h-12 rounded-2xl bg-[#22c55e]/5 border border-[#22c55e]/10 flex items-center justify-center text-[#22c55e] shadow-elevation-1">
-                  <Plus size={24} />
-                </div>
-                <div>
-                  <h2 className="text-[20px] font-black text-[#e4e4e7] uppercase tracking-tighter">Initialize_Artifact</h2>
-                  <p className="text-[9px] text-[#3f3f46] font-black uppercase tracking-[0.3em] mt-1">New_Variable_Encryption_Protocol</p>
-                </div>
-              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Add Environment Variable</h2>
+              <p className="text-[13px] text-[#71717a] mb-6">Create or update a real project secret in the database.</p>
 
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] mb-3 ml-1">Registry_Identity</label>
+                  <label className="block text-[11px] font-bold text-[#3f3f46] uppercase tracking-widest mb-2">Project</label>
+                  <select
+                    value={form.projectId}
+                    onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))}
+                    className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-sm focus:outline-none focus:border-white/[0.2] transition-colors"
+                  >
+                    <option value="">Select a project</option>
+                    {projects.map((project) => (
+                      <option key={project._id} value={project._id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-[#3f3f46] uppercase tracking-widest mb-2">Variable Key</label>
                   <input
                     type="text"
-                    placeholder="E.G._API_ACCESS_KEY"
-                    value={newKey}
-                    onChange={(e) => setNewKey(e.target.value.toUpperCase().replace(/\s+/g, '_'))}
-                    className="w-full h-12 bg-[#0d0d0f] border border-white/[0.04] rounded-xl px-6 text-[11px] font-black text-[#e4e4e7] focus:outline-none focus:border-white/[0.1] transition-all uppercase tracking-[0.2em] shadow-inner placeholder:text-[#2d2d33]"
+                    value={form.key}
+                    onChange={(e) => setForm((prev) => ({ ...prev, key: e.target.value.toUpperCase() }))}
+                    placeholder="e.g. API_TOKEN"
+                    className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-sm focus:outline-none focus:border-white/[0.2] transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] mb-3 ml-1">Secure_Payload</label>
-                  <div className="relative">
-                    <input
-                      type="password"
-                      placeholder="PROTECTED_ENCRYPTION_FIELD"
-                      value={newValue}
-                      onChange={(e) => setNewValue(e.target.value)}
-                      className="w-full h-12 bg-[#0d0d0f] border border-white/[0.04] rounded-xl px-6 text-[11px] font-black text-[#e4e4e7] focus:outline-none focus:border-white/[0.1] transition-all uppercase tracking-[0.2em] shadow-inner placeholder:text-[#2d2d33]"
-                    />
-                    <Lock size={14} className="absolute right-5 top-1/2 -translate-y-1/2 text-[#3f3f46]" />
-                  </div>
+                  <label className="block text-[11px] font-bold text-[#3f3f46] uppercase tracking-widest mb-2">Variable Value</label>
+                  <input
+                    type="text"
+                    value={form.value}
+                    onChange={(e) => setForm((prev) => ({ ...prev, value: e.target.value }))}
+                    placeholder="Paste secret value"
+                    className="w-full h-11 bg-[#09090b] border border-white/[0.06] rounded-xl px-4 text-sm focus:outline-none focus:border-white/[0.2] transition-colors"
+                  />
                 </div>
               </div>
 
-              <div className="flex gap-4 mt-10">
-                <button
-                  className="flex-1 h-11 rounded-xl bg-[#0d0d0f] border border-white/[0.04] text-[9px] font-black uppercase tracking-[0.3em] text-[#3f3f46] hover:text-white transition-all"
-                  onClick={() => setShowAddModal(false)}
-                >
-                  ABORT_COMMAND
-                </button>
-                <GlassButton
-                  variant="primary"
-                  className="flex-1 h-11 text-[9px] font-black uppercase tracking-[0.3em]"
-                  disabled={isSaving || !newKey || !newValue}
-                  onClick={handleAddVar}
-                >
-                  {isSaving ? "SYNCING..." : "COMMIT_REGISTRY"}
+              <div className="flex gap-3 mt-8">
+                <GlassButton className="flex-1" onClick={() => setShowAddModal(false)}>Cancel</GlassButton>
+                <GlassButton variant="primary" className="flex-1" onClick={handleCreateVariable} disabled={saving}>
+                  {saving ? "Saving..." : "Save Variable"}
                 </GlassButton>
               </div>
             </motion.div>

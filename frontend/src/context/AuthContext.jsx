@@ -1,79 +1,63 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 import { getCurrentUser } from '../api/api';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(() => {
-        const saved = sessionStorage.getItem('cached_user');
-        return saved ? JSON.parse(saved) : null;
-    });
-    const [loading, setLoading] = useState(!sessionStorage.getItem('cached_user'));
-
-    const refreshUser = useCallback(async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            setUser(null);
-            setLoading(false);
-            sessionStorage.removeItem('cached_user');
-            return null;
-        }
-
-        try {
-            if (!user) setLoading(true);
-            const res = await getCurrentUser();
-            const userData = res.data.user;
-            
-            if (userData) {
-                if (userData.username && !userData.name) userData.name = userData.username;
-                if (userData.avatarUrl && !userData.avatar) userData.avatar = userData.avatarUrl;
-            }
-            
-            setUser(userData);
-            if (userData) sessionStorage.setItem('cached_user', JSON.stringify(userData));
-            return userData;
-        } catch (error) {
-            console.error("Auth Refresh Failed:", error);
-            if (error.response?.status === 401) {
-                setUser(null);
-                sessionStorage.removeItem('cached_user');
-            }
-            return null;
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [avatar, setAvatar] = useState(() => localStorage.getItem('user_avatar') || 'pf5.jpeg');
 
     useEffect(() => {
-        refreshUser();
-        
-        const handleUnauthorized = () => {
-            setUser(null);
+        const checkUser = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const response = await getCurrentUser();
+                    const currentUser = response.data?.user || null;
+                    if (currentUser) {
+                        setUser({ ...currentUser, token });
+                        if (currentUser.avatar || currentUser.avatarUrl) {
+                            const resolvedAvatar = currentUser.avatar || currentUser.avatarUrl;
+                            setAvatar(resolvedAvatar);
+                            localStorage.setItem('user_avatar', resolvedAvatar);
+                        }
+                    } else {
+                        localStorage.removeItem('token');
+                    }
+                } catch (error) {
+                    localStorage.removeItem('token');
+                    setUser(null);
+                }
+            }
             setLoading(false);
         };
-
-        window.addEventListener('auth-unauthorized', handleUnauthorized);
-        return () => window.removeEventListener('auth-unauthorized', handleUnauthorized);
-    }, [refreshUser]);
+        checkUser();
+    }, []);
 
     const login = (userData, token) => {
         localStorage.setItem('token', token);
-        sessionStorage.setItem('cached_user', JSON.stringify(userData));
-        setUser(userData);
-        setLoading(false);
+        setUser({ ...userData, token });
+        if (userData?.avatar || userData?.avatarUrl) {
+            const resolvedAvatar = userData.avatar || userData.avatarUrl;
+            setAvatar(resolvedAvatar);
+            localStorage.setItem('user_avatar', resolvedAvatar);
+        }
     };
 
     const logout = () => {
         localStorage.removeItem('token');
-        sessionStorage.removeItem('cached_user');
+        localStorage.removeItem('user_avatar');
         setUser(null);
-        setLoading(false);
     };
 
-    const value = { user, login, logout, loading, refreshUser };
+    const updateAvatar = (newAvatar) => {
+        setAvatar(newAvatar);
+        localStorage.setItem('user_avatar', newAvatar);
+    };
 
     return (
-        <AuthContext.Provider value={value}>
+        <AuthContext.Provider value={{ user, login, logout, loading, avatar, updateAvatar }}>
             {children}
         </AuthContext.Provider>
     );

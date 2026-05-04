@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Bell, User, Settings, FileText, ChevronDown } from "lucide-react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { getFrameworkIcon } from "../../utils/frameworkIcons";
 import BrandLogo from "../ui/BrandLogo";
 
 const routeLabels = {
@@ -21,45 +19,24 @@ const routeLabels = {
 };
 
 const TopNav = () => {
+  const { user } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
   const location = useLocation();
-  const { user } = useAuth();
-
-  const queryParams = new URLSearchParams(location.search);
-  const projectId = queryParams.get("projectId");
-  const [project, setProject] = useState(null);
-  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
-  const [projects, setProjects] = useState([]);
-  const projectDropdownRef = useRef(null);
 
   const pageLabel = routeLabels[location.pathname] ?? "";
 
   useEffect(() => {
-    if (projectId) {
-      const fetchProject = async () => {
-        try {
-          const { getProjectById, getUserProjects } = await import("../../api/api");
-          const pRes = await getProjectById(projectId);
-          setProject(pRes.data.data);
-          
-          const psRes = await getUserProjects();
-          setProjects(psRes.data.data || []);
-        } catch (e) { console.error(e); }
-      };
-      fetchProject();
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (projectDropdownRef.current && !projectDropdownRef.current.contains(e.target))
-        setIsProjectDropdownOpen(false);
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
+        setIsDropdownOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target))
+        setIsSearchOpen(false);
     };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -73,50 +50,6 @@ const TopNav = () => {
           iconClassName="rounded-md"
           textClassName="text-[12px] md:text-[12.5px] text-[#3f3f46] hover:text-white transition-colors tracking-tight normal-case"
         />
-        
-        {projectId && project && (
-          <>
-            <span className="text-[#1a1a1a] text-[12px] select-none mx-1">/</span>
-            <div className="relative" ref={projectDropdownRef}>
-              <button
-                onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
-                className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition-all group min-w-0"
-              >
-                {project.framework && (
-                  <div style={{ color: getFrameworkIcon(project.framework).color }}>
-                    {React.createElement(getFrameworkIcon(project.framework).Icon, { size: 14, strokeWidth: 2 })}
-                  </div>
-                )}
-                <span className="text-[13px] font-bold text-white/90 select-none tracking-tight truncate max-w-[180px]">{project.name}</span>
-                <ChevronDown size={12} className={`text-[#3f3f46] transition-transform duration-300 ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence>
-                {isProjectDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-56 bg-[#111113] border border-white/[0.1] rounded-xl shadow-2xl p-1.5 z-[60]">
-                    <div className="px-3 py-2 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.2em]">Switch Project</div>
-                    <div className="space-y-0.5 max-h-60 overflow-y-auto scrollbar-hide">
-                      {projects.map(p => (
-                        <button
-                          key={p._id}
-                          onClick={() => {
-                            setIsProjectDropdownOpen(false);
-                            window.location.href = `${location.pathname}?projectId=${p._id}`;
-                          }}
-                          className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-all ${p._id === projectId ? 'bg-white text-black font-bold' : 'text-[#a1a1aa] hover:bg-white/5 hover:text-white'}`}
-                        >
-                          <span className="text-[12.5px] truncate">{p.name}</span>
-                          {p._id === projectId && <div className="w-1 h-1 rounded-full bg-black" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </AnimatePresence>
-            </div>
-          </>
-        )}
-
         {pageLabel && (
           <>
             <span className="text-[#1a1a1a] text-[12px] select-none mx-1 hidden sm:inline">/</span>
@@ -154,6 +87,12 @@ const TopNav = () => {
             }`}
           />
         </div>
+
+        {/* Notifications */}
+        <button className="relative flex items-center justify-center w-8 h-8 rounded-lg text-[#52525b] hover:text-white hover:bg-white/[0.05] transition-colors">
+          <Bell size={14} />
+          <span className="absolute top-1.5 right-1.5 w-[5px] h-[5px] bg-[#22c55e] rounded-full ring-2 ring-[#09090b]" />
+        </button>
 
         {/* Divider */}
         <div className="w-px h-4 bg-white/[0.08] mx-1 hidden sm:block" />

@@ -109,13 +109,13 @@ app.get('/api/health', (req, res) => {
 
 app.post('/api/test-ai', async (req, res) => {
   try {
-    const { logs } = req.body;
+    const { logs, provider = 'mistral' } = req.body;
     if (!logs) {
       return res
         .status(400)
         .json({ error: 'Logs array is required for testing' });
     }
-    const aiResponse = await analyzeLogsWithAI(logs, 'mistral');
+    const aiResponse = await analyzeLogsWithAI(logs, provider);
     return res.status(200).json({ success: true, aiAnalysis: aiResponse });
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });

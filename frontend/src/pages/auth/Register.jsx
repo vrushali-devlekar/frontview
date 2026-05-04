@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api, { githubAuthUrl, googleAuthUrl } from "../../api/api";
-import { useAuth } from "../../context/AuthContext";
+import logoClose from "../../assets/logo-close.png";
 import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
 import BrandLogo from "../../components/ui/BrandLogo";
@@ -14,7 +14,6 @@ const Register = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   useEffect(() => {
     const urlError = searchParams.get("error");
@@ -31,9 +30,7 @@ const Register = () => {
     try {
       const response = await api.post("/auth/register", { username, email, password });
       if (response.data && response.data.token) {
-        const userData = response.data.user;
-        if (userData && userData.username) userData.name = userData.username;
-        login(userData, response.data.token);
+        localStorage.setItem("token", response.data.token);
         navigate("/dashboard");
       }
     } catch (err) {

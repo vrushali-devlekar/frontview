@@ -56,18 +56,12 @@ export default function Navbar () {
           </div>
 
           <div className='hidden md:flex items-center gap-4'>
-            <Link 
-              to="/login"
-              className='text-white text-[11px] px-4 py-2 hover:text-[#a3e635] transition-colors uppercase font-mono'
-            >
+            <button className='text-white text-[11px] px-4 py-2 hover:text-[#a3e635] transition-colors uppercase font-mono'>
               Sign In
-            </Link>
-            <Link 
-              to="/register"
-              className='bg-[#a3e635] text-black font-bold text-[11px] px-5 py-2 rounded-md hover:bg-[#bef264] transition-all uppercase font-mono'
-            >
+            </button>
+            <button className='bg-[#a3e635] text-black font-bold text-[11px] px-5 py-2 rounded-md hover:bg-[#bef264] transition-all uppercase font-mono'>
               Get Started
-            </Link>
+            </button>
           </div>
 
           <button

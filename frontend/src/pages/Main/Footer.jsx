@@ -14,7 +14,7 @@ const Logo = () => (
       <img src={logoClose} alt="Velora Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
     </div>
     <span
-      className="text-white font-bold tracking-widest uppercase group-hover:text-[#a3e635] transition-colors"
+      className="text-white font-bold tracking-widest uppercase"
       style={{ fontFamily: "'Space Mono', monospace", fontSize: "16px" }}
     >
       Velora

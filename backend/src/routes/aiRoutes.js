@@ -28,7 +28,7 @@ const toReadableStructuredText = (text) =>
         .trim();
 
 router.post('/diagnose', protect, async (req, res) => {
-    const { errorLogs } = req.body;
+    const { errorLogs, provider = 'mistral' } = req.body;
 
     if (!errorLogs) {
         return res.status(400).json({ message: 'errorLogs field is required' });
@@ -44,7 +44,7 @@ router.post('/diagnose', protect, async (req, res) => {
         res.write(`data: ${JSON.stringify({ text: "[ENGINE: VELORA_AI_ANALYZING]\n\n" })}\n\n`);
 
         const { analyzeLogsWithAI } = require('../services/logAnalysisService');
-        const result = await analyzeLogsWithAI(errorLogs, 'mistral');
+        const result = await analyzeLogsWithAI(errorLogs, provider);
 
         let text = '';
         if (typeof result === 'string') {
@@ -82,7 +82,7 @@ router.post('/diagnose', protect, async (req, res) => {
 
 // @desc    General AI Chat for debugging and questions
 router.post('/chat', protect, async (req, res) => {
-    const { message, context } = req.body;
+    const { message, context, provider = 'mistral' } = req.body;
 
     if (!message) {
         return res.status(400).json({ message: 'message field is required' });
@@ -95,59 +95,14 @@ router.post('/chat', protect, async (req, res) => {
     });
 
     try {
-        const { PromptTemplate } = require('@langchain/core/prompts');
-        const { ChatMistralAI } = require('@langchain/mistralai');
-        
-        // Switching to Mistral for stability as requested
-        const model = new ChatMistralAI({
-            apiKey: process.env.MISTRAL_API_KEY,
-            model: 'mistral-large-latest',
-            temperature: 0.5
-        });
-
-        const promptTemplate = PromptTemplate.fromTemplate(`
-            You are Velora AI, a friendly and expert Cloud Assistant. 
-            
-            TONE: 
-            - Conversational, clear, and very helpful. 
-            - Explain things like you are talking to a friend who is a developer.
-            - Use simple language (Layman's terms) for complex errors.
-            
-            STRICT RULES:
-            1. Be CONCISE but don't be robotic. 
-            2. Do NOT repeat the user's question.
-            3. If the user says 'hlw', 'hi', or 'hello', just respond with a friendly greeting and ask how you can help.
-            4. ALWAYS respond in plain text using EXACTLY this structure:
-
-            Issue
-            - <short issue summary>
-
-            Root Cause
-            - <root cause in simple language>
-
-            Fix Steps
-            1. <step 1>
-            2. <step 2>
-            3. <step 3>
-
-            Validation
-            - <how to verify fix>
-
-            5. DO NOT use markdown symbols like #, *, **, or code fences.
-            6. Keep each bullet clear and actionable.
-            
-            Context Logs: {context}
-            User Question: {question}
-        `);
-
+        const { analyzeLogsWithAI } = require('../services/logAnalysisService');
         const logsText = Array.isArray(context) ? context.join('\n') : context;
-        const chain = promptTemplate.pipe(model);
-        
-        const response = await chain.invoke({
-            context: logsText || "No logs available",
-            question: message
-        });
-        const structured = toReadableStructuredText(normalizeModelText(response?.content));
+        const response = await analyzeLogsWithAI(logsText || 'No logs available', provider, message);
+        const structured = toReadableStructuredText(
+            typeof response === 'string'
+                ? response
+                : response?.markdown || response?.rawOutput || response?.rootCause || ''
+        );
         res.write(`data: ${JSON.stringify({ text: structured })}\n\n`);
         
         res.write('data: [DONE]\n\n');

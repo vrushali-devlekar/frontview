@@ -1,12 +1,20 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { X, Cpu, MessageSquare, Expand, Send, BrainCircuit, Loader2 } from "lucide-react";
 import GlassButton from "../ui/GlassButton";
-import { buildApiUrl } from "../../api/runtime";
+import { buildApiUrl } from "../../api/api";
+
+const AI_PROVIDER_OPTIONS = [
+  { value: "mistral", label: "Mistral" },
+  { value: "cohere", label: "Cohere" },
+  { value: "gemini", label: "Gemini" },
+  { value: "grok", label: "Grok" },
+];
 
 export default function AIModal({ deploymentId, isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [provider, setProvider] = useState("mistral");
+  const [retryKey, setRetryKey] = useState(0);
 
   const [streamedAnalysis, setStreamedAnalysis] = useState("");
   const [isChatExpanded, setIsChatExpanded] = useState(false);
@@ -14,6 +22,11 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef(null);
+  const buildAnalyzeUrl = (id) => buildApiUrl(`/deployments/${id}/analyze/stream`);
+  const getRequestHeaders = () => ({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+  });
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -40,16 +53,14 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
       }
 
       try {
-        const response = await fetch(buildApiUrl(`/deployments/${deploymentId}/analyze/stream`), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
+        const response = await fetch(buildAnalyzeUrl(deploymentId), {
+          method: "POST",
+          headers: getRequestHeaders(),
           body: JSON.stringify({ provider })
         });
 
         if (!response.ok) throw new Error("Connection failed.");
+        if (!response.body) throw new Error("No analysis stream returned.");
 
         setIsLoading(false);
         setIsTyping(true);
@@ -98,7 +109,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
 
     runStreamingAnalysis();
     return () => { cancelled = true; };
-  }, [isOpen, deploymentId, provider]);
+  }, [isOpen, deploymentId, provider, retryKey]);
 
   const canChat = useMemo(() => Boolean(deploymentId), [deploymentId]);
 
@@ -118,14 +129,14 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
     setChatMessages((prev) => [...prev, { id: astMsgId, role: "assistant", text: "" }]);
 
     try {
-      const response = await fetch(buildApiUrl(`/deployments/${deploymentId}/analyze/stream`), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+      const response = await fetch(buildAnalyzeUrl(deploymentId), {
+        method: "POST",
+        headers: getRequestHeaders(),
         body: JSON.stringify({ provider, question: text })
       });
+
+      if (!response.ok) throw new Error("Connection lost. Please try again.");
+      if (!response.body) throw new Error("No chat stream returned.");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
@@ -170,19 +181,40 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
       <div className={`relative w-full bg-[#1e1e20] border border-white/[0.06] rounded-xl flex flex-col h-[92vh] max-h-[92vh] sm:h-[85vh] sm:max-h-[85vh] shadow-elevation-2 overflow-hidden transition-all duration-300 ${isChatExpanded ? "max-w-[96vw] lg:max-w-4xl" : "max-w-[96vw] lg:max-w-2xl"}`}>
 
         {/* Header - Clean & Professional */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0 bg-[#161618]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0 bg-[#111113]">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-lg bg-white/[0.04] flex items-center justify-center border border-white/[0.06]">
               <BrainCircuit size={20} className="text-[#a1a1aa]" />
             </div>
             <div>
-              <h2 className="text-[15px] font-semibold text-white tracking-tight uppercase">
+              <h2 className="text-[15px] font-semibold text-white tracking-tight">
                 AI Diagnostics
               </h2>
               <p className="text-[12px] text-[#71717a] font-medium mt-0.5">Automated issue resolution</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5">
+              <span className="text-[11px] font-medium text-[#71717a] font-sans">
+                Model
+              </span>
+              <select
+                value={provider}
+                onChange={(e) => {
+                  setProvider(e.target.value);
+                  setError("");
+                  setChatMessages([]);
+                  setChatInput("");
+                }}
+                className="bg-transparent text-[12px] font-medium text-white outline-none font-sans"
+              >
+                {AI_PROVIDER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value} className="bg-[#111113] text-white">
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <button
               type="button"
               disabled={!canChat}
@@ -204,11 +236,32 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
 
         {/* Content */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 font-mono text-[13px]" style={{ scrollbarWidth: 'thin' }}>
+          <div className="sm:hidden mb-4">
+            <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-[#111113] px-3 py-2">
+              <span className="text-[11px] font-medium text-[#71717a] font-sans">Model</span>
+              <select
+                value={provider}
+                onChange={(e) => {
+                  setProvider(e.target.value);
+                  setError("");
+                  setChatMessages([]);
+                  setChatInput("");
+                }}
+                className="bg-transparent text-[12px] font-medium text-white outline-none font-sans"
+              >
+                {AI_PROVIDER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value} className="bg-[#111113] text-white">
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-52 gap-4">
               <Loader2 size={24} className="text-[#a1a1aa] animate-spin" />
               <div className="text-center">
-                <p className="text-[#d4d4d8] font-medium font-sans uppercase tracking-widest">
+                <p className="text-[#d4d4d8] font-medium font-sans">
                   Analyzing deployment logs...
                 </p>
                 <p className="text-[#71717a] text-[12px] font-sans mt-1">
@@ -222,14 +275,27 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
                 <X size={18} className="text-[#ef4444]" />
               </div>
               <p className="text-[#ef4444] font-medium font-sans text-[14px]">{error}</p>
-              <button onClick={() => setError("")} className="text-[13px] text-[#71717a] hover:text-white underline font-sans">Try again</button>
+              <button
+                onClick={() => {
+                  setError("");
+                  setChatInput("");
+                  setChatMessages([]);
+                  setRetryKey((prev) => prev + 1);
+                }}
+                className="text-[13px] text-[#71717a] hover:text-white underline font-sans"
+              >
+                Try again
+              </button>
             </div>
           ) : !isChatExpanded ? (
             <div className="space-y-4">
-              <div className="bg-[#161618] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1">
+              <div className="bg-[#111113] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1">
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/[0.06]">
                   <Cpu size={14} className="text-[#3b82f6]" />
-                  <span className="text-[12px] font-black text-[#3b82f6] tracking-widest font-sans uppercase">Analysis Result</span>
+                  <span className="text-[12px] font-medium text-[#3b82f6] tracking-wide font-sans">Analysis Result</span>
+                  <span className="ml-auto rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-[#a1a1aa] font-sans">
+                    {provider}
+                  </span>
                 </div>
                 <div className="text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap">
                   {streamedAnalysis}
@@ -242,7 +308,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
               <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-2" style={{ scrollbarWidth: 'thin' }}>
                 {/* Initial Analysis */}
                 <div className="flex justify-start">
-                  <div className="max-w-[85%] bg-[#161618] border border-white/[0.06] rounded-2xl rounded-tl-sm px-4 py-3 text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap shadow-elevation-1">
+                  <div className="max-w-[85%] bg-[#111113] border border-white/[0.06] rounded-2xl rounded-tl-sm px-4 py-3 text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap shadow-elevation-1">
                     {streamedAnalysis}
                   </div>
                 </div>
@@ -250,8 +316,8 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
                 {chatMessages.map((m) => (
                   <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap shadow-elevation-1 ${m.role === "user"
-                        ? "bg-white text-black font-semibold rounded-tr-sm shadow-xl"
-                        : "bg-[#161618] border border-white/[0.06] text-[#d4d4d8] rounded-tl-sm shadow-lg"
+                        ? "bg-white/[0.06] border border-white/[0.08] text-white rounded-tr-sm"
+                        : "bg-[#111113] border border-white/[0.06] text-[#d4d4d8] rounded-tl-sm"
                       }`}>
                       {m.text}
                       {(isTyping && m.id === chatMessages[chatMessages.length - 1].id && m.role === "assistant") && (

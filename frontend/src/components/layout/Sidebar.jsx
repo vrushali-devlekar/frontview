@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Grid3X3, Zap, Layers, BarChart2,
-  Settings, ChevronDown, LogOut, User, Users,
-  FileText, PanelLeft, Plug, Monitor, History as HistoryIcon
+  Settings, LogOut, User, Users,
+  PanelLeft, Plug, Monitor
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -41,9 +41,11 @@ const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => {
 const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // ✅ FIXED: moved out of JSX
+  const { user, avatar } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -57,24 +59,18 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
 
   if (navMode === "dock") return null;
 
-  const queryParams = new URLSearchParams(location.search);
-  const projectId = queryParams.get("projectId");
-
-  const getPath = (base) => projectId ? `${base}?projectId=${projectId}` : base;
-
   const topItems = [
-    { icon: LayoutDashboard, label: "Overview", to: getPath("/dashboard") },
-    { icon: Grid3X3, label: "Projects", to: getPath("/projects") },
-    { icon: Zap, label: "Deployments", to: getPath("/deploy") },
-    { icon: Layers, label: "Environments", to: getPath("/environments") },
-    { icon: Monitor, label: "Logs", to: getPath("/logs") },
-    { icon: HistoryIcon, label: "History", to: getPath("/history") },
+    { icon: LayoutDashboard, label: "Overview", to: "/dashboard" },
+    { icon: Grid3X3, label: "Applications", to: "/applications" },
+    { icon: Zap, label: "Deployments", to: "/deploy" },
+    { icon: Layers, label: "Environments", to: "/environments" },
+    { icon: BarChart2, label: "Metrics", to: "/metrics" },
   ];
 
   const bottomItems = [
-    { icon: Users, label: "Members", to: getPath("/members") },
-    { icon: Plug, label: "Integrations", to: getPath("/integrations") },
-    { icon: Settings, label: "Settings", to: getPath("/settings") },
+    { icon: Users, label: "Members", to: "/members" },
+    { icon: Plug, label: "Integrations", to: "/integrations" },
+    { icon: Settings, label: "Settings", to: "/settings" },
   ];
 
   return (
@@ -84,7 +80,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="fixed left-0 top-0 h-screen z-50 bg-[#161618] border-r border-white/[0.04] hidden md:flex flex-col"
     >
-      {/* Brand Header */}
+      {/* Brand */}
       <div className={`h-20 flex items-center px-6 ${isCollapsed ? "justify-center" : ""}`}>
         <BrandLogo
           to="/dashboard"
@@ -95,10 +91,10 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
         />
       </div>
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-2 space-y-8 scrollbar-hide">
+      {/* Nav */}
+      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-8">
         <div>
-          {!isCollapsed && <h3 className="px-4 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.25em] mb-4">Workspace</h3>}
+          {!isCollapsed && <h3 className="px-4 text-[10px] text-[#3f3f46] uppercase mb-4">Workspace</h3>}
           <div className="space-y-1">
             {topItems.map((item) => (
               <MenuItem key={item.to} {...item} isCollapsed={isCollapsed} />
@@ -107,7 +103,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
         </div>
 
         <div>
-          {!isCollapsed && <h3 className="px-4 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.25em] mb-4">Account</h3>}
+          {!isCollapsed && <h3 className="px-4 text-[10px] text-[#3f3f46] uppercase mb-4">Account</h3>}
           <div className="space-y-1">
             {bottomItems.map((item) => (
               <MenuItem key={item.to} {...item} isCollapsed={isCollapsed} />
@@ -118,61 +114,55 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
 
       {/* Footer */}
       <div className="p-4 space-y-2 border-t border-white/[0.05]">
+
         <button
           onClick={toggleNavMode}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-[#71717a] hover:text-white hover:bg-white/[0.03]
-            ${isCollapsed ? "justify-center px-0 w-[48px] h-[48px] mx-auto" : ""}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[#71717a] hover:text-white hover:bg-white/[0.03]
+            ${isCollapsed ? "justify-center w-[48px] h-[48px] mx-auto" : ""}
           `}
-          title="Switch to Dock"
         >
-          <Monitor size={18} strokeWidth={1.5} />
-          {!isCollapsed && <span className="text-[13px] font-medium">Switch to Dock</span>}
+          <Monitor size={18} />
+          {!isCollapsed && <span>Switch to Dock</span>}
         </button>
 
         <button
           onClick={toggleSidebar}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-[#71717a] hover:text-white hover:bg-white/[0.03]
-            ${isCollapsed ? "justify-center px-0 w-[48px] h-[48px] mx-auto" : ""}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[#71717a] hover:text-white hover:bg-white/[0.03]
+            ${isCollapsed ? "justify-center w-[48px] h-[48px] mx-auto" : ""}
           `}
         >
-          <PanelLeft size={18} strokeWidth={1.5} className={`transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`} />
-          {!isCollapsed && <span className="text-[13px] font-medium">Collapse Sidebar</span>}
+          <PanelLeft size={18} className={`${isCollapsed ? "rotate-180" : ""}`} />
+          {!isCollapsed && <span>Collapse Sidebar</span>}
         </button>
 
-        {/* Profile Card */}
+        {/* ✅ Profile Dropdown */}
         <div className="relative pt-2" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className={`w-full flex items-center gap-3 bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-all rounded-2xl
-              ${isCollapsed ? "justify-center p-0 w-[48px] h-[48px] mx-auto" : "p-2.5"}
+            className={`w-full flex items-center gap-3 bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] rounded-2xl
+              ${isCollapsed ? "justify-center w-[48px] h-[48px] mx-auto" : "p-2.5"}
             `}
           >
-            {user?.avatar || user?.githubAvatarUrl || user?.googleAvatarUrl ? (
+            <div className="w-8 h-8 rounded-full bg-[#111113] border border-white/[0.08] overflow-hidden">
               <img
-                src={user.avatar || user.githubAvatarUrl || user.googleAvatarUrl}
-                className="w-8 h-8 rounded-full object-cover shadow-[0_0_10px_rgba(255,255,255,0.1)] border border-white/10"
-                alt="Avatar"
+                src={
+                  avatar
+                    ? new URL(`../../assets/${avatar}`, import.meta.url).href
+                    : "https://github.com/identicons/velora.png"
+                }
+                alt="Profile"
+                className="w-full h-full object-cover"
               />
-            ) : (
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-black text-white shrink-0 relative shadow-inner"
-                style={{
-                  backgroundColor: (() => {
-                    const colors = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
-                    const name = user?.name || "User";
-                    let hash = 0;
-                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-                    return colors[Math.abs(hash) % colors.length];
-                  })()
-                }}
-              >
-                {user?.name?.charAt(0).toUpperCase() || "U"}
-              </div>
-            )}
+            </div>
+
             {!isCollapsed && (
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-[13px] font-bold text-white truncate">{user?.name || "User"}</p>
-                <p className="text-[11px] text-[#52525b] truncate">{user?.email || "No email"}</p>
+              <div className="flex-1 text-left">
+                <p className="text-[13px] font-bold text-white truncate">
+                  {user?.name || "Operator"}
+                </p>
+                <p className="text-[11px] text-[#52525b] truncate">
+                  {user?.email || "admin@velora.io"}
+                </p>
               </div>
             )}
           </button>
@@ -183,14 +173,21 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className={`absolute bottom-full mb-3 z-50 bg-[#111113] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden
+                className={`absolute bottom-full mb-3 bg-[#111113] border border-white/[0.08] rounded-2xl shadow-2xl
                   ${isCollapsed ? "left-14 w-48" : "left-0 right-0"}`}
               >
-                <div className="p-1.5 space-y-0.5">
-                  <button onClick={() => { setDropdownOpen(false); navigate("/account"); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#a1a1aa] hover:text-white hover:bg-white/[0.05] rounded-xl transition-colors">
+                <div className="p-1.5">
+                  <button
+                    onClick={() => navigate("/account")}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-[#a1a1aa] hover:text-white"
+                  >
                     <User size={16} /> Profile
                   </button>
-                  <button onClick={() => { setDropdownOpen(false); logout(); navigate("/login"); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-[#ef4444] hover:bg-[#ef4444]/10 rounded-xl transition-colors">
+
+                  <button
+                    onClick={() => navigate("/login")}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-400/10"
+                  >
                     <LogOut size={16} /> Sign out
                   </button>
                 </div>
@@ -198,6 +195,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
             )}
           </AnimatePresence>
         </div>
+
       </div>
     </motion.aside>
   );

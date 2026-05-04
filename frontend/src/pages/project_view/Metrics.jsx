@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
 import Dock from "../../components/layout/Dock";
 import PageWrapper from "../../components/layout/PageWrapper";
 import TopNav from "../../components/layout/TopNav";
 import GlassButton from "../../components/ui/GlassButton";
-import { PageShell, PageHeader, Card, CardHeader, CardBody, TableHead } from "../../components/layout/PageLayout";
+import { PageShell, PageHeader, Card, CardHeader, CardBody, TableHead, AlertBanner, EmptyState } from "../../components/layout/PageLayout";
 import { RefreshCw, Rocket, ShieldCheck, Clock, AlertCircle, ArrowUpRight, ArrowDownRight, Cpu, BarChart3, Download } from "lucide-react";
 import { motion } from "framer-motion";
+import { getWorkspaceMetrics } from "../../api/api";
 
 const Sparkline = ({ data, color }) => {
-  const min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * 100},${100 - ((v - min) / range) * 100}`).join(" ");
+  if (!data?.length) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => `${(i / Math.max(data.length - 1, 1)) * 100},${100 - ((v - min) / range) * 100}`).join(" ");
   return (
     <svg viewBox="0 0 100 100" className="w-14 h-7" preserveAspectRatio="none">
       <polyline fill="none" stroke={color} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" points={pts} vectorEffect="non-scaling-stroke" />
@@ -19,245 +23,291 @@ const Sparkline = ({ data, color }) => {
   );
 };
 
+const asNumber = (value) => {
+  const parsed = Number.parseFloat(String(value || "").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 export default function Metrics() {
   const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
   const [exporting, setExporting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [metrics, setMetrics] = useState({
+    stats: {},
+    heatmap: [],
+    resourceBreakdown: [],
+    recentEvents: [],
+  });
 
-  const stats = [
-    { title: "Node_Deployments", value: "28",      change: "+12%", isPositive: true,  icon: Rocket,       sparklineData: [2,4,3,5,4,7,6],              sparklineColor: "#22c55e" },
-    { title: "Registry_Success", value: "96.4%",   change: "+3.2%", isPositive: true, icon: ShieldCheck,  sparklineData: [90,92,91,95,94,96,97],       sparklineColor: "#22c55e" },
-    { title: "Latency_Buffer",   value: "2m 34s",  change: "-10s",  isPositive: true, icon: Clock,        sparklineData: [3.5,3.2,3.0,2.8,2.9,2.5,2.4], sparklineColor: "#3b82f6" },
-    { title: "Sequence_Faults",  value: "2",       change: "-33%",  isPositive: true, icon: AlertCircle,  sparklineData: [4,3,5,2,3,1,2],              sparklineColor: "#ef4444" },
-  ];
+  const loadMetrics = async () => {
+    const response = await getWorkspaceMetrics();
+    setMetrics(response.data?.data || {
+      stats: {},
+      heatmap: [],
+      resourceBreakdown: [],
+      recentEvents: [],
+    });
+  };
 
-  const analyticsData = [
-    { id: "AUTH_SERVICE_NODE",     type: "BUILD_SUCCESS",  time: "14:22:01", status: "NOMINAL" },
-    { id: "PAYMENT_GATEWAY_NODE",  type: "RUNTIME_ERROR",  time: "13:45:12", status: "FAULT" },
-    { id: "WEB_DASHBOARD_NODE",    type: "CONFIG_SYNC",    time: "12:10:55", status: "NOMINAL" },
-    { id: "API_GATEWAY_NODE",      type: "ROLLBACK_INIT",  time: "11:30:22", status: "NOMINAL" },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await getWorkspaceMetrics();
+        if (!cancelled) {
+          setMetrics(response.data?.data || {
+            stats: {},
+            heatmap: [],
+            resourceBreakdown: [],
+            recentEvents: [],
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.response?.data?.message || "Failed to load metrics");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const heatmapData = metrics.heatmap || [];
+  const resourceBars = metrics.resourceBreakdown || [];
+  const recentEvents = metrics.recentEvents || [];
+
+  const statCards = useMemo(() => {
+    const baseHeatmap = heatmapData.length ? heatmapData : [0, 0, 0, 0, 0, 0, 0];
+    const slice = (from, to) => baseHeatmap.slice(from, to);
+
+    return [
+      {
+        title: "Total Deployments",
+        value: metrics.stats?.totalDeployments || "0",
+        change: metrics.stats?.deltas?.totalDeployments || "0",
+        isPositive: !String(metrics.stats?.deltas?.totalDeployments || "").startsWith("-"),
+        icon: Rocket,
+        sparklineData: slice(Math.max(baseHeatmap.length - 28, 0), Math.max(baseHeatmap.length - 21, 0) || baseHeatmap.length),
+        sparklineColor: "#22c55e",
+      },
+      {
+        title: "Success Rate",
+        value: metrics.stats?.successRate || "0%",
+        change: metrics.stats?.deltas?.successRate || "0/0",
+        isPositive: true,
+        icon: ShieldCheck,
+        sparklineData: slice(Math.max(baseHeatmap.length - 21, 0), Math.max(baseHeatmap.length - 14, 0) || baseHeatmap.length),
+        sparklineColor: "#22c55e",
+      },
+      {
+        title: "Avg Deploy Time",
+        value: metrics.stats?.avgBuildTime || "0s",
+        change: metrics.stats?.deltas?.avgBuildTime || "0 samples",
+        isPositive: true,
+        icon: Clock,
+        sparklineData: slice(Math.max(baseHeatmap.length - 14, 0), Math.max(baseHeatmap.length - 7, 0) || baseHeatmap.length),
+        sparklineColor: "#3b82f6",
+      },
+      {
+        title: "Failed Deploys",
+        value: metrics.stats?.failedDeployments || "0",
+        change: `${metrics.stats?.failedDeployments || "0"} total`,
+        isPositive: asNumber(metrics.stats?.failedDeployments) === 0,
+        icon: AlertCircle,
+        sparklineData: slice(Math.max(baseHeatmap.length - 7, 0), baseHeatmap.length),
+        sparklineColor: "#ef4444",
+      },
+    ];
+  }, [metrics.stats, heatmapData]);
 
   const exportAnalytics = () => {
     setExporting(true);
     const headers = ["Project", "Event", "Timestamp", "Status"];
-    const rows = analyticsData.map(r => [r.id, r.type, r.time, r.status]);
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const rows = recentEvents.map((event) => [
+      event.project,
+      event.event,
+      new Date(event.timestamp).toISOString(),
+      event.status,
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8,"
       + headers.join(",") + "\n"
-      + rows.map(r => r.join(",")).join("\n");
-    
+      + rows.map((row) => row.join(",")).join("\n");
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "velora_telemetry.csv");
+    link.setAttribute("download", "velora_analytics.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => setExporting(false), 1000);
+    window.setTimeout(() => setExporting(false), 500);
   };
 
-  const heatmapData = Array.from({ length: 7 * 12 }, () => Math.floor(Math.random() * 4));
-
   return (
-    <div className="flex h-screen bg-[var(--bg-main)] text-white font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
-        <div className="flex-1 p-10 lg:p-16 overflow-y-auto scrollbar-hide">
-          <div className="max-w-7xl mx-auto">
-            {/* Header Area */}
-            <div className="flex items-end justify-between mb-16 pb-12 border-b border-white/[0.04]">
-              <div>
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="px-3 py-1 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">TELEMETRY_ENGINE</span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-                </div>
-                <h1 className="text-[36px] font-black tracking-tighter uppercase text-white leading-none">Global_Performance</h1>
-                <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.4em] mt-5">Real-time_Infrastructure_Optimization_&_Resource_Telemetry</p>
-              </div>
-              <GlassButton 
-                variant="secondary" 
-                className="h-14 px-10 gap-4 text-[10px] font-black uppercase tracking-[0.25em] shadow-elevation-1"
-                onClick={() => {}}
-              >
-                <RefreshCw size={18} /> SYNC_METRICS
-              </GlassButton>
-            </div>
+        <PageShell>
+          <PageHeader title="Metrics" subtitle="Real workspace metrics from deployments and projects">
+            <GlassButton
+              variant="secondary"
+              className="gap-2"
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  setError("");
+                  await loadMetrics();
+                } catch (err) {
+                  setError(err.response?.data?.message || "Failed to refresh metrics");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            >
+              <RefreshCw size={13} /> Refresh
+            </GlassButton>
+          </PageHeader>
 
-            <div className="space-y-10">
-              {/* Stat Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {stats.map((item, i) => (
+          {error && <AlertBanner type="error">{error}</AlertBanner>}
+
+          {loading ? (
+            <div className="px-2 py-8 text-[13px] text-[#71717a]">Loading metrics...</div>
+          ) : (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                {statCards.map((item, i) => (
                   <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
+                    key={item.title}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: i * 0.05 }}
+                    transition={{ duration: 0.3, delay: i * 0.06 }}
                   >
-                    <div className="p-10 bg-[#1e1e20] border border-white/[0.04] rounded-[48px] flex flex-col gap-8 shadow-elevation-1 hover:shadow-elevation-2 transition-all group">
+                    <Card className="p-6 flex flex-col gap-4" hover={false}>
                       <div className="flex items-start justify-between">
-                        <div className="w-14 h-14 rounded-2xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center shrink-0 shadow-elevation-2 group-hover:border-white/10 transition-all">
-                          <item.icon size={24} className="text-[#3f3f46] group-hover:text-white transition-colors" />
+                        <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center shrink-0">
+                          <item.icon size={15} className="text-[#52525b]" />
                         </div>
-                        <div className="opacity-10 group-hover:opacity-30 transition-opacity">
+                        <div className="opacity-70">
                           <Sparkline data={item.sparklineData} color={item.sparklineColor} />
                         </div>
                       </div>
                       <div>
-                        <p className="text-[32px] font-black text-white tracking-tighter leading-none mb-4">{item.value}</p>
-                        <div className="flex items-center justify-between">
-                          <p className="text-[9px] text-[#52525b] font-black uppercase tracking-[0.3em]">{item.title}</p>
-                          <span className={`inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] ${item.isPositive ? "text-[#22c55e]" : "text-[#ef4444]"}`}>
-                            {item.isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                        <p className="text-[26px] font-bold text-white tracking-tight leading-none">{item.value}</p>
+                        <div className="flex items-center justify-between mt-2.5 gap-2">
+                          <p className="text-[11.5px] text-[#71717a] font-medium">{item.title}</p>
+                          <span className={`inline-flex items-center gap-0.5 text-[11px] font-bold ${item.isPositive ? "text-[#22c55e]" : "text-[#ef4444]"}`}>
+                            {item.isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                             {item.change}
                           </span>
                         </div>
                       </div>
-                    </div>
+                    </Card>
                   </motion.div>
                 ))}
               </div>
 
-              {/* Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Heatmap */}
-                <div className="lg:col-span-2 bg-[#1e1e20] border border-white/[0.04] rounded-[56px] p-12 shadow-elevation-1">
-                  <div className="flex items-center justify-between mb-12">
-                    <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#52525b]">
-                        <BarChart3 size={22} />
-                      </div>
-                      <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Sequence_Frequency</h3>
-                    </div>
-                    <div className="flex items-center gap-3 text-[9px] font-black text-[#1e1e20] uppercase tracking-[0.3em] select-none">
-                      LOW
-                      <div className="flex gap-1.5 mx-2">
-                        {["bg-white/[0.02]", "bg-[#22c55e]/10", "bg-[#22c55e]/30", "bg-[#22c55e]"].map((c, i) => (
-                          <div key={i} className={`w-3 h-3 rounded-[2px] ${c}`} />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <Card className="lg:col-span-2 overflow-hidden">
+                  <CardHeader icon={BarChart3} title="Deployment Frequency" />
+                  <CardBody>
+                    {heatmapData.length === 0 ? (
+                      <EmptyState icon={BarChart3} title="No deployment activity yet" subtitle="Once deployments run, the frequency map will populate here." />
+                    ) : (
+                      <div className="grid grid-cols-12 sm:grid-cols-14 md:grid-cols-21 gap-1.5">
+                        {heatmapData.map((value, index) => (
+                          <div
+                            key={`${index}-${value}`}
+                            className={`h-6 rounded-md transition-colors ${
+                              value === 0
+                                ? "bg-white/[0.03]"
+                                : value === 1
+                                  ? "bg-[#22c55e]/30"
+                                  : value === 2
+                                    ? "bg-[#22c55e]/55"
+                                    : "bg-[#22c55e]"
+                            }`}
+                            title={`${value} deployments`}
+                          />
                         ))}
                       </div>
-                      HIGH
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-12 gap-2">
-                    {heatmapData.map((val, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.002 }}
-                        className={`aspect-square rounded-[4px] transition-all duration-500 hover:ring-2 hover:ring-white/[0.08] cursor-crosshair ${
-                          val === 0 ? "bg-[#0d0d0f]" :
-                          val === 1 ? "bg-[#22c55e]/10" :
-                          val === 2 ? "bg-[#22c55e]/40" :
-                          "bg-[#22c55e]"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-8 text-[9px] font-black text-[#1e1e20] uppercase tracking-[0.4em] px-2">
-                    <span>MON</span>
-                    <span>TUE</span>
-                    <span>WED</span>
-                    <span>THU</span>
-                    <span>FRI</span>
-                    <span>SAT</span>
-                    <span>SUN</span>
-                  </div>
-                </div>
+                    )}
+                  </CardBody>
+                </Card>
 
-                {/* Infrastructure Payload */}
-                <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[56px] p-12 shadow-elevation-1">
-                  <div className="flex items-center gap-6 mb-12">
-                    <div className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#52525b]">
-                      <Cpu size={22} />
-                    </div>
-                    <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Infrastructure_Payload</h3>
-                  </div>
-                  
-                  <div className="space-y-10 py-4">
-                    {[
-                      { label: "COMPUTE_LOGIC", val: "42%", pct: 42, color: "bg-white" },
-                      { label: "MEMORY_BUFFER", val: "68%", pct: 68, color: "bg-[#22c55e]" },
-                      { label: "UPLINK_SPEED",  val: "15%", pct: 15, color: "bg-[#3b82f6]" },
-                    ].map((bar, i) => (
-                      <div key={i}>
-                        <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.3em] mb-4">
-                          <span className="text-[#3f3f46]">{bar.label}</span>
-                          <span className="text-white">{bar.val}</span>
+                <Card>
+                  <CardHeader icon={Cpu} title="Resource Allocation" />
+                  <CardBody>
+                    <div className="space-y-6">
+                      {resourceBars.map((bar) => (
+                        <div key={bar.label}>
+                          <div className="flex justify-between text-[12px] mb-2.5">
+                            <span className="text-[#71717a] font-medium">{bar.label}</span>
+                            <span className="text-white font-bold">{bar.value}</span>
+                          </div>
+                          <div className="h-[3px] bg-white/[0.06] rounded-full overflow-hidden">
+                            <motion.div
+                              className={`h-full ${bar.color} rounded-full`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${bar.pct}%` }}
+                              transition={{ duration: 0.9, ease: "easeOut" }}
+                            />
+                          </div>
                         </div>
-                        <div className="h-2 bg-[#0d0d0f] rounded-full overflow-hidden shadow-inner">
-                          <motion.div
-                            className={`h-full ${bar.color} rounded-full shadow-elevation-1`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${bar.pct}%` }}
-                            transition={{ duration: 1, delay: 0.3 + i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Telemetry Table */}
-              <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[56px] overflow-hidden shadow-elevation-2">
-                <div className="bg-[#0d0d0f]/40 px-12 py-10 border-b border-white/[0.04] flex items-center justify-between">
-                  <div className="flex items-center gap-6">
-                    <div className="w-14 h-14 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#52525b] shadow-elevation-1">
-                      <BarChart3 size={24} />
-                    </div>
-                    <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Real-time_Telemetry_Registry</h3>
-                  </div>
-                  <GlassButton 
-                    variant="secondary" 
-                    className="h-10 px-6 text-[9px] font-black uppercase tracking-widest gap-3" 
-                    onClick={exportAnalytics} 
-                    disabled={exporting}
-                  >
-                    <Download size={14} /> {exporting ? "SYNCING..." : "EXPORT_LOGS"}
-                  </GlassButton>
-                </div>
-                
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-white/[0.02]">
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">NODE_CLUSTER</th>
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">PROTOCOL_TYPE</th>
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">SYNC_TIMESTAMP</th>
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">STATE_STATUS</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.02] bg-[#0d0d0f]/10">
-                      {analyticsData.map((row, i) => (
-                        <tr key={i} className="hover:bg-white/[0.02] transition-all group">
-                          <td className="px-12 py-8 text-[13px] font-black text-white uppercase tracking-tighter">{row.id}</td>
-                          <td className="px-12 py-8 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.3em]">{row.type}</td>
-                          <td className="px-12 py-8 text-[11px] font-black text-[#1e1e20] tabular-nums group-hover:text-[#52525b] transition-colors">{row.time}</td>
-                          <td className="px-12 py-8">
-                            <div className={`inline-flex items-center gap-3 px-4 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-[0.2em] shadow-elevation-1
-                              ${row.status === "FAULT"
-                                ? "text-[#ef4444] bg-[#ef4444]/5 border-[#ef4444]/10"
-                                : "text-[#22c55e] bg-[#22c55e]/5 border-[#22c55e]/10"
-                              }`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${row.status === "FAULT" ? "bg-[#ef4444]" : "bg-[#22c55e] animate-pulse"}`} />
-                              {row.status}
-                            </div>
-                          </td>
-                        </tr>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+                  </CardBody>
+                </Card>
               </div>
+
+              <Card noPad>
+                <CardHeader icon={BarChart3} title="Recent Analytics Events">
+                  <GlassButton variant="secondary" className="h-8 px-3 text-xs gap-2" onClick={exportAnalytics} disabled={exporting || recentEvents.length === 0}>
+                    <Download size={12} /> {exporting ? "Exporting..." : "Export CSV"}
+                  </GlassButton>
+                </CardHeader>
+                {recentEvents.length === 0 ? (
+                  <EmptyState icon={Rocket} title="No analytics events yet" subtitle="Deployment events will appear here once projects start shipping." />
+                ) : (
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <table className="w-full text-[13px]">
+                      <TableHead cols={["Project", "Event", "Timestamp", "Status"]} />
+                      <tbody className="divide-y divide-white/[0.04]">
+                        {recentEvents.map((row) => (
+                          <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="px-7 py-5 text-[13px] font-semibold text-white">{row.project}</td>
+                            <td className="px-7 py-5 text-[12px] font-mono text-[#71717a]">{row.event}</td>
+                            <td className="px-7 py-5 text-[12px] font-mono text-[#52525b]">{new Date(row.timestamp).toLocaleString()}</td>
+                            <td className="px-7 py-5">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
+                                row.status === "Failed"
+                                  ? "text-[#ef4444] bg-[#ef4444]/10 border border-[#ef4444]/20"
+                                  : "text-[#22c55e] bg-[#22c55e]/10 border border-[#22c55e]/20"
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${row.status === "Failed" ? "bg-[#ef4444]" : "bg-[#22c55e]"}`} />
+                                {row.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
             </div>
-          </div>
-        </div>
+          )}
+        </PageShell>
       </PageWrapper>
     </div>
-  );
-}
   );
 }

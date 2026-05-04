@@ -1,8 +1,11 @@
 const PROVIDER_ENV_KEYS = {
     mistral: 'MISTRAL_API_KEY',
     cohere: 'COHERE_API_KEY',
-    gemini: 'GEMINI_API_KEY'
+    gemini: 'GEMINI_API_KEY',
+    grok: 'GROK_API_KEY'
 };
+
+const SUPPORTED_PROVIDERS = ['mistral', 'cohere', 'gemini', 'grok'];
 
 const normalizeModelContent = (content) => {
     if (typeof content === 'string') return content.trim();
@@ -44,9 +47,14 @@ const parseApiKeys = (rawValue) =>
         .map((key) => key.trim())
         .filter(Boolean);
 
+const normalizeProvider = (provider) => {
+    const selected = String(provider || 'mistral').toLowerCase().trim();
+    return SUPPORTED_PROVIDERS.includes(selected) ? selected : 'mistral';
+};
+
 const getProviderConfig = (provider) => {
-    const selected = (provider || 'mistral').toLowerCase();
-    const envName = PROVIDER_ENV_KEYS[selected] || PROVIDER_ENV_KEYS.gemini;
+    const selected = normalizeProvider(provider);
+    const envName = PROVIDER_ENV_KEYS[selected] || PROVIDER_ENV_KEYS.mistral;
     const apiKeys = parseApiKeys(process.env[envName]);
 
     if (apiKeys.length === 0) {
@@ -57,7 +65,7 @@ const getProviderConfig = (provider) => {
 };
 
 const createModelForProvider = (provider, apiKey) => {
-    const selected = (provider || 'mistral').toLowerCase();
+    const selected = normalizeProvider(provider);
 
     switch (selected) {
         case 'mistral': {
@@ -77,7 +85,7 @@ const createModelForProvider = (provider, apiKey) => {
             });
         }
         case 'gemini':
-        default: {
+            {
             const { ChatGoogleGenerativeAI } = require('@langchain/google-genai');
             return new ChatGoogleGenerativeAI({
                 model: 'gemini-2.0-flash',
@@ -85,7 +93,43 @@ const createModelForProvider = (provider, apiKey) => {
                 temperature: 0.2
             });
         }
+        default:
+            return null;
     }
+};
+
+const invokeGrokChatCompletion = async (apiKey, prompt) => {
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model: process.env.GROK_MODEL || 'grok-4.20-reasoning',
+            messages: [
+                {
+                    role: 'user',
+                    content: String(prompt || '')
+                }
+            ],
+            stream: false,
+            temperature: 0.2
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Grok request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content =
+        data?.choices?.[0]?.message?.content ||
+        data?.choices?.[0]?.message ||
+        '';
+
+    return { content };
 };
 
 const isKeyRotationCandidate = (error) => {
@@ -115,7 +159,16 @@ const invokeProviderWithKeyRotation = async (provider, promptTemplate, variables
                 console.log(`[AI ${selected.toUpperCase()}] Trying API key ${index + 1}/${apiKeys.length}`);
             }
 
+            if (selected === 'grok') {
+                const formattedPrompt = await promptTemplate.format(variables);
+                return await invokeGrokChatCompletion(apiKey, formattedPrompt);
+            }
+
             const model = createModelForProvider(selected, apiKey);
+            if (!model) {
+                throw new Error(`Unsupported provider: ${selected}`);
+            }
+
             const chain = promptTemplate.pipe(model);
             return await chain.invoke(variables);
         } catch (error) {
@@ -200,8 +253,8 @@ Deployment Logs:
 };
 
 const analyzeWithFallback = async (logs, preferredProvider, question) => {
-    const preferred = preferredProvider ? String(preferredProvider).toLowerCase() : '';
-    const providers = ['mistral', 'cohere', 'gemini'];
+    const preferred = normalizeProvider(preferredProvider);
+    const providers = [...SUPPORTED_PROVIDERS];
     const ordered = preferred && providers.includes(preferred)
         ? [preferred, ...providers.filter((provider) => provider !== preferred)]
         : providers;
