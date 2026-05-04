@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Sidebar from "./Sidebar";
-import TopNav from "./TopNav";
+import Sidebar from "../layout/Sidebar";
+import TopNav from "../layout/TopNav";
 import {
   Rocket,
   Folder,

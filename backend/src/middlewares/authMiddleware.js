@@ -10,27 +10,23 @@ const protect = asyncHandler(async (req, res, next) => {
     // 1. Check karo ki Header mein Authorization hai aur wo 'Bearer' se start ho raha hai
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
-            // Header format: "Bearer <token>" hota hai, isliye split karke sirf token nikal rahe hain
             token = req.headers.authorization.split(' ')[1];
-
-            // 2. Token ko verify karo (secret key ka use karke)
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-            // 3. Token se User ID nikal kar database se user fetch karo
-            // Password ko hatane ke liye .select('-password') use kiya hai (Security!)
+            
             req.user = await User.findById(decoded.id).select('-password');
-
-            // 4. Sab sahi hai, toh aage badhne do (next middleware/controller pe)
-            return next();
+            if (!req.user) {
+                console.warn(`[AUTH] User not found for ID: ${decoded.id}`);
+                res.status(401);
+                throw new Error('Not authorized, user not found');
+            }
+            next();
         } catch (error) {
-            console.error(error);
+            console.error(`[AUTH] Token Verification Failed: ${error.message}`);
             res.status(401);
             throw new Error('Not authorized, token failed');
         }
-    }
-
-    // Agar token hi nahi mila
-    if (!token) {
+    } else {
+        console.warn('[AUTH] No Bearer token found in request headers');
         res.status(401);
         throw new Error('Not authorized, no token provided');
     }

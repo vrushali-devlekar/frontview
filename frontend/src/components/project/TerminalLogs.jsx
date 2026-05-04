@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { RefreshCw, ShieldCheck, ArrowDown, Sparkles } from "lucide-react";
+import { RefreshCw, ShieldCheck, ArrowDown } from "lucide-react";
 import { io as socketIO } from "socket.io-client";
 import { getDeployment, SOCKET_ORIGIN } from "../../api/api";
 
@@ -50,113 +50,43 @@ export default function TerminalLogs({
   onErrorDetect,
   onComplete,
   onStatusChange,
-  onOpenAnalysis,
 }) {
   const [logs, setLogs] = useState([]);
   const [isStreaming, setIsStreaming] = useState(true);
   const [loadError, setLoadError] = useState("");
   const messagesEndRef = useRef(null);
-  const pendingEntriesRef = useRef([]);
-  const flushTimerRef = useRef(null);
+  const logsRef = useRef([]);
 
-  const scrollToBottom = useCallback((behavior = "auto") => {
-    messagesEndRef.current?.scrollIntoView({ behavior });
-  }, []);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-  const flushQueuedLogs = useCallback(() => {
-    if (pendingEntriesRef.current.length === 0) return;
+  useEffect(() => {
+    logsRef.current = logs;
+  }, [logs]);
 
-    const queuedEntries = pendingEntriesRef.current.splice(0, pendingEntriesRef.current.length);
-    setLogs((prev) => {
-      const next = [...prev, ...queuedEntries];
-      const hasError = queuedEntries.some((entry) => {
+  useEffect(() => {
+    scrollToBottom();
+  }, [logs]);
+
+  const appendAndMaybeSignalError = useCallback(
+    (entry) => {
+      setLogs((prev) => {
+        const next = [...prev, entry];
         const msg = entry.message || "";
-        return (
+        if (
           entry.type === "error" ||
           msg.includes("ERR!") ||
           msg.includes("error") ||
           /\[ERROR\]/i.test(msg)
-        );
+        ) {
+          if (onErrorDetect) onErrorDetect();
+        }
+        return next;
       });
-
-      if (hasError && onErrorDetect) {
-        onErrorDetect();
-      }
-
-      return next;
-    });
-  }, [onErrorDetect]);
-
-  const queueLogEntry = useCallback(
-    (entry) => {
-      pendingEntriesRef.current.push(entry);
-      if (flushTimerRef.current) return;
-
-      flushTimerRef.current = window.setTimeout(() => {
-        flushTimerRef.current = null;
-        flushQueuedLogs();
-      }, 80);
     },
-    [flushQueuedLogs]
+    [onErrorDetect]
   );
-
-  const clearPendingFlush = useCallback(() => {
-    if (flushTimerRef.current) {
-      window.clearTimeout(flushTimerRef.current);
-      flushTimerRef.current = null;
-    }
-    pendingEntriesRef.current = [];
-  }, []);
-
-  const flushImmediately = useCallback(() => {
-    if (flushTimerRef.current) {
-      window.clearTimeout(flushTimerRef.current);
-      flushTimerRef.current = null;
-    }
-    flushQueuedLogs();
-  }, [flushQueuedLogs]);
-
-  const resetLogs = useCallback(() => {
-    clearPendingFlush();
-    setLogs([]);
-  }, [clearPendingFlush]);
-
-  const finishStreaming = useCallback(() => {
-    flushImmediately();
-    setIsStreaming(false);
-    if (onComplete) onComplete();
-  }, [flushImmediately, onComplete]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [logs, scrollToBottom]);
-
-  useEffect(() => clearPendingFlush, [clearPendingFlush]);
-
-  const handleLogCompleteState = useCallback(
-    (status) => {
-      if (
-        status &&
-        ["failed", "stopped", "rolling_back"].includes(String(status).toLowerCase())
-      ) {
-        flushImmediately();
-        setIsStreaming(false);
-      }
-    },
-    [flushImmediately]
-  );
-
-  const appendAndMaybeSignalError = useCallback(
-    (entry) => {
-      queueLogEntry(entry);
-    },
-    [queueLogEntry]
-  );
-
-  const handleScrollToBottomClick = useCallback(() => {
-    flushImmediately();
-    scrollToBottom("smooth");
-  }, [flushImmediately, scrollToBottom]);
 
   useEffect(() => {
     if (!deploymentId) return undefined;
@@ -176,7 +106,8 @@ export default function TerminalLogs({
     };
 
     const handleLogComplete = () => {
-      finishStreaming();
+      setIsStreaming(false);
+      if (onComplete) onComplete();
     };
 
     socket.on("log:line", handleLogLine);
@@ -189,7 +120,7 @@ export default function TerminalLogs({
       await Promise.resolve();
       if (cancelled) return;
       setLoadError("");
-      resetLogs();
+      setLogs([]);
       setIsStreaming(true);
       try {
         const { data } = await getDeployment(deploymentId);
@@ -201,7 +132,14 @@ export default function TerminalLogs({
         }
         const st = doc?.status;
         if (st && onStatusChange) onStatusChange(String(st).toLowerCase());
-        handleLogCompleteState(st);
+        if (
+          st &&
+          ["failed", "stopped", "rolling_back"].includes(
+            String(st).toLowerCase()
+          )
+        ) {
+          setIsStreaming(false);
+        }
       } catch (e) {
         if (!cancelled) {
           setLoadError(
@@ -213,13 +151,12 @@ export default function TerminalLogs({
 
     return () => {
       cancelled = true;
-      flushImmediately();
       socket.emit("leave:deployment", deploymentId);
       socket.off("log:line", handleLogLine);
       socket.off("log:complete", handleLogComplete);
       socket.off("connect_error", handleConnectError);
     };
-  }, [deploymentId, appendAndMaybeSignalError, finishStreaming, flushImmediately, handleLogCompleteState, onComplete, onStatusChange, resetLogs]);
+  }, [deploymentId, appendAndMaybeSignalError, onComplete, onStatusChange]);
 
   const getLogColor = (type) => {
     switch (type) {
@@ -240,17 +177,17 @@ export default function TerminalLogs({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full min-h-0 bg-[#09090b] rounded-xl overflow-hidden">
+    <div className="flex-1 flex flex-col h-full min-h-0 bg-[#0d0d0f] rounded-xl overflow-hidden">
       {/* Terminal Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#111113] border-b border-white/[0.06] shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#1e1e20] border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-[#ef4444]" />
             <div className="w-3 h-3 rounded-full bg-[#eab308]" />
             <div className="w-3 h-3 rounded-full bg-[#22c55e]" />
           </div>
-          <span className="text-[13px] font-medium text-[#71717a]">
-            Build Logs
+          <span className="text-[13px] font-black uppercase tracking-widest text-[#52525b]">
+            Build Console
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -259,30 +196,20 @@ export default function TerminalLogs({
               {loadError}
             </span>
           )}
-          {onOpenAnalysis && (
-            <button
-              type="button"
-              onClick={onOpenAnalysis}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[12px] font-medium text-[#d4d4d8] transition-colors hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-white"
-            >
-              <Sparkles size={12} className="text-[#22c55e]" />
-              AI Analysis
-            </button>
-          )}
           {isStreaming ? (
-            <span className="flex items-center gap-1.5 text-[#3b82f6] text-[12px] font-medium">
+            <span className="flex items-center gap-1.5 text-[#3b82f6] text-[12px] font-black uppercase tracking-widest">
               <RefreshCw size={12} className="animate-spin" /> Live
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-[#71717a] text-[12px] font-medium">
-              <ShieldCheck size={12} /> Complete
+            <span className="flex items-center gap-1.5 text-[#22c55e] text-[12px] font-black uppercase tracking-widest">
+              <ShieldCheck size={12} /> Finished
             </span>
           )}
         </div>
       </div>
 
       {/* Log Lines */}
-      <div className="flex-1 overflow-y-auto px-2 py-4 min-h-0" style={{ scrollbarWidth: 'thin' }}>
+      <div className="flex-1 overflow-y-auto px-2 py-4 min-h-0 bg-black/40" style={{ scrollbarWidth: 'thin' }}>
         {logs.map((log, index) => (
           <div
             key={`${index}-${log.time}`}
@@ -294,17 +221,17 @@ export default function TerminalLogs({
             </span>
 
             {/* Timestamp */}
-            <span className="text-[12px] text-[#71717a] min-w-[70px] tabular-nums">
+            <span className="text-[12px] text-[#52525b] min-w-[70px] tabular-nums font-bold">
               {log.time}
             </span>
             
             {/* Type badge */}
-            <span className={`text-[12px] min-w-[32px] font-medium ${getLogColor(log.type)}`}>
+            <span className={`text-[12px] min-w-[32px] font-bold ${getLogColor(log.type)}`}>
               {getLogPrefix(log.type)}
             </span>
 
             {/* Message */}
-            <span className={`flex-1 text-[13px] leading-relaxed break-all ${getLogColor(log.type)} ${log.type === 'error' ? 'font-medium text-[#ef4444]' : 'text-[#d4d4d8]'}`}>
+            <span className={`flex-1 text-[13px] leading-relaxed break-all ${getLogColor(log.type)} ${log.type === 'error' ? 'font-medium text-[#ef4444]' : 'text-[#a1a1aa]'}`}>
               {log.message}
             </span>
           </div>
@@ -313,8 +240,8 @@ export default function TerminalLogs({
         {isStreaming && (
           <div className="flex gap-4 px-2 py-1 items-center">
             <span className="text-[12px] text-[#3f3f46] min-w-[32px] text-right">{logs.length + 1}</span>
-            <span className="text-[12px] text-[#71717a] min-w-[70px]">--:--:--</span>
-            <span className="text-[12px] min-w-[32px] text-[#3b82f6]">...</span>
+            <span className="text-[12px] text-[#52525b] min-w-[70px] font-bold">--:--:--</span>
+            <span className="text-[12px] min-w-[32px] text-[#3b82f6] font-bold">...</span>
             <span className="inline-block w-2 h-3.5 bg-[#3b82f6] animate-pulse rounded-sm"></span>
           </div>
         )}
@@ -323,10 +250,10 @@ export default function TerminalLogs({
       </div>
 
       {/* Footer stats */}
-      <div className="py-2 px-4 bg-[#111113] border-t border-white/[0.06] flex justify-between items-center shrink-0">
-        <span className="text-[12px] text-[#71717a]">{logs.length} lines</span>
-        <button onClick={handleScrollToBottomClick} className="text-[12px] text-[#71717a] hover:text-white flex items-center gap-1.5 transition-colors">
-          <ArrowDown size={12} /> Scroll to bottom
+      <div className="py-2 px-4 bg-[#1e1e20] border-t border-white/[0.06] flex justify-between items-center shrink-0">
+        <span className="text-[12px] text-[#52525b] font-black uppercase tracking-widest">{logs.length} output lines</span>
+        <button onClick={scrollToBottom} className="text-[12px] text-[#52525b] hover:text-white flex items-center gap-1.5 transition-colors font-black uppercase tracking-widest">
+          <ArrowDown size={12} /> Auto-scroll
         </button>
       </div>
     </div>

@@ -4,10 +4,11 @@ const LocalStrategy = require('passport-local').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
-const {
-    githubCallbackUrl,
-    googleCallbackUrl
-} = require('./runtime');
+
+console.log('--- Passport Strategy Config ---');
+console.log('GitHub Callback:', `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/github/callback`);
+console.log('Google Callback:', `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/google/callback`);
+console.log('-------------------------------');
 
 // User ki ID ko session mein pack karna
 passport.serializeUser((user, done) => {
@@ -32,9 +33,8 @@ passport.use(
     async (email, password, done) => {
       try{
         try {
-            const normalizedEmail = String(email || '').trim().toLowerCase();
             // Email se user dhundo
-            const user = await User.findOne({ email: normalizedEmail });
+            const user = await User.findOne({ email });
             if (!user) {
                 return done(null, false, { message: 'That email is not registered' });
             }
@@ -102,10 +102,10 @@ function resolveGithubAvatar(profile) {
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: githubCallbackUrl
+    callbackURL: `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/github/callback`
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        const email = resolveGithubEmail(profile)?.trim().toLowerCase();
+        const email = resolveGithubEmail(profile);
         if (!email) {
           return done(null, false, {
             message:
@@ -164,35 +164,17 @@ passport.use(new GitHubStrategy({
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: googleCallbackUrl
+    callbackURL: `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/google/callback`
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        const email = profile.emails?.[0]?.value?.trim().toLowerCase();
-        if (!email) {
-            return done(null, false, { message: 'Google did not provide an email address.' });
-        }
-
-        let user = await User.findOne({ googleId: profile.id });
-        if (!user) {
-            user = await User.findOne({ email });
-        }
-
-        if (user) {
-            if (!user.googleId) {
-                user.googleId = profile.id;
-            }
-            if (!user.avatarUrl && profile.photos?.[0]?.value) {
-                user.avatarUrl = profile.photos[0].value;
-            }
-            await user.save();
-            return done(null, user);
-        }
+        let user = await User.findOne({ email: profile.emails[0].value });
+        if (user) return done(null, user);
 
         user = await User.create({
             username: profile.displayName,
-            email,
+            email: profile.emails[0].value,
             googleId: profile.id,
-            avatarUrl: profile.photos?.[0]?.value,
+            avatarUrl: profile.photos[0].value,
             authProvider: 'google'
         });
         return done(null, user);

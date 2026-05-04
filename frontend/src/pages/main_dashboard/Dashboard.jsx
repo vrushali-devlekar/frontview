@@ -1,546 +1,358 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import {
-  Rocket,
-  Folder,
-  Terminal,
-  History,
-  Settings,
-  ArrowUpRight,
-  Shield,
-  Clock,
-  Plus,
-  GitBranch,
-  Globe,
-  Activity,
-  TrendingUp,
-  AlertTriangle,
-  Layers
-} from "lucide-react";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "../../components/layout/Sidebar";
 import Dock from "../../components/layout/Dock";
 import PageWrapper from "../../components/layout/PageWrapper";
 import TopNav from "../../components/layout/TopNav";
 import GlassButton from "../../components/ui/GlassButton";
-import { EmptyState } from "../../components/layout/PageLayout";
-import { getWorkspaceOverview } from "../../api/api";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Rocket, History as HistoryIcon, ArrowUpRight, ArrowDownRight,
+  Clock, Plus, GitBranch, Globe, Activity, TrendingUp,
+  Shield, Check, Box, Cpu, HardDrive, BarChart3, Search
+} from "lucide-react";
+import {
+  getProjects,
+  getDashboardStats,
+  deleteProject
+} from "../../api/api";
+import { useAuth } from "../../context/AuthContext";
+import { getFrameworkIcon } from "../../utils/frameworkIcons";
 
+/* ── Status dot ── */
 const StatusDot = ({ status }) => {
-  const colors = {
-    RUNNING: "bg-[#22c55e]",
-    FAILED: "bg-[#ef4444]",
-    BUILDING: "bg-[#eab308]",
-    INACTIVE: "bg-[#52525b]",
-  };
+  const colors = { RUNNING: "bg-[#22c55e]", FAILED: "bg-[#ef4444]", BUILDING: "bg-[#eab308]" };
   return <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${colors[status] || "bg-[#52525b]"}`} />;
 };
 
-const StatusBadge = ({ status }) => {
-  const map = {
-    RUNNING: { cls: "bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/20", label: "Running" },
-    FAILED: { cls: "bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/20", label: "Failed" },
-    BUILDING: { cls: "bg-[#eab308]/10 text-[#eab308] border-[#eab308]/20", label: "Building" },
-    INACTIVE: { cls: "bg-white/[0.05] text-[#71717a] border-white/10", label: "Inactive" },
-  };
-  const cfg = map[status] || { cls: "bg-white/[0.05] text-[#71717a] border-white/10", label: status };
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${cfg.cls}`}
-    >
-      <StatusDot status={status} />
-      {cfg.label}
-    </span>
-  );
-};
-
-const Spark = ({ data, color = "#22c55e" }) => {
-  if (!data || data.length < 2) return null;
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const W = 56;
-  const H = 24;
-  const pts = data
-    .map((v, i) => `${(i / (data.length - 1)) * W},${H - ((v - min) / range) * H}`)
-    .join(" ");
-
-  return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none">
-      <polyline
-        points={pts}
-        stroke={color}
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  );
-};
-
-const BentoCard = ({ children, className = "", onClick, hover = true }) => (
-  <div
-    onClick={onClick}
-    className={`
-      bg-[#111113] border border-white/[0.07] rounded-2xl overflow-hidden
-      ${hover ? "hover:border-white/[0.13] hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] cursor-pointer" : ""}
-      transition-all duration-200
-      ${className}
-    `}
-  >
-    {children}
+/* ── Stat card ── */
+const StatCard = ({ label, value, Icon, color }) => (
+  <div className="bg-[#1e1e20] border border-white/[0.04] p-4 rounded-[20px] flex flex-col gap-3 shadow-elevation-1 hover:border-white/[0.08] transition-all">
+    <div className="flex items-center justify-between">
+      <div className={`w-8 h-8 rounded-[12px] flex items-center justify-center bg-[#0d0d0f] border border-white/[0.05] shadow-2xl ${color}`}>
+        <Icon size={15} />
+      </div>
+      <ArrowUpRight size={11} className="text-[#3f3f46]" />
+    </div>
+    <div>
+      <p className="text-[18px] font-black text-[#e4e4e7] tracking-tighter leading-none">{value}</p>
+      <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.2em] mt-1.5">{label}</p>
+    </div>
   </div>
 );
 
-const StatCard = ({ label, value, delta, Icon, iconColor, sparkData, sparkColor }) => (
-  <BentoCard hover={false} className="p-5 md:p-7 flex flex-col justify-between gap-6">
-    <div className="flex items-start justify-between gap-3">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconColor}`}>
-        <Icon size={18} strokeWidth={1.75} />
-      </div>
-      <Spark data={sparkData} color={sparkColor} />
+/* ── Uptime bar ── */
+const UptimeBar = ({ activityData = [] }) => {
+  // Use activityData from props, or fallback to zeros if empty
+  const data = activityData.length > 0 ? activityData : new Array(30).fill(0);
+  const max = Math.max(...data, 1); // Avoid division by zero
+  
+  return (
+    <div className="flex items-end gap-[2px] h-12 w-full">
+      {data.map((val, i) => (
+        <div
+          key={i}
+          style={{ height: `${(val / max) * 100}%` }}
+          className={`flex-1 rounded-[2px] transition-colors ${val === 0 ? "bg-white/[0.05]" : "bg-[#22c55e]/40 hover:bg-[#22c55e]/70"}`}
+          title={`${val} Deployments`}
+        />
+      ))}
     </div>
-    <div>
-      <p className="text-[26px] md:text-[30px] font-bold text-white tracking-tight leading-none">{value}</p>
-      <div className="flex items-center justify-between gap-3 mt-3">
-        <p className="text-[12px] text-[#71717a] font-medium">{label}</p>
-        <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#22c55e]">
-          <ArrowUpRight size={12} />
-          {delta}
-        </span>
-      </div>
-    </div>
-  </BentoCard>
-);
+  );
+};
 
 export default function Dashboard() {
   const { isCollapsed, toggleSidebar, navMode, toggleNavMode } = useSidebar();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [overview, setOverview] = useState({
-    stats: {
-      totalProjects: "0",
-      totalDeployments: "0",
-      successRate: "0%",
-      avgBuildTime: "0s",
-      failedDeployments: "0",
-      runningDeployments: "0",
-      deltas: {
-        totalProjects: "0",
-        totalDeployments: "0",
-        successRate: "0/0",
-        avgBuildTime: "0 samples",
-      },
-      activityBars: [],
-    },
-    recentDeployments: [],
-    projects: [],
-    environmentPreview: [],
+  const [stats, setStats] = useState({ 
+    totalProjects: 0, 
+    totalDeployments: 0, 
+    successRate: "0%", 
+    avgBuildTime: "42s",
+    activityBars: [] 
   });
+  const [chartPeriod, setChartPeriod] = useState('Monthly');
+  const [recentDeployments, setRecentDeployments] = useState([]);
 
   useEffect(() => {
-    let ignore = false;
-
-    const loadOverview = async () => {
-      setLoading(true);
-      try {
-        const { data } = await getWorkspaceOverview();
-        if (!ignore && data?.data) {
-          setOverview(data.data);
-        }
-      } catch {
-        if (!ignore) {
-          setOverview((prev) => ({ ...prev, recentDeployments: [], projects: [], environmentPreview: [] }));
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
-    void loadOverview();
-    return () => {
-      ignore = true;
-    };
+    fetchData();
   }, []);
 
-  // Calculate dynamic deltas based on previous data
-  const calculateDelta = (current, previous) => {
-    const diff = current - previous;
-    return diff >= 0 ? `+${diff}` : `${diff}`;
+  const fetchData = async () => {
+    try {
+      const [projRes, statsRes] = await Promise.all([getProjects(), getDashboardStats()]);
+      const projs = projRes.data.data || [];
+      setProjects(projs);
+      if (statsRes.data.stats) setStats(statsRes.data.stats);
+
+      // Build recent deployments list from projects
+      const deps = projs
+        .filter(p => p.latestDeployment)
+        .map(p => ({ project: p, dep: p.latestDeployment }))
+        .sort((a, b) => new Date(b.dep.createdAt) - new Date(a.dep.createdAt))
+        .slice(0, 5);
+      setRecentDeployments(deps);
+    } catch (err) {
+      console.error("Dashboard error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const stats = [
-    {
-      label: "Total Projects",
-      value: overview.stats.totalProjects,
-      delta: overview.stats.deltas.totalProjects,
-      Icon: Folder,
-      iconColor: "bg-[#22c55e]/10 text-[#22c55e]",
-      sparkData: [...(overview.stats.activityBars || []).slice(-7), Number(overview.stats.totalProjects) || 0],
-      sparkColor: "#22c55e",
-    },
-    {
-      label: "Deployments",
-      value: overview.stats.totalDeployments,
-      delta: overview.stats.deltas.totalDeployments,
-      Icon: Rocket,
-      iconColor: "bg-[#3b82f6]/10 text-[#3b82f6]",
-      sparkData: overview.stats.activityBars || [0, 0],
-      sparkColor: "#3b82f6",
-    },
-    {
-      label: "Success Rate",
-      value: overview.stats.successRate,
-      delta: overview.stats.deltas.successRate,
-      Icon: Shield,
-      iconColor: "bg-[#a855f7]/10 text-[#a855f7]",
-      sparkData: [
-        Number(overview.stats.successRate.replace("%", "")) || 0,
-        Number(overview.stats.successRate.replace("%", "")) || 0,
-      ],
-      sparkColor: "#a855f7",
-    },
-    {
-      label: "Avg Build",
-      value: overview.stats.avgBuildTime,
-      delta: overview.stats.deltas.avgBuildTime,
-      Icon: Clock,
-      iconColor: "bg-[#eab308]/10 text-[#eab308]",
-      sparkData: overview.stats.activityBars || [0, 0],
-      sparkColor: "#eab308",
-    },
-  ];
-
   return (
-    <div className="flex h-screen overflow-hidden bg-black text-white font-sans">
-      <Sidebar
-        isCollapsed={isCollapsed}
-        toggleSidebar={toggleSidebar}
-        navMode={navMode}
-        toggleNavMode={toggleNavMode}
-      />
+    <div className="flex h-screen overflow-hidden bg-[var(--bg-main)] text-white font-sans">
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
+
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
 
-        <div
-          className="flex-1 overflow-y-auto"
-          style={{ scrollbarWidth: "none" }}
-        >
-          <div className="p-8 max-w-[1400px] mx-auto">
-            {/* ══ PAGE HEADER ══ */}
-            <div className="flex items-start justify-between mb-8 pb-6 border-b border-white/[0.06]">
+        <div className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="p-5 lg:p-8 max-w-[1400px] mx-auto">
+            
+            {/* Header Area */}
+            <div className="flex items-center justify-between mb-6 pb-5 border-b border-white/[0.04]">
               <div>
-                <h1 className="text-[22px] font-bold text-white tracking-tight leading-tight">
-                  Overview
-                </h1>
-                <p className="text-[13px] text-[#52525b] mt-1.5">
-                  Good morning — here's what's happening.
-                </p>
+                <h1 className="text-[20px] font-black tracking-tighter text-[#e4e4e7] mb-1 uppercase leading-none">Welcome, {user?.name || 'Operator'}</h1>
+                <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.4em] mt-1">Central Command & Infrastructure Control</p>
               </div>
-              <div className="flex items-center gap-3">
-                <GlassButton
-                  variant="secondary"
-                  onClick={() => navigate("/projects/new")}
-                >
-                  <Plus size={14} /> New Project
-                </GlassButton>
-                <GlassButton
-                  variant="primary"
-                  onClick={() => navigate("/deploy")}
-                >
-                  <Rocket size={14} /> Deploy
+              <div className="flex items-center gap-4">
+                <div className="relative group">
+                  <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#3f3f46] group-focus-within:text-white transition-colors" />
+                  <input 
+                    type="text" 
+                    placeholder="SCAN REGISTRY..."
+                    className="h-9 pl-10 pr-5 bg-[#161618] border border-white/[0.04] rounded-xl text-[9px] font-black uppercase tracking-[0.2em] w-56 focus:outline-none focus:border-white/10 transition-all shadow-elevation-1 placeholder:text-[#2d2d33]"
+                  />
+                </div>
+                <GlassButton variant="primary" onClick={() => navigate("/projects/new")} className="h-9 px-5 text-[9px] font-black uppercase tracking-[0.2em] shadow-elevation-2">
+                  <Plus size={13} /> INITIALIZE NODE
                 </GlassButton>
               </div>
             </div>
 
-            <div className="grid grid-cols-12 gap-4 md:gap-5">
-              {stats.map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  className="col-span-12 sm:col-span-6 xl:col-span-3"
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: index * 0.07 }}
-                >
-                  <StatCard {...stat} />
-                </motion.div>
-              ))}
+            {/* Top Row: Mini Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <StatCard label="Total Nodes" value={stats.totalProjects} Icon={Box} color="text-white" />
+              <StatCard label="Active Clusters" value={stats.totalDeployments} Icon={Rocket} color="text-white" />
+              <StatCard label="Operational Stability" value={stats.successRate} Icon={Check} color="text-white" />
+              <StatCard label="Sync Latency" value={stats.avgBuildTime} Icon={Clock} color="text-white" />
+            </div>
 
-              <motion.div
-                className="col-span-12 xl:col-span-7"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.28 }}
-              >
-                <BentoCard hover={false} className="h-full flex flex-col">
-                  <div className="flex items-center justify-between px-4 md:px-6 py-5 border-b border-white/[0.06]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
-                        <Activity size={13} className="text-[#52525b]" />
-                      </div>
-                      <p className="text-[14px] font-semibold text-white">
-                        Recent Deployments
-                      </p>
+            {/* Middle Section: Projects & Analytics */}
+            <div className="grid grid-cols-12 gap-6">
+              
+              {/* Left: Projects List */}
+              <div className="col-span-12 lg:col-span-8 space-y-5">
+                <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden shadow-elevation-2">
+                    <div className="px-8 py-6 border-b border-white/[0.04] flex items-center justify-between bg-[#161618]">
+                        <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Authority Node Registry</h2>
+                        <button onClick={() => navigate("/projects")} className="text-[9px] font-black text-[#a1a1aa] hover:text-white transition-colors uppercase tracking-[0.2em] border-b border-white/5 pb-0.5">FULL_REGISTRY_SYNC</button>
                     </div>
-                    <button
-                      onClick={() => navigate("/deploy")}
-                      className="text-[12px] text-[#52525b] hover:text-white transition-colors font-medium"
-                    >
-                      View all →
-                    </button>
-                  </div>
-
-                  <div className="flex flex-col divide-y divide-white/[0.04] flex-1">
-                    {loading ? (
-                      <div className="px-6 py-8 text-[13px] text-[#71717a]">Loading recent deployments...</div>
-                    ) : overview.recentDeployments.length === 0 ? (
-                      <div className="px-6 py-8 text-[13px] text-[#71717a]">No deployments yet.</div>
-                    ) : (
-                      overview.recentDeployments.map((deployment) => (
-                        <div
-                          key={deployment.id}
-                          onClick={() => navigate(`/deploy?projectId=${deployment.projectId}`)}
-                          className="flex flex-col md:flex-row md:items-center gap-3 md:gap-5 px-4 md:px-6 py-4 hover:bg-white/[0.025] cursor-pointer transition-colors group"
-                        >
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <StatusDot status={deployment.status} />
-                            <div className="min-w-0">
-                              <p className="text-[13px] font-semibold text-white truncate group-hover:text-[#e4e4e7] transition-colors">
-                                {deployment.name}
-                              </p>
-                              <div className="flex items-center gap-1.5 mt-1.5">
-                                <GitBranch size={10} className="text-[#3f3f46] shrink-0" />
-                                <span className="text-[11px] text-[#3f3f46] font-mono truncate">
-                                  {deployment.branch} • {deployment.duration}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between md:justify-end gap-3">
-                            <StatusBadge status={deployment.status} />
-                            <span className="text-[11px] text-[#3f3f46] shrink-0">
-                              {new Date(deployment.time).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </BentoCard>
-              </motion.div>
-
-              <div className="col-span-12 xl:col-span-5 flex flex-col gap-4 md:gap-5">
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: 0.32 }}
-                >
-                  <BentoCard hover={false} className="px-5 md:px-6 py-6">
-                    <div className="flex items-center justify-between mb-5">
-                      <p className="text-[14px] font-semibold text-white">Deployment Activity</p>
-                      <div className="flex items-center gap-2">
-                        <TrendingUp size={13} className="text-[#22c55e]" />
-                        <span className="text-[13px] font-bold text-[#22c55e]">
-                          {overview.stats.runningDeployments} live
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-end gap-[2px] h-10 w-full">
-                      {(overview.stats.activityBars || []).map((value, idx) => {
-                        const max = Math.max(...(overview.stats.activityBars || [1]), 1);
-                        return (
-                          <div
-                            key={idx}
-                            style={{ height: `${Math.max(10, (value / max) * 100)}%` }}
-                            className="flex-1 rounded-[2px] bg-[#22c55e]/40 hover:bg-[#22c55e]/70 transition-colors"
-                          />
-                        );
-                      })}
-                    </div>
-                    <div className="flex justify-between text-[10.5px] text-[#2d2d33] mt-3 font-mono select-none">
-                      <span>30 days ago</span>
-                      <span>Today</span>
-                    </div>
-                  </BentoCard>
-                </motion.div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 flex-1">
-                  <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: 0.36 }}
-                    className="h-full"
-                  >
-                    <BentoCard
-                      hover={false}
-                      className="px-5 py-5 h-full flex flex-col"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <p className="text-[13px] font-semibold text-white">Failures</p>
-                        <AlertTriangle size={13} className="text-[#ef4444]" />
-                      </div>
-                      <p className="text-[28px] font-bold text-white">{overview.stats.failedDeployments}</p>
-                      <p className="text-[11px] text-[#3f3f46] font-medium mt-auto">
-                        Failed deployments in your workspace
-                      </p>
-                    </BentoCard>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: 0.4 }}
-                    className="h-full"
-                  >
-                    <BentoCard hover={false} className="h-full flex flex-col">
-                      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.05]">
-                        <p className="text-[13px] font-semibold text-white">Secrets</p>
-                        <button
-                          onClick={() => navigate("/environments")}
-                          className="text-[11px] text-[#52525b] hover:text-white transition-colors font-medium"
-                        >
-                          Edit →
-                        </button>
-                      </div>
-                      <div className="flex flex-col divide-y divide-white/[0.04] flex-1">
-                        {overview.environmentPreview.length === 0 ? (
-                          <div className="px-5 py-5 text-[12px] text-[#71717a]">No environment variables saved yet.</div>
+                    <div className="divide-y divide-white/[0.02] bg-[#0d0d0f]/20">
+                        {loading ? (
+                            [1,2,3].map(i => <div key={i} className="h-28 bg-white/[0.01] animate-pulse m-6 rounded-2xl" />)
+                        ) : projects.length === 0 ? (
+                            <div className="p-24 text-center text-[#3f3f46] text-[12px] font-black uppercase tracking-[0.3em]">No active nodes detected.</div>
                         ) : (
-                          overview.environmentPreview.map((env) => (
-                            <div key={`${env.projectId}-${env.key}`} className="flex items-center justify-between px-5 py-3.5 gap-3">
-                              <div className="min-w-0">
-                                <span className="text-[11px] font-mono text-[#3b82f6] truncate block">{env.key}</span>
-                                <span className="text-[10px] text-[#3f3f46] truncate block">{env.projectName}</span>
-                              </div>
-                              <span className="text-[11px] font-mono text-[#2d2d33] shrink-0">{env.masked}</span>
-                            </div>
-                          ))
+                            projects.slice(0, 5).map((p) => {
+                                const lastDeploy = p.latestDeployment;
+                                return (
+                                    <div 
+                                        key={p._id} 
+                                        onClick={() => navigate(`/deploy?projectId=${p._id}`)}
+                                        className="px-8 py-6 flex items-center justify-between hover:bg-white/[0.01] cursor-pointer transition-all group"
+                                    >
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-12 h-12 rounded-[18px] bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center relative shadow-elevation-1 transition-transform group-hover:scale-105">
+                                                {(() => {
+                                                    const { Icon: FrameworkIcon } = getFrameworkIcon(p.framework || 'other');
+                                                    return <FrameworkIcon size={24} className="text-[#3f3f46] group-hover:text-white transition-colors" />;
+                                                })()}
+                                                <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-[2.5px] border-[#1e1e20] shadow-elevation-1 ${lastDeploy?.status === 'running' ? 'bg-[#22c55e]' : 'bg-[#1e1e20] border-white/5'} `} />
+                                            </div>
+                                            <div>
+                                                <p className="text-[15px] font-black text-[#e4e4e7] mb-1.5 uppercase tracking-tighter group-hover:text-[#22c55e] transition-colors">{p.name}</p>
+                                                <div className="flex items-center gap-4">
+                                                    <span className="flex items-center gap-2 text-[10px] text-[#52525b] font-black uppercase tracking-widest"><GitBranch size={12} /> {p.branch || 'main'}</span>
+                                                    <div className="w-1 h-1 rounded-full bg-[#1e1e20] border border-white/5" />
+                                                    <span className="text-[10px] text-[#52525b] font-black uppercase tracking-widest">{p.framework}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-8">
+                                            <div className="text-right hidden sm:block">
+                                                <p className="text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.2em] mb-1.5">Cluster Status: {lastDeploy?.status === 'running' ? 'NOMINAL' : 'IDLE'}</p>
+                                                <p className={`text-[11px] font-black uppercase tracking-widest ${lastDeploy?.status === 'running' ? 'text-[#22c55e]' : 'text-[#3f3f46]'}`}>{lastDeploy?.status === 'running' ? '99.99% Stability' : 'Offline'}</p>
+                                            </div>
+                                            <div className="w-12 h-12 rounded-[18px] bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#3f3f46] group-hover:text-white group-hover:bg-[#1e1e20] transition-all shadow-elevation-1">
+                                                <ArrowUpRight size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
                         )}
+                    </div>
+                </div>
+
+                {/* Operational Telemetry Chart — generated from real activityBars */}
+                <div className="bg-[#1e1e20] border border-white/[0.04] p-5 rounded-[24px] shadow-elevation-1">
+                    <div className="flex items-center justify-between mb-5">
+                        <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Operational Telemetry</h2>
+                        <div className="flex bg-[#0d0d0f] p-1 rounded-xl gap-1 border border-white/5">
+                            {['Daily', 'Weekly', 'Monthly'].map(t => (
+                                <button
+                                  key={t}
+                                  onClick={() => setChartPeriod(t)}
+                                  className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] transition-all ${
+                                    t === chartPeriod ? 'bg-[#1e1e20] text-white shadow-elevation-1 border border-white/5' : 'text-[#3f3f46] hover:text-[#52525b]'
+                                  }`}
+                                >{t}</button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="h-48 relative">
+                      {(() => {
+                        // Slice activityBars based on period
+                        const bars = stats.activityBars || [];
+                        const slice = chartPeriod === 'Daily' ? bars.slice(-7)
+                          : chartPeriod === 'Weekly' ? bars.slice(-14)
+                          : bars;
+                        const data = slice.length > 0 ? slice : new Array(30).fill(0);
+                        const max = Math.max(...data, 1);
+                        const w = 800;
+                        const h = 160;
+                        const pts = data.map((v, i) => {
+                          const x = (i / (data.length - 1)) * w;
+                          const y = h - (v / max) * (h * 0.85) - 10;
+                          return [x, y];
+                        });
+                        // Build smooth bezier path
+                        let d = `M${pts[0][0]},${pts[0][1]}`;
+                        for (let i = 1; i < pts.length; i++) {
+                          const [x0, y0] = pts[i - 1];
+                          const [x1, y1] = pts[i];
+                          const cx = (x0 + x1) / 2;
+                          d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`;
+                        }
+                        const fill = `${d} L${pts[pts.length-1][0]},${h} L0,${h} Z`;
+                        const labels = chartPeriod === 'Daily'
+                          ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+                          : chartPeriod === 'Weekly'
+                          ? ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14']
+                          : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        return (
+                          <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#22c55e" stopOpacity="0.12" />
+                                <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            <path d={d} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.6" className="drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]" />
+                            <path d={fill} fill="url(#chartGrad)" />
+                            {pts.map(([x, y], i) => (
+                              <circle key={i} cx={x} cy={y} r="3" fill="#22c55e" opacity="0.5" />
+                            ))}
+                          </svg>
+                        );
+                      })()}
+                      <div className="absolute bottom-0 inset-x-0 flex justify-between text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.2em]">
+                        {(chartPeriod === 'Daily'
+                          ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+                          : chartPeriod === 'Weekly'
+                          ? ['W1','','W3','','W5','','W7','','W9','','W11','','W13','']
+                          : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+                        ).map(m => <span key={m}>{m}</span>)}
                       </div>
-                    </BentoCard>
-                  </motion.div>
+                    </div>
                 </div>
               </div>
 
-              <div className="col-span-12 mt-2">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-                  <div className="flex items-center gap-3">
-                    <p className="text-[16px] font-bold text-white">Projects</p>
-                    {!loading && (
-                      <span className="px-2.5 py-0.5 rounded-lg bg-white/[0.06] border border-white/[0.08] text-[11px] font-semibold text-[#71717a]">
-                        {overview.projects.length}
-                      </span>
-                    )}
-                  </div>
-                  <GlassButton
-                    variant="secondary"
-                    onClick={() => navigate("/applications")}
-                  >
-                    View all
-                  </GlassButton>
+              {/* Right Sidebar: Messages & Uptime */}
+              <div className="col-span-12 lg:col-span-4 space-y-4">
+                {/* Consultation Card */}
+                <div className="bg-[#1e1e20] border border-white/[0.04] p-5 rounded-[24px] shadow-elevation-1">
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-[8px] font-black text-[#52525b] uppercase tracking-[0.3em]">Authority Identity</p>
+                        <button onClick={() => navigate('/account')} className="text-[8px] font-black text-[#a1a1aa] hover:text-white transition-colors uppercase tracking-widest">Profile</button>
+                    </div>
+                    <div className="bg-[#0d0d0f] rounded-xl p-4 flex items-center gap-4 border border-white/[0.04] shadow-elevation-1">
+                        <img src={`https://ui-avatars.com/api/?name=${user?.name || 'Velora'}&background=1e1e20&color=fff`} className="w-9 h-9 rounded-xl border border-white/5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[12px] font-black text-[#e4e4e7] uppercase tracking-tighter leading-tight truncate">{user?.name || 'Operator'}</p>
+                            <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.2em] mt-1">Authority Node</p>
+                        </div>
+                        <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-white/40 shrink-0"><Activity size={14} /></div>
+                    </div>
                 </div>
 
-                {loading && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-10">
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="h-44 bg-[#111113] border border-white/[0.06] rounded-2xl animate-pulse"
-                      />
-                    ))}
-                  </div>
-                )}
+                {/* Uptime Monitoring */}
+                <div className="bg-[#1e1e20] border border-white/[0.04] p-5 rounded-[24px] shadow-elevation-1">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-[8px] font-black text-[#52525b] uppercase tracking-[0.3em]">Real-time Pulse</h3>
+                        <span className="text-[8px] font-black text-[#22c55e] uppercase tracking-widest">{stats.successRate} Nominal</span>
+                    </div>
+                    <div className="py-2">
+                        <UptimeBar activityData={stats.activityBars} />
+                    </div>
+                    <div className="flex justify-between mt-4">
+                        <span className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.25em]">30d SEQUENCE</span>
+                        <span className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.25em]">LIVE_TELEMETRY</span>
+                    </div>
+                </div>
 
-                {!loading && overview.projects.length === 0 && (
-                  <BentoCard hover={false} className="mb-10">
-                    <EmptyState
-                      icon={Rocket}
-                      title="No projects yet"
-                      subtitle="Deploy your first application to unlock dashboard activity."
-                    >
-                      <GlassButton variant="primary" onClick={() => navigate("/projects/new")}>
-                        <Plus size={14} /> Create project
-                      </GlassButton>
-                    </EmptyState>
-                  </BentoCard>
-                )}
-
-                {!loading && overview.projects.length > 0 && (
-                  <motion.div
-                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-10"
-                    initial="hidden"
-                    animate="show"
-                    variants={{
-                      hidden: { opacity: 0 },
-                      show: {
-                        opacity: 1,
-                        transition: { staggerChildren: 0.06 },
-                      },
-                    }}
-                  >
-                    {overview.projects.map((project) => (
-                      <motion.div
-                        key={project.id}
-                        variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
-                      >
-                        <BentoCard className="group flex flex-col" onClick={() => navigate(`/deploy?projectId=${project.id}`)}>
-                          <div className="px-5 md:px-6 py-6 flex-1">
-                            <div className="flex items-start justify-between gap-3 mb-5">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-9 h-9 rounded-xl bg-[#18181b] border border-white/[0.08] flex items-center justify-center text-[#22c55e] shrink-0">
-                                  <Globe size={15} />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-[13.5px] font-semibold text-white truncate group-hover:text-[#22c55e] transition-colors">
-                                    {project.name}
-                                  </p>
-                                  <div className="flex items-center gap-1.5 mt-1">
-                                    <GitBranch size={10} className="text-[#3f3f46] shrink-0" />
-                                    <span className="text-[11px] text-[#3f3f46] font-mono">{project.branch}</span>
-                                  </div>
-                                </div>
+                {/* Recent Deployments Log — real data */}
+                <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden shadow-elevation-1">
+                    <div className="px-8 py-6 border-b border-white/[0.04] bg-[#161618] flex items-center justify-between">
+                        <h3 className="text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">Operational Logs</h3>
+                        <button onClick={() => navigate('/deploy')} className="text-[9px] font-black text-[#a1a1aa] hover:text-white transition-colors uppercase tracking-widest">View All</button>
+                    </div>
+                    <div className="p-3 space-y-2 bg-[#0d0d0f]/20">
+                        {loading ? (
+                          [1,2,3].map(i => <div key={i} className="h-16 bg-white/[0.01] animate-pulse m-2 rounded-[18px]" />)
+                        ) : recentDeployments.length === 0 ? (
+                          <div className="px-5 py-8 text-center text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.3em]">No recent activity</div>
+                        ) : recentDeployments.map(({ project: p, dep }, i) => {
+                          const statusColor = dep.status === 'running' ? 'text-[#22c55e]' : dep.status === 'failed' ? 'text-[#ef4444]' : dep.status === 'building' ? 'text-[#eab308]' : 'text-[#3f3f46]';
+                          const timeAgo = dep.createdAt ? (() => {
+                            const diff = Date.now() - new Date(dep.createdAt);
+                            const m = Math.floor(diff / 60000);
+                            const h = Math.floor(m / 60);
+                            const d = Math.floor(h / 24);
+                            return d > 0 ? `${d}d` : h > 0 ? `${h}h` : `${m}m`;
+                          })() : '?';
+                          const tag = (p.name || 'NODE').slice(0, 4).toUpperCase();
+                          return (
+                            <div
+                              key={i}
+                              onClick={() => navigate(`/deployment-progress/${dep._id}`)}
+                              className="px-5 py-4 flex items-center gap-4 hover:bg-white/[0.01] rounded-[20px] transition-all group cursor-pointer"
+                            >
+                              <div className="w-10 h-10 rounded-[14px] bg-[#0d0d0f] flex items-center justify-center text-[#3f3f46] group-hover:text-white font-black text-[8px] border border-white/[0.04] uppercase tracking-widest transition-colors shadow-elevation-1 shrink-0">{tag}</div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-black text-[#e4e4e7] uppercase tracking-tighter leading-tight truncate">{p.name}</p>
+                                <p className={`text-[8px] font-black uppercase tracking-widest truncate mt-1 ${statusColor}`}>{dep.status?.toUpperCase() || 'UNKNOWN'}</p>
                               </div>
-                              <StatusBadge status={project.status} />
+                              <span className="text-[8px] text-[#3f3f46] font-black uppercase tracking-widest whitespace-nowrap">{timeAgo} AGO</span>
                             </div>
-
-                            <div className="flex items-center gap-2 text-[12px] text-[#71717a]">
-                              <Layers size={12} />
-                              <span>{project.variables} environment variables</span>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-4 border-t border-white/[0.05]">
-                            {[
-                              { icon: Terminal, label: "Logs", fn: () => navigate(`/deploy?projectId=${project.id}`) },
-                              { icon: History, label: "Deploys", fn: () => navigate(`/deploy?projectId=${project.id}`) },
-                              { icon: Settings, label: "Config", fn: () => navigate(`/settings?projectId=${project.id}`) },
-                              { icon: Globe, label: "Env", fn: () => navigate(`/settings?projectId=${project.id}`) },
-                            ].map(({ icon: Icon, label, fn }) => (
-                              <button
-                                key={label}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  fn();
-                                }}
-                                className="flex flex-col items-center justify-center gap-1.5 py-4 text-[#3f3f46] hover:text-white hover:bg-white/[0.04] transition-colors border-r border-white/[0.05] last:border-r-0"
-                              >
-                                <Icon size={13} strokeWidth={1.75} />
-                                <span className="text-[9.5px] font-semibold uppercase tracking-[0.06em]">
-                                  {label}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </BentoCard>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
+                          );
+                        })}
+                    </div>
+                    <div className="p-5 bg-[#0d0d0f]">
+                        <button
+                          onClick={() => navigate('/logs')}
+                          className="w-full h-10 bg-[#1e1e20] border border-white/[0.04] rounded-xl text-[9px] font-black uppercase tracking-[0.25em] text-[#3f3f46] hover:text-white hover:border-white/[0.08] transition-all flex items-center justify-center gap-3"
+                        >
+                          <Activity size={12} /> VIEW_LIVE_LOGS
+                        </button>
+                    </div>
+                </div>
               </div>
             </div>
           </div>

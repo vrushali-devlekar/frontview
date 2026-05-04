@@ -10,8 +10,12 @@ const projectSchema = new mongoose.Schema({
     },
     repoUrl: {
         type: String,
-        required: [true, 'Repository URL is required'],
-        match: [/^https?:\/\/(www\.)?github\.com\/.+\/.+\.git$/, 'Please provide a valid GitHub repository URL ending with .git']
+        default: null
+    },
+    deploymentSource: {
+        type: String,
+        enum: ['github', 'upload'],
+        default: 'github'
     },
     repoName: {
         type: String,
@@ -41,6 +45,11 @@ const projectSchema = new mongoose.Schema({
     },
     installCommand: { type: String, default: 'npm install' },
     startCommand: { type: String, default: 'npm start' },
+    framework: { 
+        type: String, 
+        default: 'other',
+        enum: ['react', 'nextjs', 'vite', 'nodejs', 'vanilla', 'other']
+    },
     envVars: [{
         key: { type: String, required: true },
         encryptedValue: { type: String, required: true },
@@ -52,8 +61,15 @@ const projectSchema = new mongoose.Schema({
 
 // Indexes - Search ko fast banane ke liye
 projectSchema.index({ owner: 1, isDeleted: 1 });
-// Ek user ek hi repo ko do baar add na kar paye
-projectSchema.index({ repoUrl: 1, owner: 1 }, { unique: true });
+// Ek user ek hi repo ko do baar add na kar paye (Sirf GitHub projects ke liye)
+projectSchema.index(
+    { repoUrl: 1, owner: 1 }, 
+    { 
+        unique: true, 
+        partialFilterExpression: { repoUrl: { $type: "string" } } 
+    }
+);
+projectSchema.index({ status: 1, owner: 1 });
 
 const Project = mongoose.model('Project', projectSchema);
 module.exports = Project;

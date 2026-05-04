@@ -2,19 +2,19 @@ import React from "react";
 
 export const PageShell = ({ children }) => (
   <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-    <div className="px-4 py-5 md:px-6 md:py-6 lg:px-8 max-w-[1280px] mx-auto pb-24 md:pb-20">
+    <div className="p-8 max-w-[1280px] mx-auto pb-20">
       {children}
     </div>
   </div>
 );
 
 export const PageHeader = ({ title, subtitle, children }) => (
-  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-8 pb-5 border-b border-white/[0.04]">
-    <div className="min-w-0">
-      <h1 className="text-[22px] md:text-[28px] font-semibold tracking-tight text-white leading-tight">{title}</h1>
-      {subtitle && <p className="text-[13px] md:text-[14px] text-[#8a8f98] mt-1.5 max-w-2xl">{subtitle}</p>}
+  <div className="flex items-start justify-between mb-8 pb-5 border-b border-white/[0.04]">
+    <div>
+      <h1 className="text-[22px] font-black tracking-tighter text-[#e4e4e7] leading-tight uppercase">{title}</h1>
+      {subtitle && <p className="text-[11px] text-[#52525b] font-black uppercase tracking-[0.2em] mt-1.5">{subtitle}</p>}
     </div>
-    {children && <div className="flex flex-wrap items-center gap-3 md:mt-1">{children}</div>}
+    {children && <div className="flex items-center gap-3 mt-1">{children}</div>}
   </div>
 );
 
@@ -34,21 +34,21 @@ export const Card = ({ children, className = "", noPad = false, onClick }) => (
 );
 
 export const CardHeader = ({ icon: Icon, title, children }) => (
-  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-4 md:px-7 py-4 md:py-5 border-b border-white/[0.03]">
-    <div className="flex items-center gap-3.5 min-w-0">
+  <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.03] bg-[#161618]">
+    <div className="flex items-center gap-3">
       {Icon && (
-        <div className="w-8 h-8 rounded-full bg-white/[0.03] flex items-center justify-center shrink-0">
-          <Icon size={15} className="text-[#a1a1aa]" />
+        <div className="w-7 h-7 rounded-lg bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center shrink-0">
+          <Icon size={14} className="text-[#52525b]" />
         </div>
       )}
-      <p className="text-[14px] font-medium tracking-wide text-[#e4e4e7]">{title}</p>
+      <p className="text-[11px] font-black tracking-[0.1em] text-[#a1a1aa] uppercase">{title}</p>
     </div>
-    {children && <div className="flex flex-wrap items-center gap-2.5">{children}</div>}
+    {children && <div className="flex items-center gap-2.5">{children}</div>}
   </div>
 );
 
 export const CardBody = ({ children, className = "" }) => (
-  <div className={`px-4 md:px-7 py-5 md:py-6 ${className}`}>{children}</div>
+  <div className={`px-6 py-5 ${className}`}>{children}</div>
 );
 
 export const SectionLabel = ({ children }) => (
@@ -59,9 +59,9 @@ export const SectionLabel = ({ children }) => (
 
 export const TableHead = ({ cols }) => (
   <thead>
-    <tr className="border-b border-white/[0.03] bg-white/[0.01]">
+    <tr className="border-b border-white/[0.03] bg-[#161618]">
       {cols.map((c) => (
-        <th key={c} className="px-7 py-4 text-left text-[11.5px] font-medium text-[#8a8f98] uppercase tracking-wider">
+        <th key={c} className="px-6 py-3 text-left text-[10px] font-black text-[#52525b] uppercase tracking-[0.2em]">
           {c}
         </th>
       ))}

@@ -4,25 +4,29 @@ import { Zap } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Callback() {
+  const { refreshUser } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   useEffect(() => {
-    const completeOAuth = async () => {
-      const token = searchParams.get("token");
-      if (token) {
-        const redirectTarget = sessionStorage.getItem("postAuthRedirect") || "/dashboard";
-        sessionStorage.removeItem("postAuthRedirect");
-        await login(null, token);
-        navigate(redirectTarget, { replace: true });
-      } else {
-        navigate("/login?error=auth_failed", { replace: true });
-      }
-    };
-
-    void completeOAuth();
-  }, [searchParams, navigate, login]);
+    const token = searchParams.get("token");
+    if (token) {
+      console.log("Token received, refreshing user...");
+      localStorage.setItem("token", token);
+      refreshUser()
+        .then(() => {
+          console.log("User refreshed successfully, navigating to dashboard");
+          navigate("/dashboard");
+        })
+        .catch((err) => {
+          console.error("Failed to refresh user after OAuth:", err);
+          const msg = err.response?.data?.message || "session_sync_failed";
+          navigate(`/login?error=${encodeURIComponent(msg)}`);
+        });
+    } else {
+      navigate("/login?error=auth_failed");
+    }
+  }, [searchParams, navigate, refreshUser]);
 
   return (
     <div className="h-screen bg-[#09090b] flex flex-col items-center justify-center font-sans">

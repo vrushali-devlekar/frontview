@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Zap } from "lucide-react";
 import api, { githubAuthUrl, googleAuthUrl } from "../../api/api";
+import { useAuth } from "../../context/AuthContext";
 import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
-import { useAuth } from "../../context/AuthContext";
 
 const Register = () => {
   const [searchParams] = useSearchParams();
@@ -31,7 +31,9 @@ const Register = () => {
     try {
       const response = await api.post("/auth/register", { username, email, password });
       if (response.data && response.data.token) {
-        await login(response.data.user || null, response.data.token);
+        const userData = response.data.user;
+        if (userData && userData.username) userData.name = userData.username;
+        login(userData, response.data.token);
         navigate("/dashboard");
       }
     } catch (err) {

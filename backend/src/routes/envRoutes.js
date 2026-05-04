@@ -1,19 +1,13 @@
 // routes/envRoutes.js
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { protect } = require("../middlewares/authMiddleware");
-const {
-  addEnvVar,
-  getEnvVars,
-  deleteEnvVar,
-} = require("../controllers/envController");
+const { protect } = require('../middlewares/authMiddleware');
+const { addEnvVar, getEnvVars, deleteEnvVar } = require('../controllers/envController');
 
-// Dhyan de: Hum isko app.js me '/api/projects' par mount karenge
-// Toh iska actual path ban jayega: /api/projects/:id/env
+router.route('/:id/env')
+    .post(protect, addEnvVar)
+    .get(protect, getEnvVars);
 
-router.get('/:id/env', protect, getEnvVars);  // Saare variables (masked) dekhne ke liye
-router.post('/:id/env', protect, addEnvVar);
-
-router.delete("/:id/env/:key", protect, deleteEnvVar);
+router.delete('/:id/env/:key', protect, deleteEnvVar);
 
 module.exports = router;

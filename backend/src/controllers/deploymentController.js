@@ -49,15 +49,27 @@ exports.listDeploymentsForProject = asyncHandler(async (req, res) => {
         throw new Error('Project not found');
     }
 
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
     const deployments = await Deployment.find({ projectId: project._id })
         .sort({ createdAt: -1 })
-        .limit(100)
-        .select('-logs');
+        .skip(skip)
+        .limit(limit)
+        .select('-logs -buildLogs -runtimeLogs'); // Selection optimization 🚀
+
+    const total = await Deployment.countDocuments({ projectId: project._id });
 
     res.status(200).json({
         success: true,
         count: deployments.length,
-        data: deployments
+        data: deployments,
+        pagination: {
+            currentPage: page,
+            totalPages: Math.ceil(total / limit),
+            totalItems: total
+        }
     });
 });
 

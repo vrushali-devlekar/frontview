@@ -1,35 +1,22 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { X, Cpu, MessageSquare, Expand, Send, BrainCircuit, Loader2 } from "lucide-react";
 import GlassButton from "../ui/GlassButton";
-import { buildApiUrl } from "../../api/api";
-
-function appendChunkToMessage(messageId, chunk, setChatMessages) {
-  setChatMessages((prev) =>
-    prev.map((msg) =>
-      msg.id === messageId ? { ...msg, text: msg.text + chunk } : msg
-    )
-  );
-}
 
 export default function AIModal({ deploymentId, isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [provider, setProvider] = useState("mistral");
+  const [provider, setProvider] = useState("cohere");
 
   const [streamedAnalysis, setStreamedAnalysis] = useState("");
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const analysisRef = useRef(null);
-  const chatRef = useRef(null);
+  const scrollRef = useRef(null);
 
   useEffect(() => {
-    if (analysisRef.current) {
-      analysisRef.current.scrollTop = analysisRef.current.scrollHeight;
-    }
-    if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [streamedAnalysis, chatMessages]);
 
@@ -52,7 +39,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
       }
 
       try {
-        const response = await fetch(buildApiUrl(`/deployments/${deploymentId}/analyze/stream`), {
+        const response = await fetch(`http://localhost:4000/api/deployments/${deploymentId}/analyze/stream`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -87,7 +74,11 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
                 try {
                   const parsed = JSON.parse(dataStr);
                   if (parsed.text && !cancelled) {
-                    setStreamedAnalysis((prev) => prev + parsed.text);
+                    for (let char of parsed.text) {
+                      if (cancelled) break;
+                      setStreamedAnalysis((prev) => prev + char);
+                      await new Promise(r => setTimeout(r, 15));
+                    }
                   }
                 } catch (e) { /* partial chunk */ }
               }
@@ -126,7 +117,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
     setChatMessages((prev) => [...prev, { id: astMsgId, role: "assistant", text: "" }]);
 
     try {
-      const response = await fetch(buildApiUrl(`/deployments/${deploymentId}/analyze/stream`), {
+      const response = await fetch(`http://localhost:4000/api/deployments/${deploymentId}/analyze/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,11 +143,14 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
               try {
                 const parsed = JSON.parse(dataStr);
                 if (parsed.text) {
-                  appendChunkToMessage(astMsgId, parsed.text, setChatMessages);
+                  for (let char of parsed.text) {
+                    setChatMessages((prev) => prev.map(msg =>
+                      msg.id === astMsgId ? { ...msg, text: msg.text + char } : msg
+                    ));
+                    await new Promise(r => setTimeout(r, 10));
+                  }
                 }
-              } catch (e) { /* partial chunk */
-                e.message = "Received malformed response from AI.";
-                throw e;
+              } catch (e) { }
             }
           }
         }
@@ -172,34 +166,22 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
 
-      <div className={`relative w-full bg-[#09090b] border border-white/[0.06] rounded-xl flex flex-col shadow-elevation-2 overflow-hidden transition-all duration-300 ${isChatExpanded ? "max-w-6xl h-[90vh]" : "max-w-3xl max-h-[85vh]"}`}>
+      <div className={`relative w-full bg-[#1e1e20] border border-white/[0.06] rounded-xl flex flex-col max-h-[85vh] shadow-elevation-2 overflow-hidden transition-all duration-300 ${isChatExpanded ? "max-w-4xl" : "max-w-2xl"}`}>
 
         {/* Header - Clean & Professional */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0 bg-[#111113]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0 bg-[#161618]">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-lg bg-white/[0.04] flex items-center justify-center border border-white/[0.06]">
               <BrainCircuit size={20} className="text-[#a1a1aa]" />
             </div>
             <div>
-              <h2 className="text-[15px] font-semibold text-white tracking-tight">
+              <h2 className="text-[15px] font-semibold text-white tracking-tight uppercase">
                 AI Diagnostics
               </h2>
               <p className="text-[12px] text-[#71717a] font-medium mt-0.5">Automated issue resolution</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2 rounded-md border border-white/[0.06] bg-[#09090b] px-2.5 py-1.5">
-              <span className="text-[11px] uppercase tracking-[0.14em] text-[#52525b]">Model</span>
-              <select
-                value={provider}
-                onChange={(e) => setProvider(e.target.value)}
-                className="bg-transparent text-[12px] font-medium text-white outline-none"
-              >
-                <option value="mistral" className="bg-[#09090b]">Mistral</option>
-                <option value="cohere" className="bg-[#09090b]">Cohere</option>
-                <option value="gemini" className="bg-[#09090b]">Gemini</option>
-              </select>
-            </div>
             <button
               type="button"
               disabled={!canChat}
@@ -220,12 +202,12 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
         </div>
 
         {/* Content */}
-        <div className={`flex-1 min-h-0 ${isChatExpanded ? "grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]" : ""}`}>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 font-mono text-[13px]" style={{ scrollbarWidth: 'thin' }}>
           {isLoading ? (
-            <div className={`flex flex-col items-center justify-center gap-4 ${isChatExpanded ? "min-h-0 h-full px-6 py-5 lg:col-span-2" : "h-52 px-6 py-5"}`}>
+            <div className="flex flex-col items-center justify-center h-52 gap-4">
               <Loader2 size={24} className="text-[#a1a1aa] animate-spin" />
               <div className="text-center">
-                <p className="text-[#d4d4d8] font-medium font-sans">
+                <p className="text-[#d4d4d8] font-medium font-sans uppercase tracking-widest">
                   Analyzing deployment logs...
                 </p>
                 <p className="text-[#71717a] text-[12px] font-sans mt-1">
@@ -234,7 +216,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
               </div>
             </div>
           ) : error ? (
-            <div className={`flex flex-col items-center justify-center gap-3 ${isChatExpanded ? "min-h-0 h-full px-6 py-5 lg:col-span-2" : "h-40 px-6 py-5"}`}>
+            <div className="flex flex-col items-center justify-center h-40 gap-3">
               <div className="w-10 h-10 rounded-full bg-[#ef4444]/10 flex items-center justify-center">
                 <X size={18} className="text-[#ef4444]" />
               </div>
@@ -242,11 +224,11 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
               <button onClick={() => setError("")} className="text-[13px] text-[#71717a] hover:text-white underline font-sans">Try again</button>
             </div>
           ) : !isChatExpanded ? (
-            <div className="overflow-y-auto px-6 py-5 font-mono text-[13px]" style={{ scrollbarWidth: 'thin' }}>
-              <div className="bg-[#111113] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1 min-h-[320px]">
+            <div className="space-y-4">
+              <div className="bg-[#161618] border border-white/[0.06] rounded-xl p-5 shadow-elevation-1">
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/[0.06]">
                   <Cpu size={14} className="text-[#3b82f6]" />
-                  <span className="text-[12px] font-medium text-[#3b82f6] tracking-wide font-sans">Analysis Result</span>
+                  <span className="text-[12px] font-black text-[#3b82f6] tracking-widest font-sans uppercase">Analysis Result</span>
                 </div>
                 <div className="text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap">
                   {streamedAnalysis}
@@ -255,63 +237,32 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
               </div>
             </div>
           ) : (
-            <>
-              <div className="min-h-0 border-b border-white/[0.06] lg:border-b-0 lg:border-r border-white/[0.06] bg-[#0c0c0f]">
-                <div className="px-6 py-4 border-b border-white/[0.06]">
-                  <div className="flex items-center gap-2">
-                    <Cpu size={14} className="text-[#3b82f6]" />
-                    <span className="text-[12px] font-medium text-[#3b82f6] tracking-wide font-sans">Analysis Result</span>
+            <div className="flex flex-col gap-4 min-h-0 h-full">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-2" style={{ scrollbarWidth: 'thin' }}>
+                {/* Initial Analysis */}
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] bg-[#161618] border border-white/[0.06] rounded-2xl rounded-tl-sm px-4 py-3 text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap shadow-elevation-1">
+                    {streamedAnalysis}
                   </div>
                 </div>
-                <div
-                  ref={analysisRef}
-                  className="h-full overflow-y-auto px-6 py-5 font-mono text-[13px]"
-                  style={{ scrollbarWidth: 'thin' }}
-                >
-                  <div className="rounded-2xl border border-white/[0.06] bg-[#111113] px-5 py-4 text-[13px] leading-relaxed text-[#d4d4d8] whitespace-pre-wrap shadow-elevation-1 min-h-full">
-                    {streamedAnalysis || "Waiting for analysis output..."}
-                    {isTyping && chatMessages.length === 0 && (
-                      <span className="inline-block w-1.5 h-4 bg-[#a1a1aa] animate-pulse ml-1 align-middle"></span>
-                    )}
+
+                {chatMessages.map((m) => (
+                  <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap shadow-elevation-1 ${m.role === "user"
+                        ? "bg-white text-black font-semibold rounded-tr-sm shadow-xl"
+                        : "bg-[#161618] border border-white/[0.06] text-[#d4d4d8] rounded-tl-sm shadow-lg"
+                      }`}>
+                      {m.text}
+                      {(isTyping && m.id === chatMessages[chatMessages.length - 1].id && m.role === "assistant") && (
+                        <span className="inline-block w-1.5 h-4 bg-[#a1a1aa] animate-pulse ml-1 align-middle"></span>
+                      )}
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
 
-              <div className="min-h-0 flex flex-col bg-[#09090b]">
-                <div className="px-6 py-4 border-b border-white/[0.06]">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare size={14} className="text-[#f4f4f5]" />
-                    <span className="text-[12px] font-medium text-[#f4f4f5] tracking-wide font-sans">Follow-up Chat</span>
-                  </div>
-                </div>
-
-                <div
-                  ref={chatRef}
-                  className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4"
-                  style={{ scrollbarWidth: 'thin' }}
-                >
-                  {chatMessages.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-white/[0.08] bg-[#111113] px-4 py-5 text-[13px] text-[#71717a]">
-                      Ask about failures, missing environment variables, build errors, or what to fix next.
-                    </div>
-                  ) : (
-                    chatMessages.map((m) => (
-                      <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[90%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed whitespace-pre-wrap shadow-elevation-1 ${m.role === "user"
-                            ? "bg-white/[0.06] border border-white/[0.08] text-white rounded-tr-sm"
-                            : "bg-[#111113] border border-white/[0.06] text-[#d4d4d8] rounded-tl-sm"
-                          }`}>
-                          {m.text}
-                          {(isTyping && m.id === chatMessages[chatMessages.length - 1]?.id && m.role === "assistant") && (
-                            <span className="inline-block w-1.5 h-4 bg-[#a1a1aa] animate-pulse ml-1 align-middle"></span>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div className="border-t border-white/[0.06] px-6 py-4 flex items-end gap-3 shrink-0">
+              <div className="pt-3 flex items-end gap-3 shrink-0">
+                <div className="flex-1">
                   <textarea
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -320,37 +271,23 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
                     className="w-full bg-[#111113] border border-white/[0.06] text-white text-[13px] rounded-lg p-3 outline-none focus:border-white/[0.12] placeholder:text-[#71717a] resize-none transition-colors shadow-elevation-1 font-sans"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
                   />
-                  <GlassButton
-                    variant="primary"
-                    disabled={!chatInput.trim() || isTyping}
-                    onClick={sendChat}
-                    className="h-[46px] px-4 shrink-0"
-                  >
-                    <Send size={16} />
-                  </GlassButton>
                 </div>
+                <GlassButton
+                  variant="primary"
+                  disabled={!chatInput.trim() || isTyping}
+                  onClick={sendChat}
+                  className="h-[46px] px-4 shrink-0"
+                >
+                  <Send size={16} />
+                </GlassButton>
               </div>
-            </>
+            </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-white/[0.06] bg-[#111113] shrink-0 flex justify-between items-center">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <p className="text-[11px] text-[#71717a] font-medium font-sans">AI responses may be inaccurate. Verify with logs.</p>
-            <div className="sm:hidden flex items-center gap-2">
-              <span className="text-[11px] uppercase tracking-[0.14em] text-[#52525b]">Model</span>
-              <select
-                value={provider}
-                onChange={(e) => setProvider(e.target.value)}
-                className="bg-[#09090b] border border-white/[0.06] rounded-md px-2 py-1 text-[12px] font-medium text-white outline-none"
-              >
-                <option value="mistral">Mistral</option>
-                <option value="cohere">Cohere</option>
-                <option value="gemini">Gemini</option>
-              </select>
-            </div>
-          </div>
+          <p className="text-[11px] text-[#71717a] font-medium font-sans">AI responses may be inaccurate. Verify with logs.</p>
           <div className="flex gap-2">
             {!isLoading && !error && !isChatExpanded && (
               <GlassButton

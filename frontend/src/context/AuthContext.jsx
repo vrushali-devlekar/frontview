@@ -1,69 +1,88 @@
-import { createContext, useState, useEffect, useContext } from 'react'
-import { getCurrentUser } from '../api/api'
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { getCurrentUser } from '../api/api';
 
-export const AuthContext = createContext()
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+    const [user, setUser] = useState(() => {
+        const saved = sessionStorage.getItem('cached_user');
+        return saved ? JSON.parse(saved) : null;
+    });
+    const [loading, setLoading] = useState(!sessionStorage.getItem('cached_user'));
 
-  const refreshUser = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      setUser(null)
-      return null
-    }
+    const refreshUser = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            setUser(null);
+            setLoading(false);
+            sessionStorage.removeItem('cached_user');
+            return null;
+        }
 
-    try {
-      const response = await getCurrentUser()
-      const backendUser = response?.data?.user || null
-      setUser(backendUser)
-      return backendUser
-    } catch {
-      localStorage.removeItem('token')
-      setUser(null)
-      return null
-    }
-  }
+        try {
+            if (!user) setLoading(true);
+            const res = await getCurrentUser();
+            const userData = res.data.user;
+            
+            if (userData) {
+                if (userData.username && !userData.name) userData.name = userData.username;
+                if (userData.avatarUrl && !userData.avatar) userData.avatar = userData.avatarUrl;
+            }
+            
+            setUser(userData);
+            if (userData) sessionStorage.setItem('cached_user', JSON.stringify(userData));
+            return userData;
+        } catch (error) {
+            console.error("Auth Refresh Failed:", error);
+            if (error.response?.status === 401) {
+                setUser(null);
+                sessionStorage.removeItem('cached_user');
+            }
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  useEffect(() => {
-    const checkUser = async () => {
-      await refreshUser()
-      setLoading(false)
-    }
+    useEffect(() => {
+        refreshUser();
+        
+        const handleUnauthorized = () => {
+            setUser(null);
+            setLoading(false);
+        };
 
-    void checkUser()
-  }, [])
+        window.addEventListener('auth-unauthorized', handleUnauthorized);
+        return () => window.removeEventListener('auth-unauthorized', handleUnauthorized);
+    }, [refreshUser]);
 
-  const login = async (userData, token) => {
-    if (token) {
-      localStorage.setItem('token', token)
-    }
+    const login = (userData, token) => {
+        localStorage.setItem('token', token);
+        sessionStorage.setItem('cached_user', JSON.stringify(userData));
+        setUser(userData);
+        setLoading(false);
+    };
 
-    if (userData) {
-      setUser(userData)
-      return userData
-    }
+    const logout = () => {
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('cached_user');
+        setUser(null);
+        setLoading(false);
+    };
 
-    return refreshUser()
-  }
+    const value = { user, login, logout, loading, refreshUser };
 
-  const logout = () => {
-    localStorage.removeItem('token')
-    setUser(null)
-  }
-
-  return (
-    <AuthContext.Provider value={{ user, login, logout, refreshUser, loading }}>
-      {children}
-    </AuthContext.Provider>
-  )
-}
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};

@@ -32,7 +32,9 @@ const deploymentSchema = new mongoose.Schema({
     containerId: { type: String },
     buildDuration: { type: Number }, // in milliseconds
     errorMessage: { type: String },
-    logs: [{ type: String }],
+    logs: [{ type: String }], // Legacy / Combined
+    buildLogs: [{ type: String }],
+    runtimeLogs: [{ type: String }],
     triggeredBy: {
         type: String,
         enum: ['manual', 'webhook'],
@@ -61,6 +63,7 @@ deploymentSchema.virtual('url').get(function () {
 deploymentSchema.index({ projectId: 1, version: -1 });
 deploymentSchema.index({ projectId: 1, status: 1 });
 deploymentSchema.index({ userId: 1, status: 1 });
+deploymentSchema.index({ createdAt: -1 });
 
 // Pre-save hook for auto-incrementing version
 deploymentSchema.pre('save', async function () {

@@ -1,4 +1,4 @@
-// app.js
+// app.js (v2 - restart)
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -9,60 +9,44 @@ const rateLimit = require('express-rate-limit');
 require('./config/passportSetup');
 const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
+const { protect } = require('./middlewares/authMiddleware');
 const deploymentRoutes = require('./routes/deploymentRoutes');
 const envRoutes = require('./routes/envRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
 const aiRoutes = require('./routes/aiRoutes');
-const workspaceRoutes = require('./routes/workspaceRoutes');
-const { proxyLiveDeployment } = require('./controllers/liveController');
+const teamRoutes = require('./routes/teamRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
-const {
-    isAllowedOrigin,
-    isProduction,
-    sessionCookieSameSite,
-    sessionCookieSecure
-} = require('./config/runtime');
+
+const compression = require('compression');
 
 // Express app initialize karna
 const app = express();
 
-if (isProduction) {
-    app.set('trust proxy', 1);
-}
-
 // --- MIDDLEWARES ---
 
-// 1. Helmet for Security Headers
+// 1. Compression for faster responses 🚀
+app.use(compression());
+
+// 2. Helmet for Security Headers
 app.use(helmet());
 
-// 2. API Rate Limiting
-const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: isProduction ? 800 : 5000,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: 'Too many API requests from this IP, please try again after 15 minutes'
+// 3. Rate Limiting to prevent DDoS/Abuse 🛡️
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Max 100 requests per IP
+    message: 'Too many requests, try again later'
 });
-
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: isProduction ? 50 : 500,
-    standardHeaders: true,
-    legacyHeaders: false,
-    skipSuccessfulRequests: true,
-    message: 'Too many authentication attempts from this IP, please try again after 15 minutes'
-});
+app.use('/api', limiter);
 
 // 3. Session sabse pehle aayega
-app.use(session({   
+app.use(session({
     secret: process.env.SESSION_SECRET || 'mera_super_secret',
-    proxy: isProduction,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: sessionCookieSecure,
+        secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        sameSite: sessionCookieSameSite
+        sameSite: 'strict'
     }
 }));
 
@@ -71,63 +55,58 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // 5. CORS
+const allowedOrigins = new Set([
+    process.env.FRONTEND_URL,
+    'http://localhost:5173',
+    'http://localhost:5174'
+].filter(Boolean));
+
 app.use(cors({
     origin: (origin, callback) => {
-        // allow server-to-server/no-origin requests
         if (!origin) return callback(null, true);
-        if (isAllowedOrigin(origin)) return callback(null, true);
+        if (allowedOrigins.has(origin)) return callback(null, true);
         return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
-    credentials: true,
-  }),
-);
+    credentials: true
+}));
 
 // 6. Body Parsers
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // 7. Routes
-app.use('/api', apiLimiter);
-app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', authRoutes);
+
+app.get('/api/auth/test', (req, res) => res.json({ message: "Auth router is reachable" }));
+
+app.get('/api/auth/cleanup-db', async (req, res) => {
+    const Project = require('./models/Project');
+    const result = await Project.deleteMany({ isDeleted: true });
+    const result2 = await Project.deleteMany({ repoUrl: "https://github.com/siddhartha220507/visssh-webpage.git" });
+    try {
+        await Project.collection.dropIndex('repoUrl_1_owner_1');
+    } catch (e) {
+        console.log("Index already dropped or doesn't exist");
+    }
+    res.json({ message: "DB Cleaned & Index Migrated", deletedSoft: result.deletedCount, deletedSpecific: result2.deletedCount });
+});
+
 app.use('/api/projects', projectRoutes);
 app.use('/api/deployments', deploymentRoutes);
 app.use('/api/projects', envRoutes);
 app.use('/api/projects/:projectId/integrations', integrationRoutes);
+app.use('/api/teams', teamRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/workspace', workspaceRoutes);
-app.use('/live/:id', proxyLiveDeployment);
 
-// --- BASIC ROUTE ---
-app.get("/api/health", (req, res) => {
-  res.send("DeployPilot API is running perfectly!");
-});
-
-const { analyzeLogsWithAI } = require("./services/logAnalysisService");
-
-app.post("/api/test-ai", async (req, res) => {
-  try {
-    const { logs } = req.body;
-    if (!logs)
-      return res
-        .status(400)
-        .json({ error: "Logs array is required for testing" });
-
-    console.log("🤖 Sending logs to AI for analysis...");
-
-        const aiResponse = await analyzeLogsWithAI(logs, 'mistral');
-
-    res.status(200).json({ success: true, aiAnalysis: aiResponse });
-  } catch (error) {
-    console.error("AI Error:", error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+app.get('/api/health', (req, res) => {
+    res.send('DeployPilot API is running perfectly!');
 });
 
 // Serve frontend build from backend/dist when available
-const frontendDistPath = path.resolve(__dirname, "../dist");
+const frontendDistPath = path.resolve(__dirname, '../dist');
 app.use(express.static(frontendDistPath));
 app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(frontendDistPath, "index.html"));
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 
 // --- ERROR HANDLERS ---

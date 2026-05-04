@@ -1,9 +1,17 @@
 import axios from 'axios';
-import { API_BASE_URL, SOCKET_ORIGIN, buildApiUrl } from './runtime';
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+
+/** Socket.IO server origin (no /api suffix). */
+export const SOCKET_ORIGIN =
+  import.meta.env.VITE_SOCKET_URL ||
+  API_BASE_URL.replace(/\/api\/?$/, '') ||
+  'http://localhost:4000';
 
 /** Full URL for browser redirect (Passport OAuth). */
-export const githubAuthUrl = buildApiUrl('/auth/github');
-export const googleAuthUrl = buildApiUrl('/auth/google');
+export const githubAuthUrl = `${API_BASE_URL}/auth/github`;
+export const googleAuthUrl = `${API_BASE_URL}/auth/google`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -35,56 +43,45 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const status = error.response?.status
-    const shouldSkipRedirect = error.config?.skipAuthRedirect
-
-    if (status === 401 && !shouldSkipRedirect) {
-      // Token expired or invalid — clear and redirect
+    if (error.response && error.response.status === 401) {
+      // Token expired or invalid — clear token
       localStorage.removeItem('token');
-      // Only redirect if not already on login/register/landing
-      const path = window.location.pathname;
-      if (!['/login', '/register', '/'].includes(path)) {
-        window.location.href = '/login';
-      }
+      // Emit an event so AuthContext can handle the logout/redirect gracefully
+      window.dispatchEvent(new Event('auth-unauthorized'));
     }
     return Promise.reject(error);
   }
 );
 
-// Auth APIs
+// ==========================================
+// AUTH APIs
+// ==========================================
 export const login = (credentials) => api.post('/auth/login', credentials);
 export const register = (userData) => api.post('/auth/register', userData);
 export const logout = () => api.get('/auth/logout');
 export const getCurrentUser = () => api.get('/auth/me');
 export const updateCurrentUser = (payload) => api.put('/auth/me', payload);
-export const updatePassword = (payload) => api.put('/auth/password', payload);
 
 // PROJECT APIs
 // ==========================================
 export const getUserRepos = (search = '') =>
-  api.get(`/projects/repos${search ? `?search=${search}` : ''}`, {
-    skipAuthRedirect: true,
-  });
+  api.get(`/projects/repos${search ? `?search=${search}` : ''}`);
 
 export const getUserProjects = () => api.get('/projects');
 export const getDashboardStats = () => api.get('/projects/stats');
 
-export const createProject = (projectData) =>
-  api.post('/projects', projectData);
+export const createProject = (projectData) => api.post('/projects', projectData);
+export const createProjectFromFolder = (formData) => api.post('/projects/upload', formData);
 
 export const getProjectById = (id) => api.get(`/projects/${id}`);
 
-export const deleteProject = (id, options = {}) =>
-  api.delete(`/projects/${id}`, { data: options });
+export const deleteProject = (id) => api.delete(`/projects/${id}`);
 
 export const updateProject = (id, data) => api.put(`/projects/${id}`, data);
 
 // ==========================================
 // DEPLOYMENT APIs
 // ==========================================
-export const triggerDeployment = (projectId) =>
-  api.post('/deployments', { projectId });
-
 export const getDeploymentStatus = (deploymentId) =>
   api.get(`/deployments/${deploymentId}`);
 
@@ -93,6 +90,9 @@ export const stopDeployment = (deploymentId) =>
 
 export const analyzeDeploymentLogs = (deploymentId, logs) =>
   api.post(`/deployments/${deploymentId}/analyze-logs`, { logs });
+
+export const aiChat = (message, context) =>
+  api.post('/ai/chat', { message, context });
 
 export const rollbackDeployment = (projectId, version) =>
   api.post(`/projects/${projectId}/rollback/${version}`);
@@ -121,26 +121,21 @@ export const connectIntegration = (projectId, integrationData) =>
 export const disconnectIntegration = (projectId, integrationId) =>
   api.delete(`/projects/${projectId}/integrations/${integrationId}`);
 
-// Workspace APIs
-export const getWorkspaceOverview = () => api.get('/workspace/overview');
-export const getWorkspaceMetrics = () => api.get('/workspace/metrics');
-export const getWorkspaceEnvironments = () => api.get('/workspace/environments');
-export const getWorkspaceNotifications = () => api.get('/workspace/notifications');
-export const searchWorkspace = (query) =>
-  api.get('/workspace/search', { params: { q: query } });
-export const getWorkspaceMembers = () => api.get('/workspace/members');
-export const inviteWorkspaceMember = (payload) =>
-  api.post('/workspace/members/invite', payload);
-
 // Aliases to support existing React components
 export const getProjects = getUserProjects;
 export const getProject = getProjectById;
 export const getGithubRepos = getUserRepos;
 export const listDeployments = (projectId) =>
   api.get('/deployments', { params: { projectId } });
+export const getDeploymentsByProject = listDeployments;
 export const getDeployment = getDeploymentStatus;
 export const stopDeploymentRequest = stopDeployment;
 export const rollbackProject = rollbackDeployment;
+export const triggerDeployment = (projectId) => api.post(`/projects/${projectId}/deploy`);
+
+// Teams
+export const getProjectTeam = (projectId) => api.get(`/teams/${projectId}`);
+export const inviteMember = (projectId, data) => api.post(`/teams/${projectId}/invite`, data);
+export const removeMember = (projectId, memberId) => api.delete(`/teams/${projectId}/members/${memberId}`);
 
 export default api;
-export { API_BASE_URL, SOCKET_ORIGIN, buildApiUrl };
