@@ -106,7 +106,7 @@ export default function Projects() {
                   <div className="flex items-center justify-between mb-10 pb-8 border-b border-white/[0.04]">
                     <div>
                       <h1 className="text-[32px] font-black tracking-tighter text-white mb-2 uppercase">Management</h1>
-                      <p className="text-[14px] text-[#52525b] font-black uppercase tracking-[0.2em]">Infrastructure Clusters & Control</p>
+                      <p className="text-[14px] text-[#52525b] font-black uppercase tracking-[0.2em]">Monitor and manage your applications</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex bg-[#0d0d0f] p-1 rounded-2xl border border-white/5 mr-4 shadow-elevation-1">
@@ -114,7 +114,7 @@ export default function Projects() {
                         <button onClick={() => setViewMode("grid")} className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-[#1e1e20] text-white shadow-xl' : 'text-[#3f3f46]'}`}><LayoutGrid size={18} /></button>
                       </div>
                       <GlassButton variant="primary" onClick={() => navigate("/projects/new")} className="h-12 px-6 text-[11px] font-black uppercase tracking-widest">
-                        <Plus size={16} /> New Application
+                        <Plus size={16} /> New Project
                       </GlassButton>
                     </div>
                   </div>
@@ -124,7 +124,7 @@ export default function Projects() {
                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#52525b]" />
                     <input
                       type="text"
-                      placeholder="Search infrastructure..."
+                      placeholder="Search projects..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full h-12 pl-12 pr-6 bg-[#0d0d0f] border border-white/[0.04] rounded-2xl text-[14px] focus:outline-none focus:border-white/10 transition-all font-bold placeholder:text-[#3f3f46] shadow-elevation-1"
@@ -227,7 +227,7 @@ export default function Projects() {
                     <div className="col-span-12 lg:col-span-8">
                       <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden shadow-elevation-2">
                         <div className="px-8 py-6 border-b border-white/[0.04] flex items-center justify-between bg-[#161618]">
-                          <h3 className="text-[12px] font-black text-[#52525b] uppercase tracking-[0.25em]">Historical Artifacts</h3>
+                          <h3 className="text-[12px] font-black text-[#52525b] uppercase tracking-[0.25em]">Deployment History</h3>
                           <div className="flex items-center gap-3 text-[11px] text-[#3f3f46] font-black uppercase tracking-widest">
                             <HistoryIcon size={14} /> {versions.length} Versions Found
                           </div>
@@ -296,17 +296,17 @@ export default function Projects() {
                             <Terminal size={16} /> Inspect Logs
                           </button>
                           <button className="w-full h-12 rounded-xl bg-[#0d0d0f] border border-white/5 flex items-center gap-4 px-6 text-[12px] font-black uppercase tracking-widest text-[#3f3f46] hover:text-white hover:bg-white/5 transition-all shadow-elevation-1">
-                            <Settings size={16} /> Configure Node
+                            <Settings size={16} /> Project Settings
                           </button>
                         </div>
                       </div>
 
                       <div className="bg-[#1e1e20] border border-white/[0.04] p-8 rounded-[32px] shadow-elevation-1">
-                        <h3 className="text-[11px] font-black text-[#52525b] uppercase tracking-[0.25em] mb-6">Cluster Health</h3>
+                        <h3 className="text-[11px] font-black text-[#52525b] uppercase tracking-[0.25em] mb-6">Project Health</h3>
                         <div className="space-y-6">
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-[#3f3f46] font-black uppercase tracking-widest">Runtime Status</span>
-                            <span className="text-[11px] text-[#22c55e] font-black uppercase tracking-widest">Operational</span>
+                            <span className="text-[11px] text-[#3f3f46] font-black uppercase tracking-widest">App Status</span>
+                            <span className="text-[11px] text-[#22c55e] font-black uppercase tracking-widest">Running</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-[#3f3f46] font-black uppercase tracking-widest">Network Score</span>

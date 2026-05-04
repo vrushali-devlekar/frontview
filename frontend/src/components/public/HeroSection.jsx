@@ -13,12 +13,12 @@ const HeroSection = () => {
       <div className="relative z-10 flex flex-col h-full grow">
         {/* Navigation */}
         <nav className="flex items-center justify-between px-6 py-6 md:px-12 border-b border-white/[0.06] bg-[#09090b]/80 backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#22c55e] flex items-center justify-center">
-              <Zap size={16} className="text-black" strokeWidth={3} />
+          <NavLink to="/" className="flex items-center gap-3 group">
+            <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.08] flex items-center justify-center p-1 group-hover:border-white/20 transition-all overflow-hidden">
+              <img src="/src/assets/logo-close.png" alt="Velora Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-lg font-semibold text-white tracking-tight">Velora</span>
-          </div>
+            <span className="text-lg font-black text-white tracking-tighter uppercase group-hover:text-white transition-colors">Velora</span>
+          </NavLink>
 
           <div className="hidden md:flex gap-8 text-[13px] font-medium text-[#71717a]">
             {["Products", "Solutions", "Resources", "Pricing"].map((item) => (

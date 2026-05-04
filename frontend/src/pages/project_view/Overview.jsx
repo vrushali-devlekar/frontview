@@ -58,18 +58,18 @@ export default function Overview() {
             <div className="flex items-end justify-between mb-16 pb-12 border-b border-white/[0.04]">
               <div>
                 <div className="flex items-center gap-4 mb-4">
-                  <span className="px-3 py-1 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">SYSTEM_REGISTRY</span>
+                  <span className="px-3 py-1 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">PROJECT LIST</span>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
                 </div>
-                <h1 className="text-[36px] font-black tracking-tighter uppercase text-white leading-none">Global_Nodes</h1>
-                <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.4em] mt-5">Manage_&_Optimize_Active_Application_Instances</p>
+                <h1 className="text-[36px] font-black tracking-tighter uppercase text-white leading-none">All Projects</h1>
+                <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.4em] mt-5">View and manage your deployed applications</p>
               </div>
               <GlassButton 
                 variant="primary" 
                 className="h-14 px-10 gap-4 text-[10px] font-black uppercase tracking-[0.25em] shadow-elevation-2"
                 onClick={() => navigate("/projects/new")}
               >
-                <Plus size={18} /> INITIALIZE_NODE
+                <Plus size={18} /> DEPLOY PROJECT
               </GlassButton>
             </div>
 
@@ -79,7 +79,7 @@ export default function Overview() {
                 <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#1e1e20] group-focus-within:text-[#52525b] transition-colors" />
                 <input
                   type="text"
-                  placeholder="QUERY_REGISTRY..."
+                  placeholder="SEARCH PROJECTS..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-14 pl-14 pr-8 text-[11px] w-[320px] bg-[#0d0d0f] border border-white/[0.04] rounded-[20px] text-white placeholder:text-[#1e1e20] focus:outline-none focus:border-white/[0.1] transition-all font-black uppercase tracking-[0.2em] shadow-inner"
@@ -89,7 +89,7 @@ export default function Overview() {
                 <div className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-[#0d0d0f] border border-white/[0.04]">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
                   <span className="text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">
-                    {loading ? "FETCHING..." : `${filtered.length}_ACTIVE_NODES`}
+                    {loading ? "FETCHING..." : `${filtered.length} PROJECTS`}
                   </span>
                 </div>
               </div>
@@ -110,14 +110,14 @@ export default function Overview() {
                 <div className="w-20 h-20 rounded-3xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center mx-auto mb-10 shadow-elevation-2">
                   <Rocket size={32} className="text-[#1e1e20]" />
                 </div>
-                <h3 className="text-[20px] font-black text-white uppercase tracking-tighter mb-4">Registry_Null_State</h3>
-                <p className="text-[11px] text-[#3f3f46] font-black uppercase tracking-[0.3em] mb-12 max-w-[320px] mx-auto leading-relaxed">No active nodes detected in this sector. Initialize your first deployment sequence.</p>
+                <h3 className="text-[20px] font-black text-white uppercase tracking-tighter mb-4">No Projects</h3>
+                <p className="text-[11px] text-[#3f3f46] font-black uppercase tracking-[0.3em] mb-12 max-w-[320px] mx-auto leading-relaxed">You haven't created any projects yet. Start by deploying your first app.</p>
                 <GlassButton 
                   variant="primary" 
                   className="h-14 px-12 text-[10px] font-black uppercase tracking-[0.3em]"
                   onClick={() => navigate("/projects/new")}
                 >
-                  INITIALIZE_COMMAND
+                  CREATE PROJECT
                 </GlassButton>
               </div>
             )}
@@ -149,7 +149,7 @@ export default function Overview() {
                             project.lastDeploymentStatus?.toUpperCase() === 'FAILED' ? 'bg-[#ef4444]/5 border-[#ef4444]/10 text-[#ef4444]' :
                             'bg-white/5 border-white/10 text-white animate-pulse'
                           }`}>
-                            {project.lastDeploymentStatus || "NOMINAL"}
+                            {project.lastDeploymentStatus || "RUNNING"}
                           </div>
                         </div>
 

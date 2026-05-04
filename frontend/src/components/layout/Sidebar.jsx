@@ -85,12 +85,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
     >
       {/* Brand Header */}
       <div className={`h-20 flex items-center px-6 ${isCollapsed ? "justify-center" : ""}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white text-black rounded-full flex items-center justify-center font-bold text-[15px] shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-            V
+        <NavLink to="/dashboard" className="flex items-center gap-3 group">
+          <div className="w-9 h-9 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center p-1.5 group-hover:border-white/20 transition-all shadow-elevation-1 overflow-hidden">
+            <img src="/src/assets/logo-close.png" alt="Velora Logo" className="w-full h-full object-contain" />
           </div>
-          {!isCollapsed && <span className="text-[16px] font-bold tracking-tight text-white/90">Velora</span>}
-        </div>
+          {!isCollapsed && <span className="text-[17px] font-black tracking-tighter text-white/90 group-hover:text-white transition-colors uppercase">Velora</span>}
+        </NavLink>
       </div>
 
       {/* Navigation */}

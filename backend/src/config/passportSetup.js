@@ -6,8 +6,8 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
 
 console.log('--- Passport Strategy Config ---');
-console.log('GitHub Callback:', `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/github/callback`);
-console.log('Google Callback:', `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/google/callback`);
+console.log('GitHub Callback:', process.env.GITHUB_CALLBACK_URL || `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/github/callback`);
+console.log('Google Callback:', process.env.GOOGLE_CALLBACK_URL || `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/google/callback`);
 console.log('-------------------------------');
 
 // User ki ID ko session mein pack karna
@@ -102,7 +102,7 @@ function resolveGithubAvatar(profile) {
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/github/callback`
+    callbackURL: process.env.GITHUB_CALLBACK_URL || `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/github/callback`
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         const email = resolveGithubEmail(profile);
@@ -164,7 +164,7 @@ passport.use(new GitHubStrategy({
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/google/callback`
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/google/callback`
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         let user = await User.findOne({ email: profile.emails[0].value });

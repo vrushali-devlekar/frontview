@@ -136,7 +136,7 @@ export default function Settings() {
                         <div>
                             <div className="flex items-center gap-5 mb-3">
                                 <h1 className="text-[20px] font-black tracking-tighter text-[#e4e4e7] uppercase leading-none">
-                                    {projectId ? "Project Configuration" : "Workspace Registry"}
+                                    {projectId ? "Project Settings" : "Workspace Settings"}
                                 </h1>
                                 {projectId && (
                                     <div className="flex items-center gap-3">
@@ -149,8 +149,8 @@ export default function Settings() {
                             </div>
                             <p className="text-[10px] text-[#52525b] font-black uppercase tracking-[0.4em]">
                                 {projectId 
-                                    ? "Infrastructure Tuning & Runtime Parameters" 
-                                    : "Personal Environment Control & Identity Registry"}
+                                    ? "Configure your project infrastructure and settings" 
+                                    : "Manage your workspace and security settings"}
                             </p>
                         </div>
                         {projectId && (
@@ -169,7 +169,7 @@ export default function Settings() {
 
                     {/* Tab sidebar */}
                     <div className="w-56 shrink-0 py-8 pr-8 border-r border-white/[0.04] flex flex-col gap-1.5 overflow-y-auto scrollbar-hide">
-                        <p className="text-[8px] font-black text-[#1e1e20] uppercase tracking-[0.5em] mb-4 px-4">System Index</p>
+                        <p className="text-[8px] font-black text-[#1e1e20] uppercase tracking-[0.5em] mb-4 px-4">Settings Menu</p>
                         {currentTabs.map((tab) => (
                             <button
                                 key={tab.id}
@@ -199,7 +199,7 @@ export default function Settings() {
                                             <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden shadow-elevation-1">
                                                 <div className="px-8 py-6 border-b border-white/[0.04] bg-[#161618]">
                                                     <h2 className="text-[11px] font-black text-[#e4e4e7] uppercase tracking-widest mb-1">Project Name</h2>
-                                                    <p className="text-[9px] font-black text-[#3f3f46] uppercase tracking-widest">Global registry identifier for this instance.</p>
+                                                    <p className="text-[9px] font-black text-[#3f3f46] uppercase tracking-widest">The name of your project.</p>
                                                 </div>
                                                 <div className="px-8 py-8">
                                                     <InputField 
@@ -215,7 +215,7 @@ export default function Settings() {
                                                         onClick={() => handleUpdate({ name: projectName })}
                                                         disabled={saving}
                                                     >
-                                                        {saving ? "SAVING..." : "COMMIT_CHANGES"}
+                                                        {saving ? "SAVING..." : "SAVE CHANGES"}
                                                     </GlassButton>
                                                 </div>
                                             </div>
@@ -224,9 +224,9 @@ export default function Settings() {
                                                 <div className="px-10 py-8 border-b border-white/[0.04] bg-[#161618] flex items-center justify-between">
                                                     <div>
                                                         <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1 flex items-center gap-3">
-                                                            <Globe size={16} className="text-[#3f3f46]" /> NETWORK_DOMAIN
+                                                            <Globe size={16} className="text-[#3f3f46]" /> DOMAINS
                                                         </h2>
-                                                        <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Administrative custom domains and SSL routing.</p>
+                                                        <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Configure custom domains and SSL.</p>
                                                     </div>
                                                 </div>
                                                 <div className="px-10 py-10">
@@ -237,7 +237,7 @@ export default function Settings() {
                                                             </span>
                                                             <div className="flex items-center gap-3 mt-2">
                                                                 <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
-                                                                <span className="text-[9px] font-black text-[#22c55e] uppercase tracking-[0.2em]">CONFIG_NOMINAL</span>
+                                                                <span className="text-[9px] font-black text-[#22c55e] uppercase tracking-[0.2em]">ACTIVE</span>
                                                             </div>
                                                         </div>
                                                         <GlassButton variant="outline" className="h-10 px-6 text-[10px] font-black uppercase tracking-widest opacity-20" disabled>OVERRIDE</GlassButton>
@@ -257,23 +257,23 @@ export default function Settings() {
                                         <motion.div key="advanced" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                                             <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[40px] overflow-hidden shadow-elevation-1">
                                                 <div className="px-10 py-8 border-b border-white/[0.04] bg-[#161618]">
-                                                    <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1">RUNTIME_OVERRIDE</h2>
-                                                    <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Configure build sequence and infrastructure commands.</p>
+                                                    <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1">BUILD SETTINGS</h2>
+                                                    <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Configure build sequence and commands.</p>
                                                 </div>
                                                 <div className="px-10 py-10 space-y-8">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                        <InputField label="FRAMEWORK_PRESET" value="AUTO_DETECT" disabled className="bg-[#0d0d0f]/50 border-white/[0.02] text-[#3f3f46] opacity-50" />
+                                                        <InputField label="FRAMEWORK" value="AUTO_DETECT" disabled className="bg-[#0d0d0f]/50 border-white/[0.02] text-[#3f3f46] opacity-50" />
                                                         <InputField 
-                                                            label="BUILD_SEQUENCE" 
+                                                            label="INSTALL COMMAND" 
                                                             value={installCommand} 
                                                             onChange={(e) => setInstallCommand(e.target.value)}
                                                             className="bg-[#0d0d0f] border-white/[0.04] h-12 text-[12px] font-black uppercase"
                                                         />
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                        <InputField label="ASSET_DIRECTORY" defaultValue="dist" disabled className="bg-[#0d0d0f]/50 border-white/[0.02] text-[#3f3f46] opacity-50" />
+                                                        <InputField label="OUTPUT DIRECTORY" defaultValue="dist" disabled className="bg-[#0d0d0f]/50 border-white/[0.02] text-[#3f3f46] opacity-50" />
                                                         <InputField 
-                                                            label="STARTUP_LOGIC" 
+                                                            label="START COMMAND" 
                                                             value={startCommand} 
                                                             onChange={(e) => setStartCommand(e.target.value)}
                                                             className="bg-[#0d0d0f] border-white/[0.04] h-12 text-[12px] font-black uppercase"
@@ -287,7 +287,7 @@ export default function Settings() {
                                                         onClick={() => handleUpdate({ installCommand, startCommand })}
                                                         disabled={saving}
                                                     >
-                                                        {saving ? "SAVING..." : "COMMIT_ADVANCED_STATE"}
+                                                        {saving ? "SAVING..." : "SAVE BUILD SETTINGS"}
                                                     </GlassButton>
                                                 </div>
                                             </div>
@@ -300,15 +300,15 @@ export default function Settings() {
                                                 <div className="px-10 py-8 border-b border-[#ef4444]/10 bg-[#ef4444]/[0.02] flex items-start gap-5">
                                                     <AlertTriangle size={20} className="text-[#ef4444] mt-1 shrink-0" />
                                                     <div>
-                                                        <h2 className="text-[13px] font-black text-[#ef4444] uppercase tracking-widest mb-1">TERMINATE_INSTANCE</h2>
+                                                        <h2 className="text-[13px] font-black text-[#ef4444] uppercase tracking-widest mb-1">DELETE PROJECT</h2>
                                                         <p className="text-[10px] font-black text-[#ef4444]/60 uppercase tracking-widest leading-relaxed">
-                                                            Permanently remove your project and all its deployments from the global edge network. This action is irreversible.
+                                                            This will permanently delete your project and all its data. This action is irreversible.
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <div className="px-10 py-10 flex items-center justify-between">
                                                     <div className="flex flex-col gap-1">
-                                                        <span className="text-[11px] font-black text-[#3f3f46] uppercase tracking-widest">Confirm_Target</span>
+                                                        <span className="text-[11px] font-black text-[#3f3f46] uppercase tracking-widest">Confirm Project Name</span>
                                                         <span className="text-[16px] font-black font-mono text-white tracking-tight">{project?.name}</span>
                                                     </div>
                                                     <GlassButton 
@@ -317,7 +317,7 @@ export default function Settings() {
                                                         onClick={handleDelete}
                                                         disabled={saving}
                                                     >
-                                                        {saving ? "TERMINATING..." : "TERMINATE_NODE"}
+                                                        {saving ? "DELETING..." : "DELETE PROJECT"}
                                                     </GlassButton>
                                                 </div>
                                             </div>
@@ -332,12 +332,12 @@ export default function Settings() {
                                         <>
                                             <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[48px] overflow-hidden shadow-elevation-1">
                                                 <div className="px-10 py-8 border-b border-white/[0.04] bg-[#161618]">
-                                                    <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1">WORKSPACE_REGISTRY</h2>
-                                                    <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Active nodes currently under global authority.</p>
+                                                    <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1">WORKSPACE PROJECTS</h2>
+                                                    <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">All projects in your workspace.</p>
                                                 </div>
                                                 <div className="px-4 py-4">
                                                     {allProjects.length === 0 ? (
-                                                        <div className="py-20 text-center text-[#1e1e20] font-black uppercase text-[12px] tracking-[0.5em]">NULL_REGISTRY_FOUND</div>
+                                                        <div className="py-20 text-center text-[#1e1e20] font-black uppercase text-[12px] tracking-[0.5em]">NO PROJECTS FOUND</div>
                                                     ) : (
                                                         <div className="grid grid-cols-1 gap-2">
                                                             {allProjects.map((p) => (
@@ -365,13 +365,13 @@ export default function Settings() {
 
                                             <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[48px] overflow-hidden shadow-elevation-1">
                                                 <div className="px-10 py-8 border-b border-white/[0.04] bg-[#161618]">
-                                                    <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1">PLATFORM_QUOTA</h2>
-                                                    <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Workspace resource allocation and compute usage.</p>
+                                                    <h2 className="text-[13px] font-black text-white uppercase tracking-widest mb-1">WORKSPACE USAGE</h2>
+                                                    <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-widest">Monitor your build minutes and usage.</p>
                                                 </div>
                                                 <div className="px-10 py-10">
                                                     <div className="flex justify-between items-center mb-5">
-                                                        <span className="text-[11px] font-black text-[#52525b] uppercase tracking-widest">BUILD_CAPACITY</span>
-                                                        <span className="text-[11px] font-black text-white uppercase tracking-widest">124_/_500_MIN</span>
+                                                        <span className="text-[11px] font-black text-[#52525b] uppercase tracking-widest">BUILD MINUTES</span>
+                                                        <span className="text-[11px] font-black text-white uppercase tracking-widest">124 / 500 MIN</span>
                                                     </div>
                                                     <div className="w-full h-2.5 bg-[#0d0d0f] rounded-full overflow-hidden border border-white/[0.04]">
                                                         <div className="h-full bg-[#22c55e] w-[25%] shadow-[0_0_15px_rgba(34,197,94,0.3)]" />
@@ -386,10 +386,10 @@ export default function Settings() {
                                             <div className="w-16 h-16 rounded-3xl bg-[#1e1e20] border border-white/[0.04] flex items-center justify-center mx-auto mb-8 shadow-elevation-1">
                                                 <User size={28} className="text-[#3f3f46]" />
                                             </div>
-                                            <p className="text-[18px] font-black text-white uppercase tracking-tighter mb-2">REDIRECT_TO_CORE</p>
-                                            <p className="text-[11px] font-black text-[#3f3f46] uppercase tracking-[0.2em] mb-10 max-w-[320px] mx-auto leading-relaxed">Identity and security registries are managed within the primary account module.</p>
+                                            <p className="text-[18px] font-black text-white uppercase tracking-tighter mb-2">ACCOUNT SETTINGS</p>
+                                            <p className="text-[11px] font-black text-[#3f3f46] uppercase tracking-[0.2em] mb-10 max-w-[320px] mx-auto leading-relaxed">Manage your profile and security in account settings.</p>
                                             <GlassButton variant="primary" className="h-12 px-10 text-[10px] font-black uppercase tracking-widest" onClick={() => navigate("/account")}>
-                                                ACCESS_ACCOUNT_NODE
+                                                GO TO ACCOUNT
                                             </GlassButton>
                                         </div>
                                     )}

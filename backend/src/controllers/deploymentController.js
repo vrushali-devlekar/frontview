@@ -245,9 +245,19 @@ exports.analyzeLogsStream = async (req, res) => {
         const { analyzeLogsWithAI } = require('../services/logAnalysisService');
         res.write(`data: ${JSON.stringify({ text: `[AI model: ${String(provider).toUpperCase()}]\n\n` })}\n\n`);
 
-        const result = await analyzeLogsWithAI(deployment.logs, provider, question);
-        const text = formatAiResult(result);
-        res.write(`data: ${JSON.stringify({ text })}\n\n`);
+        // 🌟 SSE Keep-Alive: Har 15 second mein ek heartbeat bhejte raho
+        const keepAlive = setInterval(() => {
+            res.write(':\n\n'); 
+        }, 15000);
+
+        try {
+            const result = await analyzeLogsWithAI(deployment.logs, provider, question);
+            const text = formatAiResult(result);
+            res.write(`data: ${JSON.stringify({ text })}\n\n`);
+        } finally {
+            clearInterval(keepAlive);
+        }
+
         res.write('data: [DONE]\n\n');
         res.end();
     } catch (error) {

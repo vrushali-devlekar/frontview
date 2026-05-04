@@ -22,6 +22,9 @@ const compression = require('compression');
 // Express app initialize karna
 const app = express();
 
+// Trust proxy for Railway/Vercel production environments 🛡️
+app.set('trust proxy', 1);
+
 // --- MIDDLEWARES ---
 
 // 1. Compression for faster responses 🚀

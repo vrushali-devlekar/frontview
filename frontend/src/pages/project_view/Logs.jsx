@@ -82,11 +82,11 @@ export default function Logs() {
             <div className="flex items-end justify-between mb-16 pb-12 border-b border-white/[0.04]">
               <div>
                 <div className="flex items-center gap-4 mb-4">
-                  <span className="px-3 py-1 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">TELEMETRY_STREAM</span>
+                   <span className="px-3 py-1 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">LOG STREAM</span>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
                 </div>
-                <h1 className="text-[36px] font-black tracking-tighter uppercase text-white leading-none">System_Stdout</h1>
-                <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.4em] mt-5">Real-time_Infrastructure_&_Runtime_Protocol_Monitoring</p>
+                 <h1 className="text-[36px] font-black tracking-tighter uppercase text-white leading-none">Console Logs</h1>
+                <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.4em] mt-5">Monitor your application logs in real-time</p>
               </div>
               
               <div className="flex items-center gap-4">
@@ -109,7 +109,7 @@ export default function Logs() {
                   className="h-14 px-8 text-[10px] font-black uppercase tracking-[0.25em] gap-4"
                   onClick={() => {}}
                 >
-                  <Download size={18} /> EXPORT_DATA
+                   <Download size={18} /> EXPORT LOGS
                 </GlassButton>
               </div>
             </div>
@@ -124,15 +124,15 @@ export default function Logs() {
                 <div className="relative w-full md:w-[480px] group">
                   <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#1e1e20] group-focus-within:text-[#52525b] transition-colors" />
                   <input 
-                    type="text" 
-                    placeholder="QUERY_SYSTEM_OUTPUT..."
+                    type="text"                     
+                    placeholder="SEARCH LOGS..."
                     className="w-full h-14 pl-16 pr-8 bg-[#0d0d0f] border border-white/[0.04] rounded-[20px] text-[11px] text-white focus:outline-none focus:border-white/[0.1] transition-all placeholder:text-[#1e1e20] font-black uppercase tracking-[0.2em] shadow-inner"
                   />
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-[#22c55e]/5 border border-[#22c55e]/10 shadow-elevation-1">
                     <Activity size={14} className="text-[#22c55e] animate-pulse" />
-                    <span className="text-[9px] font-black text-[#22c55e] uppercase tracking-[0.3em]">LIVE_UPLINK_ESTABLISHED</span>
+                     <span className="text-[9px] font-black text-[#22c55e] uppercase tracking-[0.3em]">CONNECTED TO LOG SERVER</span>
                   </div>
                   <button className="w-14 h-14 rounded-[20px] bg-[#0d0d0f] border border-white/[0.04] text-[#1e1e20] hover:text-white hover:border-white/[0.08] transition-all shadow-elevation-1 flex items-center justify-center">
                     <RefreshCw size={20} />
@@ -148,8 +148,8 @@ export default function Logs() {
                       <Terminal size={22} />
                     </div>
                     <div>
-                      <span className="text-[14px] font-black uppercase tracking-tighter text-white block">Node_Protocol_Stream</span>
-                      <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#3f3f46]">Registry: /dev/stdout</span>
+                       <span className="text-[14px] font-black uppercase tracking-tighter text-white block">Application Logs</span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#3f3f46]">Source: stdout</span>
                     </div>
                   </div>
                   <div className="flex gap-3">
@@ -163,7 +163,7 @@ export default function Logs() {
                   {logs.length === 0 ? (
                     <div className="h-full min-h-[480px] flex flex-col items-center justify-center opacity-[0.03]">
                       <Shield size={96} className="mb-10" />
-                      <p className="uppercase tracking-[0.6em] font-black text-lg">AWAITING_TELEMETRY</p>
+                       <p className="uppercase tracking-[0.6em] font-black text-lg">AWAITING LOGS</p>
                     </div>
                   ) : (
                     <div className="space-y-3">

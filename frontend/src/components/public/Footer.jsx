@@ -47,11 +47,11 @@ const Footer = () => {
           
           {/* 1. LOGO AND BRANDING */}
           <div className="lg:w-1/3 flex flex-col items-start gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#22c55e] flex items-center justify-center">
-                <Zap size={16} className="text-black" strokeWidth={3} />
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.08] flex items-center justify-center p-1.5 overflow-hidden">
+                <img src="/src/assets/logo-close.png" alt="Velora Logo" className="w-full h-full object-contain" />
               </div>
-              <span className="text-lg font-semibold text-white tracking-tight">Velora</span>
+              <span className="text-lg font-black text-white tracking-tighter uppercase">Velora</span>
             </div>
 
             <p className="text-[14px] leading-relaxed text-[#a1a1aa] max-w-sm">

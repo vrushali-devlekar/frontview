@@ -6,12 +6,13 @@ const User = require('../models/User');
 const { cloneRepo } = require('./fsManager');
 const { getAvailablePort, releasePort } = require('../utils/portManager');
 const { detectFramework } = require('../utils/frameworkDetector');
+const { notifyIntegrations } = require('./notificationService');
+const { uploadDirectory } = require('./storageService');
 const { streamLogs } = require('../utils/logStreamer');
 const fs = require('fs').promises;
 const path = require('path');
 const { decrypt } = require('../utils/crypto');
 const Integration = require('../models/Integration');
-const { notifyIntegrations } = require('./notificationService');
 
 // Ye Map track karega ki kaunsa deployment kis process me chal raha hai (Stop karne ke kaam aayega)
 const activeProcesses = new Map();
@@ -179,9 +180,50 @@ const executeDeployment = async (deploymentId, io) => {
                 });
             });
             await appendDeploymentLog(deploymentRecord, 'info', 'Build completed');
+
+            // 🌟 PRO-PAAS: Upload to Firebase Storage
+            const buildFolder = frameworkInfo.type === 'frontend-vite' ? 'dist' : 'build';
+            const localBuildPath = path.join(appPath, buildFolder);
+            
+            try {
+                await appendDeploymentLog(deploymentRecord, 'info', `Uploading ${buildFolder} to Object Storage...`);
+                const remoteUrl = await uploadDirectory(localBuildPath, `deployments/${deploymentRecord._id}`);
+                deploymentRecord.url = remoteUrl;
+                await appendDeploymentLog(deploymentRecord, 'info', `✅ Successfully uploaded to Storage: ${remoteUrl}`);
+            } catch (err) {
+                console.warn('⚠️ Storage upload failed:', err.message);
+                await appendDeploymentLog(deploymentRecord, 'warn', `Storage upload skipped/failed: ${err.message}. Falling back to local serving.`);
+            }
         }
 
+        // 🌟 PRO-PAAS: Cleanup local files (except for running backends)
+        const cleanupLocalFiles = async () => {
+            try {
+                await fs.rm(targetPath, { recursive: true, force: true });
+                await appendDeploymentLog(deploymentRecord, 'info', '🧹 Local build files cleaned up to save server space.');
+            } catch (cleanupErr) {
+                console.warn('Cleanup failed:', cleanupErr.message);
+            }
+        };
+
         // 5. Port assign karo aur Start chalao
+        // Frontend projects that were uploaded to storage don't need a local server
+        if (frameworkInfo.type.startsWith('frontend') && deploymentRecord.url && deploymentRecord.url.includes('storage.googleapis.com')) {
+            await cleanupLocalFiles();
+            deploymentRecord.status = 'running';
+            await deploymentRecord.save();
+            io.to(`dep:${deploymentId}`).emit('deployment:status', { status: 'running', url: deploymentRecord.url });
+            
+            // 🔥 Send Success Notification
+            notifyIntegrations(deploymentRecord.projectId, { 
+                projectName: project.name, 
+                version: deploymentRecord.version || '1.0.0' 
+            }, 'success').catch(e => console.log("Notification error:", e.message));
+
+            project.activeDeploymentId = deploymentRecord._id;
+            await project.save();
+            return;
+        }
         assignedPort = getAvailablePort();
         console.log(`🚀 Starting app on port ${assignedPort}...`);
         await appendDeploymentLog(deploymentRecord, 'info', `Starting application on port ${assignedPort}`);

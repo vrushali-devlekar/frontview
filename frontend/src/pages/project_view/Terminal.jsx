@@ -51,11 +51,11 @@ const DeploymentLogsPage = () => {
                 <div className="flex items-center gap-4 mb-1">
                   <Terminal size={16} className="text-[#22c55e]" />
                   <h1 className="text-[18px] font-black text-white uppercase tracking-tighter leading-none">
-                    Build_Sequence_Stream
+                    Build Logs
                   </h1>
                 </div>
                 {deploymentId && (
-                  <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#3f3f46]">Registry_Artifact: {deploymentId}</p>
+                   <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#3f3f46]">Deployment ID: {deploymentId}</p>
                 )}
               </div>
             </div>
@@ -74,7 +74,7 @@ const DeploymentLogsPage = () => {
                 className="h-12 px-8 text-[10px] font-black uppercase tracking-[0.3em] gap-4 shadow-elevation-2"
               >
                 <Square size={16} />
-                {isStopping ? "TERMINATING..." : ["stopped", "failed"].includes(deploymentStatus) ? "TERMINATED" : "KILL_SEQUENCE"}
+                 {isStopping ? "CANCELING..." : ["stopped", "failed"].includes(deploymentStatus) ? "CANCELED" : "CANCEL BUILD"}
               </GlassButton>
             </div>
           </div>
@@ -93,11 +93,11 @@ const DeploymentLogsPage = () => {
                       <div className="w-2 h-2 rounded-full bg-[#1e1e20]" />
                       <div className="w-2 h-2 rounded-full bg-[#1e1e20]" />
                     </div>
-                    <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.4em] ml-2">NODE_STDOUT_PIPE</span>
+                     <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.4em] ml-2">CONSOLE</span>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="px-4 py-1 rounded-xl bg-white/[0.02] border border-white/[0.04] text-[8px] font-black text-[#1e1e20] uppercase tracking-[0.3em]">
-                      UPLINK_STABLE
+                       CONNECTED
                     </div>
                   </div>
                 </div>
@@ -119,7 +119,7 @@ const DeploymentLogsPage = () => {
                   className={`h-14 px-10 gap-4 text-[10px] font-black uppercase tracking-[0.3em] ${hasError ? "animate-pulse" : ""}`}
                 >
                   <Sparkles size={18} />
-                  {hasError ? "INITIALIZE_REPAIR" : "ANALYZE_ARTIFACTS"}
+                   {hasError ? "DEBUG WITH AI" : "ANALYZE LOGS"}
                 </GlassButton>
               </div>
 

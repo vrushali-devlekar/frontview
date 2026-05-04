@@ -167,16 +167,16 @@ export default function Integrations() {
         <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
         <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
           <TopNav />
-          <div className="flex-1 p-8 lg:p-16 overflow-y-auto scrollbar-hide">
+          <div className="flex-1 p-4 lg:p-6 overflow-y-auto scrollbar-hide">
             <div className="max-w-4xl mx-auto pt-20">
               <div className="flex flex-col items-center text-center">
                 <div className="w-24 h-24 rounded-[40px] bg-[#1e1e20] border border-white/[0.04] flex items-center justify-center mb-12 shadow-elevation-2 relative overflow-hidden group">
                   <div className="absolute inset-0 bg-white/[0.01] group-hover:bg-white/[0.03] transition-colors" />
                   <Plug className="text-[#3f3f46] group-hover:text-white transition-colors" size={36} />
                 </div>
-                <h2 className="text-[40px] font-black text-white mb-4 uppercase tracking-tighter leading-none">Authority Node Link</h2>
+                <h2 className="text-[40px] font-black text-white mb-4 uppercase tracking-tighter leading-none">Integrations</h2>
                 <p className="text-[#52525b] text-[11px] font-black uppercase tracking-[0.4em] max-w-lg mb-20">
-                  Integrations are isolated per project instance. Select a target node to manage registry artifacts and data uplinks.
+                  Choose a project to manage its connected services and tools.
                 </p>
                 
                 <div className="w-full max-w-xl grid gap-5">
@@ -192,7 +192,7 @@ export default function Integrations() {
                         </div>
                         <div className="text-left">
                           <span className="text-[18px] font-black text-white uppercase tracking-tighter block group-hover:text-[#22c55e] transition-colors">{p.name}</span>
-                          <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.2em] mt-1.5 block">ACTIVE_AUTHORITY_INSTANCE</span>
+                          <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.2em] mt-1.5 block">Active Project</span>
                         </div>
                       </div>
                       <div className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#3f3f46] group-hover:text-white group-hover:translate-x-1 transition-all">
@@ -208,7 +208,7 @@ export default function Integrations() {
 
                 <div className="mt-20">
                   <GlassButton variant="secondary" onClick={() => window.location.href = '/dashboard'} className="h-14 px-10 text-[11px] font-black uppercase tracking-[0.25em] border-white/5">
-                    BACK_TO_COMMAND_CENTER
+                    BACK_TO_DASHBOARD
                   </GlassButton>
                 </div>
               </div>
@@ -228,17 +228,17 @@ export default function Integrations() {
         <div className="flex-1 p-8 lg:p-16 overflow-y-auto scrollbar-hide">
           <div className="max-w-6xl mx-auto">
             {/* Header Area */}
-            <div className="flex items-center justify-between mb-16 pb-12 border-b border-white/[0.04]">
+            <div className="flex items-center justify-between mb-10 pb-8 border-b border-white/[0.04]">
               <div>
-                <h1 className="text-[32px] font-black tracking-tighter text-white mb-2 uppercase">Uplink Registry</h1>
-                <p className="text-[11px] text-[#52525b] font-black uppercase tracking-[0.3em]">Power up your deployment pipeline with authorized extensions</p>
+                <h1 className="text-[32px] font-black tracking-tighter text-white mb-2 uppercase">Connected Services</h1>
+                <p className="text-[11px] text-[#52525b] font-black uppercase tracking-[0.3em]">Enhance your project with databases, notifications, and more.</p>
               </div>
               <GlassButton 
                 variant="secondary" 
                 className="h-12 px-8 text-[10px] font-black uppercase tracking-[0.2em] border-white/5"
                 onClick={() => window.location.href = '/integrations'}
               >
-                SWITCH_NODE_TARGET
+                SWITCH_PROJECT
               </GlassButton>
             </div>
 
@@ -260,7 +260,7 @@ export default function Integrations() {
                       transition={{ duration: 0.4, delay: i * 0.1 }}
                     >
                       <div className="flex flex-col h-full group bg-[#1e1e20] border border-white/[0.04] rounded-[48px] shadow-elevation-1 overflow-hidden transition-all hover:border-white/[0.1]">
-                        <div className="p-10 flex-1">
+                        <div className="p-8 flex-1">
                           <div className="flex items-start justify-between gap-6 mb-8">
                             <div className="flex items-center gap-6">
                               <div
@@ -278,7 +278,7 @@ export default function Integrations() {
                             {isConnected && (
                               <div className="flex items-center gap-3">
                                 <span className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-xl text-[9px] font-black text-[#22c55e] bg-[#22c55e]/5 border border-[#22c55e]/10 uppercase tracking-widest shadow-elevation-1">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" /> NOMINAL
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" /> ACTIVE
                                 </span>
                                 <button 
                                   onClick={() => handleDeleteIntegration(active._id)}
@@ -296,10 +296,10 @@ export default function Integrations() {
                           </p>
                         </div>
 
-                        <div className="flex items-center justify-between px-10 py-6 border-t border-white/[0.04] bg-[#161618]/50">
+                        <div className="flex items-center justify-between px-8 py-4 border-t border-white/[0.04] bg-[#161618]/50">
                           <div className="flex items-center gap-3 text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.25em]">
                             <Zap size={14} className={isConnected ? "text-[#22c55e]" : ""} />
-                            {app.engineType === 'database' ? "STATEFUL_INJECTION" : "TRIGGER_UPLINK"}
+                            {app.engineType === 'database' ? "CONNECTED" : "READY"}
                           </div>
                           <GlassButton
                             variant={isConnected ? "secondary" : "primary"}
@@ -309,7 +309,7 @@ export default function Integrations() {
                             {isConnected ? (
                               <><Settings2 size={16} /> CONFIGURE</>
                             ) : (
-                              <>INITIALIZE <ArrowRight size={16} /></>
+                              <>CONNECT <ArrowRight size={16} /></>
                             )}
                           </GlassButton>
                         </div>
@@ -353,7 +353,7 @@ export default function Integrations() {
                 </div>
                 <div>
                   <h2 className="text-[28px] font-black text-white uppercase tracking-tighter leading-tight">Link {modalConfig.name}</h2>
-                  <p className="text-[10px] text-[#52525b] font-black uppercase tracking-[0.25em] mt-2">Authority Node Synchronization</p>
+                  <p className="text-[10px] text-[#52525b] font-black uppercase tracking-[0.25em] mt-2">Project Integration Sync</p>
                 </div>
               </div>
 
@@ -381,14 +381,14 @@ export default function Integrations() {
                     onClick={() => setModalConfig(null)}
                     className="flex-1 h-14 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] text-white/40 text-[10px] font-black uppercase tracking-[0.25em] hover:text-white transition-all"
                   >
-                    ABORT_LINK
+                    CANCEL
                   </button>
                   <button
                     onClick={handleSaveIntegration}
                     disabled={isSubmitting}
                     className="flex-1 h-14 rounded-2xl bg-white text-black text-[10px] font-black uppercase tracking-[0.25em] hover:bg-white/90 transition-all shadow-elevation-2 disabled:opacity-50"
                   >
-                    {isSubmitting ? "SYNCHRONIZING..." : "CONFIRM_UPLINK"}
+                    {isSubmitting ? "SYNCING..." : "CONFIRM"}
                   </button>
                 </div>
               </div>

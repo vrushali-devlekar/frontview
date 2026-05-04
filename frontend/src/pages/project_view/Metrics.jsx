@@ -24,17 +24,17 @@ export default function Metrics() {
   const [exporting, setExporting] = useState(false);
 
   const stats = [
-    { title: "Node_Deployments", value: "28",      change: "+12%", isPositive: true,  icon: Rocket,       sparklineData: [2,4,3,5,4,7,6],              sparklineColor: "#22c55e" },
-    { title: "Registry_Success", value: "96.4%",   change: "+3.2%", isPositive: true, icon: ShieldCheck,  sparklineData: [90,92,91,95,94,96,97],       sparklineColor: "#22c55e" },
-    { title: "Latency_Buffer",   value: "2m 34s",  change: "-10s",  isPositive: true, icon: Clock,        sparklineData: [3.5,3.2,3.0,2.8,2.9,2.5,2.4], sparklineColor: "#3b82f6" },
-    { title: "Sequence_Faults",  value: "2",       change: "-33%",  isPositive: true, icon: AlertCircle,  sparklineData: [4,3,5,2,3,1,2],              sparklineColor: "#ef4444" },
+    { title: "Total Deployments", value: "28",      change: "+12%", isPositive: true,  icon: Rocket,       sparklineData: [2,4,3,5,4,7,6],              sparklineColor: "#22c55e" },
+    { title: "Build Success", value: "96.4%",   change: "+3.2%", isPositive: true, icon: ShieldCheck,  sparklineData: [90,92,91,95,94,96,97],       sparklineColor: "#22c55e" },
+    { title: "Avg Response Time",   value: "2m 34s",  change: "-10s",  isPositive: true, icon: Clock,        sparklineData: [3.5,3.2,3.0,2.8,2.9,2.5,2.4], sparklineColor: "#3b82f6" },
+    { title: "Build Errors",  value: "2",       change: "-33%",  isPositive: true, icon: AlertCircle,  sparklineData: [4,3,5,2,3,1,2],              sparklineColor: "#ef4444" },
   ];
 
   const analyticsData = [
-    { id: "AUTH_SERVICE_NODE",     type: "BUILD_SUCCESS",  time: "14:22:01", status: "NOMINAL" },
-    { id: "PAYMENT_GATEWAY_NODE",  type: "RUNTIME_ERROR",  time: "13:45:12", status: "FAULT" },
-    { id: "WEB_DASHBOARD_NODE",    type: "CONFIG_SYNC",    time: "12:10:55", status: "NOMINAL" },
-    { id: "API_GATEWAY_NODE",      type: "ROLLBACK_INIT",  time: "11:30:22", status: "NOMINAL" },
+    { id: "AUTH_SERVICE_NODE",     type: "BUILD_SUCCESS",  time: "14:22:01", status: "SUCCESS" },
+    { id: "PAYMENT_GATEWAY_NODE",  type: "RUNTIME_ERROR",  time: "13:45:12", status: "ERROR" },
+    { id: "WEB_DASHBOARD_NODE",    type: "CONFIG_SYNC",    time: "12:10:55", status: "SUCCESS" },
+    { id: "API_GATEWAY_NODE",      type: "ROLLBACK_INIT",  time: "11:30:22", status: "SUCCESS" },
   ];
 
   const exportAnalytics = () => {
@@ -48,7 +48,7 @@ export default function Metrics() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "velora_telemetry.csv");
+    link.setAttribute("download", "velora_stats.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -69,18 +69,18 @@ export default function Metrics() {
             <div className="flex items-end justify-between mb-16 pb-12 border-b border-white/[0.04]">
               <div>
                 <div className="flex items-center gap-4 mb-4">
-                  <span className="px-3 py-1 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">TELEMETRY_ENGINE</span>
+                  <span className="px-3 py-1 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">PROJECT STATS</span>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
                 </div>
-                <h1 className="text-[36px] font-black tracking-tighter uppercase text-white leading-none">Global_Performance</h1>
-                <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.4em] mt-5">Real-time_Infrastructure_Optimization_&_Resource_Telemetry</p>
+                <h1 className="text-[36px] font-black tracking-tighter uppercase text-white leading-none">Performance Overview</h1>
+                <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.4em] mt-5">Live project metrics and resource usage</p>
               </div>
               <GlassButton 
                 variant="secondary" 
                 className="h-14 px-10 gap-4 text-[10px] font-black uppercase tracking-[0.25em] shadow-elevation-1"
                 onClick={() => {}}
               >
-                <RefreshCw size={18} /> SYNC_METRICS
+                <RefreshCw size={18} /> REFRESH
               </GlassButton>
             </div>
 
@@ -127,7 +127,7 @@ export default function Metrics() {
                       <div className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#52525b]">
                         <BarChart3 size={22} />
                       </div>
-                      <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Sequence_Frequency</h3>
+                      <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Deployment Activity</h3>
                     </div>
                     <div className="flex items-center gap-3 text-[9px] font-black text-[#1e1e20] uppercase tracking-[0.3em] select-none">
                       LOW
@@ -173,14 +173,14 @@ export default function Metrics() {
                     <div className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#52525b]">
                       <Cpu size={22} />
                     </div>
-                    <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Infrastructure_Payload</h3>
+                    <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Resource Usage</h3>
                   </div>
                   
                   <div className="space-y-10 py-4">
                     {[
-                      { label: "COMPUTE_LOGIC", val: "42%", pct: 42, color: "bg-white" },
-                      { label: "MEMORY_BUFFER", val: "68%", pct: 68, color: "bg-[#22c55e]" },
-                      { label: "UPLINK_SPEED",  val: "15%", pct: 15, color: "bg-[#3b82f6]" },
+                      { label: "CPU Usage", val: "42%", pct: 42, color: "bg-white" },
+                      { label: "Memory Usage", val: "68%", pct: 68, color: "bg-[#22c55e]" },
+                      { label: "Network Traffic",  val: "15%", pct: 15, color: "bg-[#3b82f6]" },
                     ].map((bar, i) => (
                       <div key={i}>
                         <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.3em] mb-4">
@@ -208,7 +208,7 @@ export default function Metrics() {
                     <div className="w-14 h-14 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#52525b] shadow-elevation-1">
                       <BarChart3 size={24} />
                     </div>
-                    <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Real-time_Telemetry_Registry</h3>
+                    <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Recent Activity</h3>
                   </div>
                   <GlassButton 
                     variant="secondary" 
@@ -216,7 +216,7 @@ export default function Metrics() {
                     onClick={exportAnalytics} 
                     disabled={exporting}
                   >
-                    <Download size={14} /> {exporting ? "SYNCING..." : "EXPORT_LOGS"}
+                    <Download size={14} /> {exporting ? "SYNCING..." : "EXPORT CSV"}
                   </GlassButton>
                 </div>
                 
@@ -224,10 +224,10 @@ export default function Metrics() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-white/[0.02]">
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">NODE_CLUSTER</th>
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">PROTOCOL_TYPE</th>
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">SYNC_TIMESTAMP</th>
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">STATE_STATUS</th>
+                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">PROJECT</th>
+                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">EVENT</th>
+                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">TIME</th>
+                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">STATUS</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/[0.02] bg-[#0d0d0f]/10">
@@ -238,11 +238,11 @@ export default function Metrics() {
                           <td className="px-12 py-8 text-[11px] font-black text-[#1e1e20] tabular-nums group-hover:text-[#52525b] transition-colors">{row.time}</td>
                           <td className="px-12 py-8">
                             <div className={`inline-flex items-center gap-3 px-4 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-[0.2em] shadow-elevation-1
-                              ${row.status === "FAULT"
+                              ${row.status === "ERROR"
                                 ? "text-[#ef4444] bg-[#ef4444]/5 border-[#ef4444]/10"
                                 : "text-[#22c55e] bg-[#22c55e]/5 border-[#22c55e]/10"
                               }`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${row.status === "FAULT" ? "bg-[#ef4444]" : "bg-[#22c55e] animate-pulse"}`} />
+                              <div className={`w-1.5 h-1.5 rounded-full ${row.status === "ERROR" ? "bg-[#ef4444]" : "bg-[#22c55e] animate-pulse"}`} />
                               {row.status}
                             </div>
                           </td>

@@ -117,30 +117,30 @@ export default function Dashboard() {
             {/* Header Area */}
             <div className="flex items-center justify-between mb-6 pb-5 border-b border-white/[0.04]">
               <div>
-                <h1 className="text-[20px] font-black tracking-tighter text-[#e4e4e7] mb-1 uppercase leading-none">Welcome, {user?.name || 'Operator'}</h1>
-                <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.4em] mt-1">Central Command & Infrastructure Control</p>
+                <h1 className="text-[20px] font-black tracking-tighter text-[#e4e4e7] mb-1 uppercase leading-none">Welcome, {user?.name || 'User'}</h1>
+                <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.4em] mt-1">Manage your projects and deployments</p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="relative group">
                   <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#3f3f46] group-focus-within:text-white transition-colors" />
                   <input 
                     type="text" 
-                    placeholder="SCAN REGISTRY..."
+                    placeholder="SEARCH PROJECTS..."
                     className="h-9 pl-10 pr-5 bg-[#161618] border border-white/[0.04] rounded-xl text-[9px] font-black uppercase tracking-[0.2em] w-56 focus:outline-none focus:border-white/10 transition-all shadow-elevation-1 placeholder:text-[#2d2d33]"
                   />
                 </div>
                 <GlassButton variant="primary" onClick={() => navigate("/projects/new")} className="h-9 px-5 text-[9px] font-black uppercase tracking-[0.2em] shadow-elevation-2">
-                  <Plus size={13} /> INITIALIZE NODE
+                  <Plus size={13} /> DEPLOY PROJECT
                 </GlassButton>
               </div>
             </div>
 
             {/* Top Row: Mini Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <StatCard label="Total Nodes" value={stats.totalProjects} Icon={Box} color="text-white" />
-              <StatCard label="Active Clusters" value={stats.totalDeployments} Icon={Rocket} color="text-white" />
-              <StatCard label="Operational Stability" value={stats.successRate} Icon={Check} color="text-white" />
-              <StatCard label="Sync Latency" value={stats.avgBuildTime} Icon={Clock} color="text-white" />
+              <StatCard label="Total Projects" value={stats.totalProjects} Icon={Box} color="text-white" />
+              <StatCard label="Deployments" value={stats.totalDeployments} Icon={Rocket} color="text-white" />
+              <StatCard label="Success Rate" value={stats.successRate} Icon={Check} color="text-white" />
+              <StatCard label="Avg Build Time" value={stats.avgBuildTime} Icon={Clock} color="text-white" />
             </div>
 
             {/* Middle Section: Projects & Analytics */}
@@ -150,14 +150,14 @@ export default function Dashboard() {
               <div className="col-span-12 lg:col-span-8 space-y-5">
                 <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden shadow-elevation-2">
                     <div className="px-8 py-6 border-b border-white/[0.04] flex items-center justify-between bg-[#161618]">
-                        <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Authority Node Registry</h2>
-                        <button onClick={() => navigate("/projects")} className="text-[9px] font-black text-[#a1a1aa] hover:text-white transition-colors uppercase tracking-[0.2em] border-b border-white/5 pb-0.5">FULL_REGISTRY_SYNC</button>
+                        <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Project List</h2>
+                        <button onClick={() => navigate("/projects")} className="text-[9px] font-black text-[#a1a1aa] hover:text-white transition-colors uppercase tracking-[0.2em] border-b border-white/5 pb-0.5">VIEW ALL PROJECTS</button>
                     </div>
                     <div className="divide-y divide-white/[0.02] bg-[#0d0d0f]/20">
                         {loading ? (
                             [1,2,3].map(i => <div key={i} className="h-28 bg-white/[0.01] animate-pulse m-6 rounded-2xl" />)
                         ) : projects.length === 0 ? (
-                            <div className="p-24 text-center text-[#3f3f46] text-[12px] font-black uppercase tracking-[0.3em]">No active nodes detected.</div>
+                            <div className="p-24 text-center text-[#3f3f46] text-[12px] font-black uppercase tracking-[0.3em]">No projects found.</div>
                         ) : (
                             projects.slice(0, 5).map((p) => {
                                 const lastDeploy = p.latestDeployment;
@@ -186,8 +186,8 @@ export default function Dashboard() {
                                         </div>
                                         <div className="flex items-center gap-8">
                                             <div className="text-right hidden sm:block">
-                                                <p className="text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.2em] mb-1.5">Cluster Status: {lastDeploy?.status === 'running' ? 'NOMINAL' : 'IDLE'}</p>
-                                                <p className={`text-[11px] font-black uppercase tracking-widest ${lastDeploy?.status === 'running' ? 'text-[#22c55e]' : 'text-[#3f3f46]'}`}>{lastDeploy?.status === 'running' ? '99.99% Stability' : 'Offline'}</p>
+                                                <p className="text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.2em] mb-1.5">Status: {lastDeploy?.status === 'running' ? 'RUNNING' : 'IDLE'}</p>
+                                                <p className={`text-[11px] font-black uppercase tracking-widest ${lastDeploy?.status === 'running' ? 'text-[#22c55e]' : 'text-[#3f3f46]'}`}>{lastDeploy?.status === 'running' ? 'Stable' : 'Offline'}</p>
                                             </div>
                                             <div className="w-12 h-12 rounded-[18px] bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#3f3f46] group-hover:text-white group-hover:bg-[#1e1e20] transition-all shadow-elevation-1">
                                                 <ArrowUpRight size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -203,7 +203,7 @@ export default function Dashboard() {
                 {/* Operational Telemetry Chart — generated from real activityBars */}
                 <div className="bg-[#1e1e20] border border-white/[0.04] p-5 rounded-[24px] shadow-elevation-1">
                     <div className="flex items-center justify-between mb-5">
-                        <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Operational Telemetry</h2>
+                        <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Deployment Activity</h2>
                         <div className="flex bg-[#0d0d0f] p-1 rounded-xl gap-1 border border-white/5">
                             {['Daily', 'Weekly', 'Monthly'].map(t => (
                                 <button
@@ -279,14 +279,14 @@ export default function Dashboard() {
                 {/* Consultation Card */}
                 <div className="bg-[#1e1e20] border border-white/[0.04] p-5 rounded-[24px] shadow-elevation-1">
                     <div className="flex items-center justify-between mb-4">
-                        <p className="text-[8px] font-black text-[#52525b] uppercase tracking-[0.3em]">Authority Identity</p>
-                        <button onClick={() => navigate('/account')} className="text-[8px] font-black text-[#a1a1aa] hover:text-white transition-colors uppercase tracking-widest">Profile</button>
+                        <p className="text-[8px] font-black text-[#52525b] uppercase tracking-[0.3em]">User Profile</p>
+                        <button onClick={() => navigate('/account')} className="text-[8px] font-black text-[#a1a1aa] hover:text-white transition-colors uppercase tracking-widest">Settings</button>
                     </div>
                     <div className="bg-[#0d0d0f] rounded-xl p-4 flex items-center gap-4 border border-white/[0.04] shadow-elevation-1">
                         <img src={`https://ui-avatars.com/api/?name=${user?.name || 'Velora'}&background=1e1e20&color=fff`} className="w-9 h-9 rounded-xl border border-white/5 shrink-0" />
                         <div className="flex-1 min-w-0">
-                            <p className="text-[12px] font-black text-[#e4e4e7] uppercase tracking-tighter leading-tight truncate">{user?.name || 'Operator'}</p>
-                            <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.2em] mt-1">Authority Node</p>
+                            <p className="text-[12px] font-black text-[#e4e4e7] uppercase tracking-tighter leading-tight truncate">{user?.name || 'User'}</p>
+                            <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.2em] mt-1">Velora User</p>
                         </div>
                         <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-white/40 shrink-0"><Activity size={14} /></div>
                     </div>
@@ -295,22 +295,22 @@ export default function Dashboard() {
                 {/* Uptime Monitoring */}
                 <div className="bg-[#1e1e20] border border-white/[0.04] p-5 rounded-[24px] shadow-elevation-1">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-[8px] font-black text-[#52525b] uppercase tracking-[0.3em]">Real-time Pulse</h3>
-                        <span className="text-[8px] font-black text-[#22c55e] uppercase tracking-widest">{stats.successRate} Nominal</span>
+                        <h3 className="text-[8px] font-black text-[#52525b] uppercase tracking-[0.3em]">Real-time Status</h3>
+                        <span className="text-[8px] font-black text-[#22c55e] uppercase tracking-widest">{stats.successRate} Operational</span>
                     </div>
                     <div className="py-2">
                         <UptimeBar activityData={stats.activityBars} />
                     </div>
                     <div className="flex justify-between mt-4">
-                        <span className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.25em]">30d SEQUENCE</span>
-                        <span className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.25em]">LIVE_TELEMETRY</span>
+                        <span className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.25em]">30d ACTIVITY</span>
+                        <span className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.25em]">LIVE MONITORING</span>
                     </div>
                 </div>
 
                 {/* Recent Deployments Log — real data */}
                 <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden shadow-elevation-1">
                     <div className="px-8 py-6 border-b border-white/[0.04] bg-[#161618] flex items-center justify-between">
-                        <h3 className="text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">Operational Logs</h3>
+                        <h3 className="text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">Deployment History</h3>
                         <button onClick={() => navigate('/deploy')} className="text-[9px] font-black text-[#a1a1aa] hover:text-white transition-colors uppercase tracking-widest">View All</button>
                     </div>
                     <div className="p-3 space-y-2 bg-[#0d0d0f]/20">

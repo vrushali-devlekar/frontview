@@ -56,18 +56,18 @@ export default function DeploymentsPage() {
             <div className="flex items-end justify-between mb-16 pb-12 border-b border-white/[0.04]">
               <div>
                 <div className="flex items-center gap-4 mb-3">
-                  <span className="px-2.5 py-0.5 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[8px] font-black text-[#52525b] uppercase tracking-[0.3em]">TELEMETRY_INDEX</span>
+                  <span className="px-2.5 py-0.5 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[8px] font-black text-[#52525b] uppercase tracking-[0.3em]">DEPLOYMENTS</span>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
                 </div>
-                <h1 className="text-[22px] font-black tracking-tighter uppercase text-[#e4e4e7] leading-none">Global_Deployments</h1>
-                <p className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.4em] mt-3">Historical_&_Real-time_Overview_of_Global_Cluster_State</p>
+                <h1 className="text-[22px] font-black tracking-tighter uppercase text-[#e4e4e7] leading-none">Deployment History</h1>
+                <p className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.4em] mt-3">View and manage all your project deployments</p>
              </div>
               <GlassButton 
                 variant="primary" 
                 className="h-12 px-8 gap-4 text-[9px] font-black uppercase tracking-[0.25em] shadow-elevation-2"
                 onClick={() => navigate("/projects/new")}
               >
-                <Plus size={16} /> INITIALIZE_NODE
+                <Plus size={16} /> DEPLOY PROJECT
               </GlassButton>
             </div>
 
@@ -80,14 +80,14 @@ export default function DeploymentsPage() {
                 <div className="w-20 h-20 rounded-3xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center mx-auto mb-10 shadow-elevation-2">
                   <Rocket size={32} className="text-[#1e1e20]" />
                 </div>
-                <h3 className="text-[20px] font-black text-white uppercase tracking-tighter mb-4">NULL_TELEMETRY_DATA</h3>
-                <p className="text-[11px] text-[#3f3f46] font-black uppercase tracking-[0.3em] mb-12 max-w-[320px] mx-auto leading-relaxed">No project records found in the registry. Establish a node connection to initiate telemetry.</p>
+                <h3 className="text-[20px] font-black text-white uppercase tracking-tighter mb-4">NO DEPLOYMENTS</h3>
+                <p className="text-[11px] text-[#3f3f46] font-black uppercase tracking-[0.3em] mb-12 max-w-[320px] mx-auto leading-relaxed">No deployment history found. Deploy your first project to see logs here.</p>
                 <GlassButton 
                   variant="primary" 
                   className="h-14 px-12 text-[10px] font-black uppercase tracking-[0.3em]"
                   onClick={() => navigate("/projects/new")}
                 >
-                  INITIALIZE_COMMAND
+                  CREATE PROJECT
                 </GlassButton>
               </div>
             ) : (
@@ -182,14 +182,14 @@ function ProjectPreviewCard({ project, index, onRefresh }) {
                   <Activity size={24} className="text-[#eab308]" />
                 </div>
               </div>
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#eab308] animate-pulse">OPTIMIZING_INFRASTRUCTURE...</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#eab308] animate-pulse">BUILDING PROJECT...</p>
             </div>
           ) : status === 'failed' ? (
             <div className="flex flex-col items-center gap-4 text-center px-10">
               <div className="w-16 h-16 rounded-[24px] bg-[#ef4444]/5 border border-[#ef4444]/10 flex items-center justify-center text-[#ef4444] shadow-elevation-1">
                 <AlertCircle size={28} />
               </div>
-              <p className="text-[14px] font-black text-[#ef4444] uppercase tracking-widest">SEQUENCE_FAULT</p>
+              <p className="text-[14px] font-black text-[#ef4444] uppercase tracking-widest">DEPLOYMENT FAILED</p>
               <p className="text-[10px] text-[#ef4444]/40 font-black uppercase tracking-widest truncate max-w-full">{dep.errorMessage || 'Unknown Error'}</p>
             </div>
           ) : status === 'running' && dep.url ? (
@@ -217,7 +217,7 @@ function ProjectPreviewCard({ project, index, onRefresh }) {
                   </div>
                 </div>
                 <div className="mt-6 flex flex-col items-center gap-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white">NOMINAL_STATE</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white">STABLE</p>
                   <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#52525b]">V{dep.version} • {dep.branch}</p>
                 </div>
               </div>
@@ -228,7 +228,7 @@ function ProjectPreviewCard({ project, index, onRefresh }) {
                 <Box size={32} className="text-[#3f3f46]" />
               </div>
               <p className="text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.4em]">
-                {status === 'running' ? "ENCRYPTED_PREVIEW" : "NULL_RECORD"}
+                {status === 'running' ? "APP RUNNING" : "NO RECORD"}
               </p>
             </div>
           )}
@@ -284,7 +284,7 @@ function ProjectPreviewCard({ project, index, onRefresh }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-1.5 h-1.5 rounded-full bg-[#1e1e20]" />
-            <p className="text-[10px] text-[#52525b] font-black uppercase tracking-widest">SYNC_REF_ {dep ? formatTimeAgo(dep.createdAt).toUpperCase() : 'NULL'}</p>
+            <p className="text-[10px] text-[#52525b] font-black uppercase tracking-widest">LAST UPDATED {dep ? formatTimeAgo(dep.createdAt).toUpperCase() : 'NEVER'}</p>
           </div>
           
           <div className="flex items-center gap-3">
@@ -301,7 +301,7 @@ function ProjectPreviewCard({ project, index, onRefresh }) {
               onClick={() => navigate(`/deployment-progress/${project._id}`)}
               className="h-8 px-4 rounded-xl bg-[#0d0d0f] border border-white/[0.04] text-[8px] font-black uppercase tracking-widest text-[#52525b] hover:text-white transition-all"
             >
-              TELEMETRY
+              VIEW STATS
             </button>
           </div>
         </div>
@@ -323,7 +323,7 @@ function ProjectPreviewCard({ project, index, onRefresh }) {
                         <History size={24} />
                     </div>
                     <div>
-                        <h2 className="text-[18px] font-black text-white uppercase tracking-tighter mb-1">REGISTRY_HISTORY</h2>
+                        <h2 className="text-[18px] font-black text-white uppercase tracking-tighter mb-1">VERSION HISTORY</h2>
                         <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.3em]">{project.name}</p>
                     </div>
                 </div>
@@ -336,7 +336,7 @@ function ProjectPreviewCard({ project, index, onRefresh }) {
                 {historyLoading ? (
                     <div className="p-20 flex justify-center"><Loader2 size={32} className="animate-spin text-[#1e1e20]" /></div>
                 ) : history.length === 0 ? (
-                    <div className="p-32 text-center text-[#1e1e20] font-black uppercase text-[12px] tracking-[0.5em]">NULL_RECORDS_FOUND</div>
+                    <div className="p-32 text-center text-[#1e1e20] font-black uppercase text-[12px] tracking-[0.5em]">NO VERSIONS FOUND</div>
                 ) : (
                     <div className="space-y-2">
                         {history.map((h) => (
@@ -350,7 +350,7 @@ function ProjectPreviewCard({ project, index, onRefresh }) {
                                         <div className="flex items-center gap-4">
                                             <p className="text-[14px] font-black text-white uppercase tracking-tight">{h.status}</p>
                                             {h.version === dep?.version && (
-                                                <span className="px-3 py-1 rounded-lg bg-[#22c55e]/5 border border-[#22c55e]/10 text-[9px] font-black text-[#22c55e] uppercase tracking-[0.2em]">CURRENT_ACTIVE</span>
+                                                <span className="px-3 py-1 rounded-lg bg-[#22c55e]/5 border border-[#22c55e]/10 text-[9px] font-black text-[#22c55e] uppercase tracking-[0.2em]">ACTIVE</span>
                                             )}
                                         </div>
                                         <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.2em] mt-2 group-hover:text-[#52525b] transition-colors">{h.branch} • {formatTimeAgo(h.createdAt).toUpperCase()}</p>
@@ -374,7 +374,7 @@ function ProjectPreviewCard({ project, index, onRefresh }) {
 
               <div className="px-12 py-8 bg-[#161618] border-t border-white/[0.04] flex items-center gap-4">
                 <AlertCircle size={16} className="text-[#eab308]" />
-                <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.2em] leading-relaxed">Sequence_Override_Protocol: Rollback will generate a new deployment (V{history[0]?.version + 1 || '?'}) from the targeted registry state.</p>
+                <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.2em] leading-relaxed">Note: Restore will generate a new deployment (V{history[0]?.version + 1 || '?'}) from the selected version.</p>
               </div>
             </motion.div>
           </div>

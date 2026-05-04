@@ -104,16 +104,16 @@ export default function Members() {
         <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
         <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
           <TopNav />
-          <div className="flex-1 p-8 lg:p-16 overflow-y-auto scrollbar-hide">
+          <div className="flex-1 p-4 lg:p-6 overflow-y-auto scrollbar-hide">
             <div className="max-w-4xl mx-auto pt-20">
               <div className="flex flex-col items-center text-center">
                 <div className="w-20 h-20 rounded-[32px] bg-[#1e1e20] border border-white/[0.04] flex items-center justify-center mb-10 shadow-elevation-2 relative overflow-hidden group">
                   <div className="absolute inset-0 bg-white/[0.01] group-hover:bg-white/[0.03] transition-colors" />
                   <Users className="text-[#3f3f46] group-hover:text-white transition-colors" size={32} />
                 </div>
-                <h2 className="text-[32px] font-black text-[#e4e4e7] mb-3 uppercase tracking-tighter leading-none">Personnel Directory</h2>
-                <p className="text-[#52525b] text-[10px] font-black uppercase tracking-[0.4em] max-w-lg mb-16">
-                  Collaboration is localized per project node. Select a target instance to manage personnel access and authority levels.
+                <h2 className="text-[32px] font-black text-[#e4e4e7] mb-3 uppercase tracking-tighter leading-none">Team Management</h2>
+                <p className="text-[#52525b] text-[10px] font-black uppercase tracking-[0.4em] max-lg mb-16">
+                  Manage team members and their access permissions for this project.
                 </p>
                 
                 <div className="w-full max-w-xl grid gap-5">
@@ -129,7 +129,7 @@ export default function Members() {
                         </div>
                         <div className="text-left">
                           <span className="text-[18px] font-black text-white uppercase tracking-tighter block group-hover:text-[#22c55e] transition-colors">{p.name}</span>
-                          <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.2em] mt-1.5 block">ACTIVE_AUTHORITY_INSTANCE</span>
+                          <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.2em] mt-1.5 block">Active Project</span>
                         </div>
                       </div>
                       <div className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#3f3f46] group-hover:text-white group-hover:translate-x-1 transition-all">
@@ -145,7 +145,7 @@ export default function Members() {
 
                 <div className="mt-20">
                   <GlassButton variant="secondary" onClick={() => window.location.href = '/dashboard'} className="h-14 px-10 text-[11px] font-black uppercase tracking-[0.25em] border-white/5">
-                    BACK_TO_COMMAND_CENTER
+                    BACK_TO_DASHBOARD
                   </GlassButton>
                 </div>
               </div>
@@ -165,20 +165,20 @@ export default function Members() {
         <div className="flex-1 p-6 lg:p-10 overflow-y-auto scrollbar-hide">
           <div className="max-w-5xl mx-auto">
             {/* Header Area */}
-            <div className="flex items-center justify-between mb-10 pb-8 border-b border-white/[0.04]">
+            <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/[0.04]">
               <div>
-                <h1 className="text-[22px] font-black tracking-tighter text-[#e4e4e7] mb-2 uppercase leading-none">Personnel Registry</h1>
+                <h1 className="text-[22px] font-black tracking-tighter text-[#e4e4e7] mb-2 uppercase leading-none">Team Members</h1>
               </div>
               <GlassButton 
                 variant="secondary" 
                 className="h-12 px-8 text-[10px] font-black uppercase tracking-[0.2em] border-white/5"
                 onClick={() => window.location.href = '/members'}
               >
-                SWITCH_NODE_TARGET
+                SWITCH_PROJECT
               </GlassButton>
             </div>
 
-            <div className="grid grid-cols-1 gap-10">
+            <div className="grid grid-cols-1 gap-8">
               {/* ── Invite card ── */}
               <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                 <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] shadow-elevation-1 overflow-hidden">
@@ -186,9 +186,9 @@ export default function Members() {
                     <div className="w-8 h-8 rounded-lg bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center text-[#22c55e] shadow-elevation-1">
                       <UserPlus size={16} />
                     </div>
-                    <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Authorize New Operator</h2>
+                    <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Invite New Member</h2>
                   </div>
-                  <div className="p-8">
+                  <div className="p-6">
                     <AnimatePresence>
                       {message && (
                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-10">
@@ -205,7 +205,7 @@ export default function Members() {
                     <form onSubmit={handleInvite} className="flex flex-col md:flex-row gap-8 items-end">
                       <div className="flex-1 w-full">
                         <label className="block text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.35em] mb-3">
-                          Operator Identity Address
+                          Email Address
                         </label>
                         <input
                           type="email"
@@ -217,7 +217,7 @@ export default function Members() {
                       </div>
                       <div className="w-full md:w-56">
                         <label className="block text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.35em] mb-3">
-                          Authority Level
+                          Role
                         </label>
                         <div className="relative group">
                           <select
@@ -233,7 +233,7 @@ export default function Members() {
                         </div>
                       </div>
                       <GlassButton type="submit" variant="primary" className="h-12 px-8 shrink-0 w-full md:w-auto text-[9px] font-black uppercase tracking-[0.25em] shadow-elevation-2">
-                        Dispatch_Authorization
+                        Send_Invite
                       </GlassButton>
                     </form>
                   </div>
@@ -248,15 +248,15 @@ export default function Members() {
                       <div className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center text-[#52525b] shadow-elevation-1">
                         <Users size={18} />
                       </div>
-                      <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Personnel Registry</h2>
+                      <h2 className="text-[10px] font-black text-[#52525b] uppercase tracking-[0.3em]">Member List</h2>
                     </div>
-                    <span className="px-4 py-1.5 rounded-xl bg-[#0d0d0f] border border-white/[0.04] text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.2em] shadow-inner">{members.length} Units_Active</span>
+                    <span className="px-4 py-1.5 rounded-xl bg-[#0d0d0f] border border-white/[0.04] text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.2em] shadow-inner">{members.length} Members</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="bg-[#0d0d0f]/20">
-                          {["OPERATOR", "REGISTRY_ADDRESS", "AUTHORITY_LEVEL", "INSTANCE_STATUS", "TERMINATION"].map(h => (
+                          {["MEMBER", "EMAIL", "ROLE", "STATUS", "ACTIONS"].map(h => (
                             <th key={h} className="px-10 py-6 text-left text-[9px] font-black text-[#3f3f46] uppercase tracking-[0.35em] border-b border-white/[0.02]">{h}</th>
                           ))}
                         </tr>
@@ -270,13 +270,13 @@ export default function Members() {
                           ))
                         ) : members.length === 0 ? (
                           <tr>
-                            <td colSpan="5" className="px-10 py-20 text-center text-[#3f3f46] text-[11px] font-black uppercase tracking-[0.4em]">Awaiting personnel synchronization...</td>
+                            <td colSpan="5" className="px-10 py-20 text-center text-[#3f3f46] text-[11px] font-black uppercase tracking-[0.4em]">No members found...</td>
                           </tr>
                         ) : members.map((member) => {
                           const roleConf = getRoleConfig(member.role);
                           const statusConf = getStatusConfig(member.status);
                           const RoleIcon = roleConf.icon;
-                          const memberName = member.userId?.username || "PENDING_INVITE";
+                          const memberName = member.userId?.username || "PENDING";
                           const memberEmail = member.email;
 
                           return (
@@ -292,7 +292,7 @@ export default function Members() {
                                   )}
                                   <div>
                                     <p className="text-[14px] font-black text-[#e4e4e7] uppercase tracking-tighter leading-tight group-hover:text-[#22c55e] transition-colors">{memberName}</p>
-                                    <p className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.2em] mt-1.5">ID_NODE_ACTIVE</p>
+                                    <p className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.2em] mt-1.5">User_Active</p>
                                   </div>
                                 </div>
                               </td>

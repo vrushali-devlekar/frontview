@@ -66,7 +66,12 @@ const TopNav = () => {
 
       {/* Left — breadcrumb */}
       <div className="flex items-center gap-2 min-w-0">
-        <Link to="/dashboard" className="text-[12.5px] text-[#3f3f46] font-black hover:text-white transition-colors select-none tracking-tight">VELORA</Link>
+        <Link to="/dashboard" className="flex items-center gap-2.5 group mr-2">
+          <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/[0.08] flex items-center justify-center p-1 group-hover:border-white/20 transition-all overflow-hidden shadow-elevation-1">
+            <img src="/src/assets/logo-close.png" alt="Velora Logo" className="w-full h-full object-contain" />
+          </div>
+          <span className="text-[14px] font-black text-[#3f3f46] group-hover:text-white transition-colors select-none tracking-tighter uppercase">VELORA</span>
+        </Link>
         
         {projectId && project && (
           <>

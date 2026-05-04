@@ -238,15 +238,15 @@ export default function NewProjectPage() {
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
-        <div className="flex-1 p-6 lg:p-10 overflow-y-auto scrollbar-hide">
+        <div className="flex-1 p-6 lg:p-8 overflow-y-auto scrollbar-hide">
 
           <div className="max-w-5xl mx-auto">
             {/* Header Area */}
             <div className="flex items-center justify-between mb-10 pb-8 border-b border-white/[0.04]">
               <div>
-                <h1 className="text-[22px] font-black tracking-tighter text-[#e4e4e7] mb-2 uppercase leading-none">Initialize Authority Node</h1>
+                <h1 className="text-[22px] font-black tracking-tighter text-[#e4e4e7] mb-2 uppercase leading-none">Create New Project</h1>
                 <p className="text-[9px] text-[#52525b] font-black uppercase tracking-[0.3em] mt-2">
-                  {step === 1 ? "Uplink repository to the Velora infrastructure registry" : "Configure authority parameters and execution sequence"}
+                  {step === 1 ? "Select a project to deploy from your registry" : "Configure project settings and environment variables"}
                 </p>
               </div>
               <div className="flex items-center gap-8">
@@ -269,15 +269,15 @@ export default function NewProjectPage() {
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
                     {/* Repository List (Main Account Import) */}
-                    <div className="lg:col-span-3 bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden flex flex-col h-[580px] shadow-elevation-1 transition-all">
+                    <div className="lg:col-span-3 bg-[#1e1e20] border border-white/[0.04] rounded-[32px] overflow-hidden flex flex-col h-[480px] shadow-elevation-1 transition-all">
                       <div className="px-8 py-6 border-b border-white/[0.04] flex items-center justify-between bg-[#161618]">
                         <div className="flex items-center gap-6">
                           <div className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center shadow-elevation-1 text-[#e4e4e7]">
                             <GitHubIcon size={20} />
                           </div>
                           <div>
-                            <span className="font-black text-[13px] block uppercase tracking-tighter text-[#e4e4e7]">Uplink Registry</span>
-                            <span className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.25em] mt-1 block">Connected authority instance</span>
+                            <span className="font-black text-[13px] block uppercase tracking-tighter text-[#e4e4e7]">GitHub Projects</span>
+                            <span className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.25em] mt-1 block">Connected Account Repositories</span>
                           </div>
                         </div>
                         {user?.githubConnected && (
@@ -285,7 +285,7 @@ export default function NewProjectPage() {
                             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1e1e20]" />
                             <input
                               type="text"
-                              placeholder="FILTER_ASSETS..."
+                              placeholder="SEARCH_PROJECTS..."
                               value={repoSearch}
                               onChange={(e) => setRepoSearch(e.target.value)}
                               className="bg-[#0d0d0f] border border-white/[0.04] rounded-xl h-12 pl-12 pr-5 text-[10px] font-black uppercase tracking-[0.2em] text-white focus:outline-none focus:border-white/10 transition-all w-64 shadow-inner placeholder:text-[#2d2d33]"
@@ -294,28 +294,28 @@ export default function NewProjectPage() {
                         )}
                       </div>
 
-                      <div className="flex-1 overflow-y-auto p-10 space-y-4 scrollbar-hide">
+                      <div className="flex-1 overflow-y-auto p-6 space-y-3 scrollbar-hide">
                         {!user?.githubConnected ? (
                           <div className="h-full flex flex-col items-center justify-center text-center p-12">
                             <div className="w-28 h-28 rounded-[48px] bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center mb-10 shadow-elevation-2">
                               <GitHubIcon size={56} className="text-[#1e1e20]" />
                             </div>
-                            <h4 className="text-[20px] font-black mb-4 uppercase tracking-tighter text-white">Authority Required</h4>
+                            <h4 className="text-[20px] font-black mb-4 uppercase tracking-tighter text-white">Connection Required</h4>
                             <p className="text-[11px] text-[#52525b] mb-12 max-w-[320px] mx-auto font-black uppercase tracking-[0.3em] leading-relaxed">
-                              Uplink your GitHub credentials to synchronize remote repository assets with the Velora registry.
+                              Link your GitHub account to see your repositories and deploy them instantly.
                             </p>
                             <div className="flex flex-col items-center gap-8">
                               <a
                                 href={`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/auth/github`}
                                 className="h-16 px-12 rounded-[32px] bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-5 hover:bg-white/90 transition-all shadow-elevation-2"
                               >
-                                <GitHubIcon size={20} /> Authorize_Registry
+                                <GitHubIcon size={20} /> Connect GitHub
                               </a>
                               <button
                                 onClick={() => document.getElementById('folder-upload').click()}
                                 className="text-[9px] text-[#3f3f46] hover:text-white transition-colors font-black uppercase tracking-[0.4em] border-b border-white/5 pb-2"
                               >
-                                Deploy_Local_Archive
+                                Upload_From_Local
                               </button>
                             </div>
                           </div>
@@ -337,12 +337,12 @@ export default function NewProjectPage() {
                               className="w-full flex items-center justify-between p-6 rounded-3xl border border-white/[0.03] hover:border-white/10 bg-[#0d0d0f]/20 hover:bg-[#0d0d0f]/50 transition-all group shadow-elevation-1"
                             >
                               <div className="flex items-center gap-6">
-                                <div className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#1e1e20] group-hover:text-white transition-all shadow-inner">
+                                <div className="w-8 h-8 rounded-xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#1e1e20] group-hover:text-white transition-all shadow-inner text-[10px]">
                                   {repo.isPrivate ? <Lock size={16} /> : <Globe size={16} />}
                                 </div>
                                 <div className="text-left">
                                   <span className="text-[13px] font-black text-[#e4e4e7] uppercase tracking-tighter group-hover:text-[#22c55e] transition-colors leading-none block">{repo.name}</span>
-                                  <span className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.2em] mt-1.5 block">ASSET_NOMINAL</span>
+                                  <span className="text-[8px] text-[#3f3f46] font-black uppercase tracking-[0.2em] mt-1.5 block">Repository_Ready</span>
                                 </div>
                               </div>
                               <div className="flex items-center gap-6">
@@ -369,15 +369,15 @@ export default function NewProjectPage() {
                       <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[32px] p-8 shadow-elevation-1 relative overflow-hidden flex flex-col group transition-all hover:border-white/10">
                         <div className="mb-6">
                           <div className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center mb-5 text-[#3f3f46] group-hover:text-white transition-colors shadow-elevation-1">
-                            <Link2 size={18} />
+                            <Link2 size={16} />
                           </div>
-                          <h3 className="text-[15px] font-black mb-1 uppercase tracking-tighter text-[#e4e4e7]">Manual Uplink</h3>
-                          <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.3em] leading-relaxed">Import remote repository assets via direct encrypted uplink.</p>
+                          <h3 className="text-[15px] font-black mb-1 uppercase tracking-tighter text-[#e4e4e7]">Import via URL</h3>
+                          <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.3em] leading-relaxed">Import your project using a direct GitHub or Git URL.</p>
                         </div>
 
                         <div className="space-y-8">
                           <div className="relative">
-                            <Link2 size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#1e1e20]" />
+                            <Link2 size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-[#1e1e20]" />
                             <input
                               placeholder="HTTPS://GITHUB.COM/OPERATOR/NODE"
                               value={repoInput}
@@ -391,7 +391,7 @@ export default function NewProjectPage() {
                             onClick={handleCustomImport}
                             disabled={!repoInput}
                           >
-                            Initialize_Uplink
+                            Initialize_Import
                           </GlassButton>
                         </div>
                       </div>
@@ -417,12 +417,12 @@ export default function NewProjectPage() {
                           <div className="w-12 h-12 rounded-[20px] bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center mb-5 group-hover:bg-[#22c55e]/5 group-hover:border-[#22c55e]/10 transition-all shadow-elevation-1 text-[#3f3f46]">
                             <Rocket size={20} />
                           </div>
-                          <h3 className="text-[14px] font-black mb-1 uppercase tracking-tighter text-[#e4e4e7]">Direct Archive</h3>
+                          <h3 className="text-[14px] font-black mb-1 uppercase tracking-tighter text-[#e4e4e7]">Upload Folder</h3>
                           <p className="text-[8px] text-[#52525b] font-black uppercase tracking-[0.3em] max-w-[200px] leading-relaxed mb-6">
-                            {uploadedFiles ? `SENSING: ${uploadedFiles.length} ASSETS` : "Deploy local project directory for instant authority synchronization."}
+                            {uploadedFiles ? `SCANNING: ${uploadedFiles.length} FILES` : "Upload a project folder directly from your computer."}
                           </p>
                           <div className="px-8 py-3 rounded-2xl bg-[#22c55e]/5 border border-[#22c55e]/10 text-[9px] font-black uppercase tracking-[0.3em] text-[#22c55e] shadow-elevation-1 group-hover:bg-[#22c55e] group-hover:text-black transition-all">
-                            {loading ? "SCANNING_ASSETS..." : "SELECT_DIRECTORY"}
+                            {loading ? "SCANNING_FILES..." : "CHOOSE_FOLDER"}
                           </div>
                         </div>
 
@@ -441,7 +441,7 @@ export default function NewProjectPage() {
                   className="max-w-4xl mx-auto pb-32"
                 >
                   <div className="space-y-10">
-                    <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[40px] p-8 shadow-elevation-1">
+                    <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[40px] p-6 shadow-elevation-1">
                       <div className="flex items-center justify-between mb-10">
                         <div className="flex items-center gap-6">
                           <div className="w-14 h-14 rounded-2xl bg-[#0d0d0f] border border-white/[0.08] flex items-center justify-center text-[#22c55e] shadow-elevation-1">
@@ -455,13 +455,13 @@ export default function NewProjectPage() {
                             </div>
                           </div>
                         </div>
-                        <button onClick={() => setStep(1)} className="px-6 py-2 rounded-xl bg-[#0d0d0f] border border-white/[0.04] text-[9px] font-black uppercase tracking-[0.3em] text-[#3f3f46] hover:text-white transition-all shadow-elevation-1">ABORT_SEQUENCE</button>
+                        <button onClick={() => setStep(1)} className="px-6 py-2 rounded-xl bg-[#0d0d0f] border border-white/[0.04] text-[9px] font-black uppercase tracking-[0.3em] text-[#3f3f46] hover:text-white transition-all shadow-elevation-1">CANCEL</button>
                       </div>
 
                       <div className="space-y-10">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div className="space-y-4">
-                            <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] ml-1">Asset Identity</label>
+                            <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] ml-1">Project Name</label>
                             <input
                               value={name}
                               onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s/g, '-'))}
@@ -526,7 +526,7 @@ export default function NewProjectPage() {
                           >
                             <div className="flex items-center gap-4">
                               <Settings2 size={16} />
-                              OPERATIONAL_OVERRIDES
+                              ADVANCED_SETTINGS
                             </div>
                             {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                           </button>
@@ -539,9 +539,9 @@ export default function NewProjectPage() {
                                 exit={{ height: 0, opacity: 0 }}
                                 className="overflow-hidden"
                               >
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-10 mt-8 border-t border-white/[0.04]">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 mt-6 border-t border-white/[0.04]">
                                   <div className="space-y-4">
-                                    <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] ml-1">Dependency Resolution</label>
+                                    <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] ml-1">Install Command</label>
                                     <input
                                       value={installCommand}
                                       onChange={(e) => setInstallCommand(e.target.value)}
@@ -549,7 +549,7 @@ export default function NewProjectPage() {
                                     />
                                   </div>
                                   <div className="space-y-4">
-                                    <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] ml-1">Execution Sequence</label>
+                                    <label className="text-[8px] font-black text-[#3f3f46] uppercase tracking-[0.4em] ml-1">Start Command</label>
                                     <input
                                       value={startCommand}
                                       onChange={(e) => setStartCommand(e.target.value)}
@@ -570,7 +570,7 @@ export default function NewProjectPage() {
                               onClick={() => setEnvVars([...envVars, { key: "", value: "" }])}
                               className="px-6 py-2.5 rounded-xl bg-[#0d0d0f] border border-white/[0.04] text-[9px] font-black uppercase tracking-[0.3em] text-white hover:bg-white/[0.04] transition-all flex items-center gap-3 shadow-elevation-1"
                             >
-                              <Plus size={14} /> ADD_PARAMETER
+                              <Plus size={14} /> ADD_VARIABLE
                             </button>
                           </div>
 
@@ -578,7 +578,7 @@ export default function NewProjectPage() {
                             {envVars.map((env, i) => (
                               <div key={`env-${i}`} className="flex gap-6">
                                 <input
-                                  placeholder="IDENTIFIER_KEY"
+                                  placeholder="ENV_KEY"
                                   value={env.key}
                                   onChange={(e) => {
                                     const next = [...envVars];
@@ -631,11 +631,11 @@ export default function NewProjectPage() {
                             {loading ? (
                               <>
                                 <div className="w-4 h-4 border-[2px] border-black/20 border-t-black rounded-full animate-spin" />
-                                INITIATING_SEQUENCE...
+                                DEPLOYING...
                               </>
                             ) : (
                               <>
-                                INITIALIZE_DEPLOYMENT <ArrowRight size={18} />
+                                DEPLOY_PROJECT <ArrowRight size={18} />
                               </>
                             )}
                           </button>

@@ -198,7 +198,7 @@ const detectFramework = async (targetPath) => {
             return {
                 type: 'backend-node',
                 projectPath,
-                installCmd: 'npm install',
+                installCmd: 'npm install --omit=dev',
                 buildCmd: null, // Backend me generally build nahi hota (unless TS ho)
                 startCmd: 'npm start'
             };
@@ -208,7 +208,7 @@ const detectFramework = async (targetPath) => {
             return {
                 type: 'backend-node-dev',
                 projectPath,
-                installCmd: 'npm install',
+                installCmd: 'npm install --omit=dev',
                 buildCmd: null,
                 startCmd: 'npm run dev'
             };
