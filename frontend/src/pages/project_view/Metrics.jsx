@@ -24,17 +24,17 @@ export default function Metrics() {
   const [exporting, setExporting] = useState(false);
 
   const stats = [
-    { title: "Node_Deployments", value: "28",      change: "+12%", isPositive: true,  icon: Rocket,       sparklineData: [2,4,3,5,4,7,6],              sparklineColor: "#22c55e" },
-    { title: "Registry_Success", value: "96.4%",   change: "+3.2%", isPositive: true, icon: ShieldCheck,  sparklineData: [90,92,91,95,94,96,97],       sparklineColor: "#22c55e" },
-    { title: "Latency_Buffer",   value: "2m 34s",  change: "-10s",  isPositive: true, icon: Clock,        sparklineData: [3.5,3.2,3.0,2.8,2.9,2.5,2.4], sparklineColor: "#3b82f6" },
-    { title: "Sequence_Faults",  value: "2",       change: "-33%",  isPositive: true, icon: AlertCircle,  sparklineData: [4,3,5,2,3,1,2],              sparklineColor: "#ef4444" },
+    { title: "Total Deployments", value: "28",      change: "+12%", isPositive: true,  icon: Rocket,       sparklineData: [2,4,3,5,4,7,6],              sparklineColor: "#22c55e" },
+    { title: "Success Rate",      value: "96.4%",   change: "+3.2%", isPositive: true, icon: ShieldCheck,  sparklineData: [90,92,91,95,94,96,97],       sparklineColor: "#22c55e" },
+    { title: "Avg Deploy Time",   value: "2m 34s",  change: "-10s",  isPositive: true, icon: Clock,        sparklineData: [3.5,3.2,3.0,2.8,2.9,2.5,2.4], sparklineColor: "#3b82f6" },
+    { title: "Failed Deploys",    value: "2",       change: "-33%",  isPositive: true, icon: AlertCircle,  sparklineData: [4,3,5,2,3,1,2],              sparklineColor: "#ef4444" },
   ];
 
   const analyticsData = [
-    { id: "AUTH_SERVICE_NODE",     type: "BUILD_SUCCESS",  time: "14:22:01", status: "NOMINAL" },
-    { id: "PAYMENT_GATEWAY_NODE",  type: "RUNTIME_ERROR",  time: "13:45:12", status: "FAULT" },
-    { id: "WEB_DASHBOARD_NODE",    type: "CONFIG_SYNC",    time: "12:10:55", status: "NOMINAL" },
-    { id: "API_GATEWAY_NODE",      type: "ROLLBACK_INIT",  time: "11:30:22", status: "NOMINAL" },
+    { id: "auth-service",     type: "build_success",  time: "14:22:01", status: "Completed" },
+    { id: "payment-gateway",  type: "runtime_error",  time: "13:45:12", status: "Failed" },
+    { id: "web-dashboard",    type: "config_sync",    time: "12:10:55", status: "Completed" },
+    { id: "api-gateway",      type: "rollback",       time: "11:30:22", status: "Completed" },
   ];
 
   const exportAnalytics = () => {
@@ -48,216 +48,222 @@ export default function Metrics() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "velora_telemetry.csv");
+    link.setAttribute("download", "velora_analytics.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     setTimeout(() => setExporting(false), 1000);
   };
 
-  const heatmapData = Array.from({ length: 7 * 12 }, () => Math.floor(Math.random() * 4));
+  // Generate 365 days of heatmap data dynamically
+  const generateHeatmapData = () => {
+    const data = [];
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 364);
+    
+    // Padding for the first week (0 = Sunday)
+    for (let i = 0; i < startDate.getDay(); i++) {
+      data.push({ date: null, val: -1 });
+    }
+    
+    for (let i = 0; i <= 364; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      data.push({ 
+        date: d, 
+        val: Math.random() > 0.4 ? Math.floor(Math.random() * 4) : 0 
+      });
+    }
+    return data;
+  };
+  
+  const heatmapData = generateHeatmapData();
+
+  const months = [];
+  let lastMonth = -1;
+  heatmapData.forEach((item, index) => {
+    if (item.date && item.date.getMonth() !== lastMonth) {
+      // Only push if it's near the start of the month to avoid clustering
+      if (item.date.getDate() < 15) {
+        months.push({ name: item.date.toLocaleString('default', { month: 'short' }), col: Math.floor(index / 7) });
+        lastMonth = item.date.getMonth();
+      }
+    }
+  });
 
   return (
-    <div className="flex h-screen bg-[var(--bg-main)] text-white font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} navMode={navMode} toggleNavMode={toggleNavMode} />
       <Dock navMode={navMode} toggleNavMode={toggleNavMode} />
       <PageWrapper navMode={navMode} isCollapsed={isCollapsed}>
         <TopNav />
-        <div className="flex-1 p-10 lg:p-16 overflow-y-auto scrollbar-hide">
-          <div className="max-w-7xl mx-auto">
-            {/* Header Area */}
-            <div className="flex items-end justify-between mb-16 pb-12 border-b border-white/[0.04]">
-              <div>
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="px-3 py-1 rounded-lg bg-[#1e1e20] border border-white/[0.04] text-[9px] font-black text-[#52525b] uppercase tracking-[0.3em]">TELEMETRY_ENGINE</span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-                </div>
-                <h1 className="text-[36px] font-black tracking-tighter uppercase text-white leading-none">Global_Performance</h1>
-                <p className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.4em] mt-5">Real-time_Infrastructure_Optimization_&_Resource_Telemetry</p>
-              </div>
-              <GlassButton 
-                variant="secondary" 
-                className="h-14 px-10 gap-4 text-[10px] font-black uppercase tracking-[0.25em] shadow-elevation-1"
-                onClick={() => {}}
-              >
-                <RefreshCw size={18} /> SYNC_METRICS
-              </GlassButton>
+        <PageShell>
+          <PageHeader title="Metrics" subtitle="Real-time infrastructure performance monitoring">
+            <GlassButton variant="secondary" className="gap-2">
+              <RefreshCw size={13} /> Refresh
+            </GlassButton>
+          </PageHeader>
+
+          <div className="space-y-5">
+            {/* ── Stat cards ── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {stats.map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.06 }}
+                >
+                  <Card className="p-6 flex flex-col gap-4" hover={false}>
+                    <div className="flex items-start justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center shrink-0">
+                        <item.icon size={15} className="text-[#52525b]" />
+                      </div>
+                      <div className="opacity-70">
+                        <Sparkline data={item.sparklineData} color={item.sparklineColor} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[26px] font-bold text-white tracking-tight leading-none">{item.value}</p>
+                      <div className="flex items-center justify-between mt-2.5">
+                        <p className="text-[11.5px] text-[#71717a] font-medium">{item.title}</p>
+                        <span className={`inline-flex items-center gap-0.5 text-[11px] font-bold ${item.isPositive ? "text-[#22c55e]" : "text-[#ef4444]"}`}>
+                          {item.isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                          {item.change}
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
 
-            <div className="space-y-10">
-              {/* Stat Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {stats.map((item, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: i * 0.05 }}
-                  >
-                    <div className="p-10 bg-[#1e1e20] border border-white/[0.04] rounded-[48px] flex flex-col gap-8 shadow-elevation-1 hover:shadow-elevation-2 transition-all group">
-                      <div className="flex items-start justify-between">
-                        <div className="w-14 h-14 rounded-2xl bg-[#0d0d0f] border border-white/[0.06] flex items-center justify-center shrink-0 shadow-elevation-2 group-hover:border-white/10 transition-all">
-                          <item.icon size={24} className="text-[#3f3f46] group-hover:text-white transition-colors" />
-                        </div>
-                        <div className="opacity-10 group-hover:opacity-30 transition-opacity">
-                          <Sparkline data={item.sparklineData} color={item.sparklineColor} />
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-[32px] font-black text-white tracking-tighter leading-none mb-4">{item.value}</p>
-                        <div className="flex items-center justify-between">
-                          <p className="text-[9px] text-[#52525b] font-black uppercase tracking-[0.3em]">{item.title}</p>
-                          <span className={`inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] ${item.isPositive ? "text-[#22c55e]" : "text-[#ef4444]"}`}>
-                            {item.isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                            {item.change}
-                          </span>
-                        </div>
-                      </div>
+            {/* ── Charts row ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* Deployment heatmap */}
+              <Card className="lg:col-span-2 overflow-hidden">
+                <CardHeader icon={BarChart3} title="Deployment Frequency">
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#52525b] select-none">
+                    Less
+                    <div className="flex gap-1 mx-1">
+                      {["bg-white/[0.04]", "bg-[#22c55e]/30", "bg-[#22c55e]/60", "bg-[#22c55e]"].map((c, i) => (
+                        <div key={i} className={`w-3 h-3 rounded-[2px] ${c}`} />
+                      ))}
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Heatmap */}
-                <div className="lg:col-span-2 bg-[#1e1e20] border border-white/[0.04] rounded-[56px] p-12 shadow-elevation-1">
-                  <div className="flex items-center justify-between mb-12">
-                    <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#52525b]">
-                        <BarChart3 size={22} />
-                      </div>
-                      <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Sequence_Frequency</h3>
-                    </div>
-                    <div className="flex items-center gap-3 text-[9px] font-black text-[#1e1e20] uppercase tracking-[0.3em] select-none">
-                      LOW
-                      <div className="flex gap-1.5 mx-2">
-                        {["bg-white/[0.02]", "bg-[#22c55e]/10", "bg-[#22c55e]/30", "bg-[#22c55e]"].map((c, i) => (
-                          <div key={i} className={`w-3 h-3 rounded-[2px] ${c}`} />
+                    More
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  <div className="w-full overflow-x-auto scrollbar-hide pb-2">
+                    <div className="min-w-max flex flex-col">
+                      {/* Month Labels */}
+                      <div className="flex relative h-5 mb-1 text-[10px] font-semibold text-[#71717a]">
+                        {months.map((m, i) => (
+                          <div key={i} className="absolute" style={{ left: `${m.col * 16}px` }}>
+                            {m.name}
+                          </div>
                         ))}
                       </div>
-                      HIGH
+                      
+                      <div className="flex gap-2">
+                        {/* Day Labels */}
+                        <div className="flex flex-col justify-between text-[9px] font-semibold text-[#71717a] py-1">
+                          <span>Mon</span>
+                          <span>Wed</span>
+                          <span>Fri</span>
+                        </div>
+                        
+                        {/* Grid */}
+                        <div className="grid grid-rows-7 grid-flow-col gap-1">
+                          {heatmapData.map((item, i) => (
+                            <motion.div
+                              key={i}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: i * 0.001 }}
+                              className={`w-3 h-3 rounded-[2px] transition-colors duration-300 hover:ring-1 hover:ring-white/30 ${
+                                item.val === -1 ? "opacity-0" :
+                                item.val === 0 ? "bg-white/[0.03]" :
+                                item.val === 1 ? "bg-[#22c55e]/30" :
+                                item.val === 2 ? "bg-[#22c55e]/60" :
+                                "bg-[#22c55e]"
+                              }`}
+                              title={item.date ? `${item.date.toDateString()}: ${item.val} deploys` : ""}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-12 gap-2">
-                    {heatmapData.map((val, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.002 }}
-                        className={`aspect-square rounded-[4px] transition-all duration-500 hover:ring-2 hover:ring-white/[0.08] cursor-crosshair ${
-                          val === 0 ? "bg-[#0d0d0f]" :
-                          val === 1 ? "bg-[#22c55e]/10" :
-                          val === 2 ? "bg-[#22c55e]/40" :
-                          "bg-[#22c55e]"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-8 text-[9px] font-black text-[#1e1e20] uppercase tracking-[0.4em] px-2">
-                    <span>MON</span>
-                    <span>TUE</span>
-                    <span>WED</span>
-                    <span>THU</span>
-                    <span>FRI</span>
-                    <span>SAT</span>
-                    <span>SUN</span>
-                  </div>
-                </div>
+                </CardBody>
+              </Card>
 
-                {/* Infrastructure Payload */}
-                <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[56px] p-12 shadow-elevation-1">
-                  <div className="flex items-center gap-6 mb-12">
-                    <div className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#52525b]">
-                      <Cpu size={22} />
-                    </div>
-                    <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Infrastructure_Payload</h3>
-                  </div>
-                  
-                  <div className="space-y-10 py-4">
+              {/* Resource allocation */}
+              <Card>
+                <CardHeader icon={Cpu} title="Resource Allocation" />
+                <CardBody>
+                  <div className="space-y-6">
                     {[
-                      { label: "COMPUTE_LOGIC", val: "42%", pct: 42, color: "bg-white" },
-                      { label: "MEMORY_BUFFER", val: "68%", pct: 68, color: "bg-[#22c55e]" },
-                      { label: "UPLINK_SPEED",  val: "15%", pct: 15, color: "bg-[#3b82f6]" },
+                      { label: "CPU Usage", val: "42%", pct: 42, color: "bg-white" },
+                      { label: "Memory",    val: "68%", pct: 68, color: "bg-[#22c55e]" },
+                      { label: "Network",   val: "15%", pct: 15, color: "bg-[#3b82f6]" },
                     ].map((bar, i) => (
                       <div key={i}>
-                        <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.3em] mb-4">
-                          <span className="text-[#3f3f46]">{bar.label}</span>
-                          <span className="text-white">{bar.val}</span>
+                        <div className="flex justify-between text-[12px] mb-2.5">
+                          <span className="text-[#71717a] font-medium">{bar.label}</span>
+                          <span className="text-white font-bold">{bar.val}</span>
                         </div>
-                        <div className="h-2 bg-[#0d0d0f] rounded-full overflow-hidden shadow-inner">
+                        <div className="h-[3px] bg-white/[0.06] rounded-full overflow-hidden">
                           <motion.div
-                            className={`h-full ${bar.color} rounded-full shadow-elevation-1`}
+                            className={`h-full ${bar.color} rounded-full`}
                             initial={{ width: 0 }}
                             animate={{ width: `${bar.pct}%` }}
-                            transition={{ duration: 1, delay: 0.3 + i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                            transition={{ duration: 0.9, delay: 0.2 + i * 0.1, ease: "easeOut" }}
                           />
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
-
-              {/* Telemetry Table */}
-              <div className="bg-[#1e1e20] border border-white/[0.04] rounded-[56px] overflow-hidden shadow-elevation-2">
-                <div className="bg-[#0d0d0f]/40 px-12 py-10 border-b border-white/[0.04] flex items-center justify-between">
-                  <div className="flex items-center gap-6">
-                    <div className="w-14 h-14 rounded-2xl bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center text-[#52525b] shadow-elevation-1">
-                      <BarChart3 size={24} />
-                    </div>
-                    <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Real-time_Telemetry_Registry</h3>
-                  </div>
-                  <GlassButton 
-                    variant="secondary" 
-                    className="h-10 px-6 text-[9px] font-black uppercase tracking-widest gap-3" 
-                    onClick={exportAnalytics} 
-                    disabled={exporting}
-                  >
-                    <Download size={14} /> {exporting ? "SYNCING..." : "EXPORT_LOGS"}
-                  </GlassButton>
-                </div>
-                
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-white/[0.02]">
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">NODE_CLUSTER</th>
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">PROTOCOL_TYPE</th>
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">SYNC_TIMESTAMP</th>
-                        <th className="px-12 py-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#1e1e20]">STATE_STATUS</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.02] bg-[#0d0d0f]/10">
-                      {analyticsData.map((row, i) => (
-                        <tr key={i} className="hover:bg-white/[0.02] transition-all group">
-                          <td className="px-12 py-8 text-[13px] font-black text-white uppercase tracking-tighter">{row.id}</td>
-                          <td className="px-12 py-8 text-[10px] font-black text-[#3f3f46] uppercase tracking-[0.3em]">{row.type}</td>
-                          <td className="px-12 py-8 text-[11px] font-black text-[#1e1e20] tabular-nums group-hover:text-[#52525b] transition-colors">{row.time}</td>
-                          <td className="px-12 py-8">
-                            <div className={`inline-flex items-center gap-3 px-4 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-[0.2em] shadow-elevation-1
-                              ${row.status === "FAULT"
-                                ? "text-[#ef4444] bg-[#ef4444]/5 border-[#ef4444]/10"
-                                : "text-[#22c55e] bg-[#22c55e]/5 border-[#22c55e]/10"
-                              }`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${row.status === "FAULT" ? "bg-[#ef4444]" : "bg-[#22c55e] animate-pulse"}`} />
-                              {row.status}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                </CardBody>
+              </Card>
             </div>
+
+            {/* ── Analytics events table ── */}
+            <Card noPad>
+              <CardHeader icon={BarChart3} title="Recent Analytics Events">
+                <GlassButton variant="secondary" className="h-8 px-3 text-xs gap-2" onClick={exportAnalytics} disabled={exporting}>
+                  <Download size={12} /> {exporting ? "Exporting..." : "Export CSV"}
+                </GlassButton>
+              </CardHeader>
+              <div className="overflow-x-auto scrollbar-hide">
+                <table className="w-full text-[13px]">
+                  <TableHead cols={["Project", "Event", "Timestamp", "Status"]} />
+                  <tbody className="divide-y divide-white/[0.04]">
+                    {analyticsData.map((row, i) => (
+                      <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="px-7 py-5 text-[13px] font-semibold text-white">{row.id}</td>
+                        <td className="px-7 py-5 text-[12px] font-mono text-[#71717a]">{row.type}</td>
+                        <td className="px-7 py-5 text-[12px] font-mono text-[#52525b]">{row.time}</td>
+                        <td className="px-7 py-5">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold
+                            ${row.status === "Failed"
+                              ? "text-[#ef4444] bg-[#ef4444]/10 border border-[#ef4444]/20"
+                              : "text-[#22c55e] bg-[#22c55e]/10 border border-[#22c55e]/20"
+                            }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${row.status === "Failed" ? "bg-[#ef4444]" : "bg-[#22c55e]"}`} />
+                            {row.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
-        </div>
+        </PageShell>
       </PageWrapper>
     </div>
-  );
-}
   );
 }

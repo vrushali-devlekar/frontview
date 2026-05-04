@@ -1,7 +1,4 @@
 import React from 'react'
-// IMPORTANT: Use transparent PNGs to avoid black boxes around characters
-import skeletonImg from '../../assets/sk.png'
-import grassBlockImg from '../../assets/grassbk.png'
 
 const features = [
   {
@@ -76,23 +73,11 @@ const features = [
 export default function WhyChoose () {
   return (
     <section className='relative bg-[#060606e2] py-32 px-4 overflow-hidden'>
-      {/* 1. Left side: Skeleton */}
-      <div className='absolute left-[-2%] top-[30%] -translate-y-1/2 w-56 pointer-events-none hidden lg:block z-0 opacity-80'>
-        <img
-          src={skeletonImg}
-          alt='Skeleton'
-          className='w-full h-auto object-contain'
-        />
-      </div>
+      {/* Left decorative glow */}
+      <div className='absolute left-0 top-[30%] -translate-y-1/2 w-56 h-56 pointer-events-none hidden lg:block z-0 opacity-5 bg-[#a3e635] rounded-full blur-3xl' />
 
-      {/* 2. Right side: Grass Block */}
-      <div className='absolute right-[3%] top-[26%] -translate-y-1/2 w-46 pointer-events-none hidden lg:block z-0 opacity-100'>
-        <img
-          src={grassBlockImg}
-          alt='Minecraft Block'
-          className='w-full h-auto object-contain '
-        />
-      </div>
+      {/* Right decorative glow */}
+      <div className='absolute right-0 top-[26%] -translate-y-1/2 w-40 h-40 pointer-events-none hidden lg:block z-0 opacity-5 bg-[#a3e635] rounded-full blur-3xl' />
 
       <div className='max-w-5xl mx-auto relative z-10'>
         {/* Section Header */}
