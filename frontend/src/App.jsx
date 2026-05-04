@@ -49,6 +49,10 @@ const router = createBrowserRouter([
     element: <Callback />,
   },
   {
+    path: "/success",
+    element: <Callback />,
+  },
+  {
     path: "/dashboard",
     element: <ProtectedRoute><Dashboard /></ProtectedRoute>
   },

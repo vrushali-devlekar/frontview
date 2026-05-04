@@ -1,7 +1,7 @@
 import React from "react";
-import isometric_6595c7 from "../../assets/stepp1.png";
-import isometric_6595c8 from "../../assets/stepp2.png";
-import isometric_6595c9 from "../../assets/stepp3.png";
+import isometric_6595c7 from "../../assets/st1.png";
+import isometric_6595c8 from "../../assets/stt2.png";
+import isometric_6595c9 from "../../assets/stt3.png";
 import { GitBranch, Settings2, Rocket } from "lucide-react";
 
 const StepsSection = () => {
