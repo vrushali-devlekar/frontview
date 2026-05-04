@@ -9,10 +9,10 @@ export const PageShell = ({ children }) => (
 );
 
 export const PageHeader = ({ title, subtitle, children }) => (
-  <div className="flex items-start justify-between mb-8 pb-5 border-b border-white/[0.04]">
+  <div className="flex items-start justify-between mb-10 pb-6 border-b border-white/[0.04]">
     <div>
-      <h1 className="text-[22px] font-black tracking-tighter text-[#e4e4e7] leading-tight uppercase">{title}</h1>
-      {subtitle && <p className="text-[11px] text-[#52525b] font-black uppercase tracking-[0.2em] mt-1.5">{subtitle}</p>}
+      <h1 className="text-[28px] font-semibold tracking-tight text-white leading-tight">{title}</h1>
+      {subtitle && <p className="text-[14px] text-[#8a8f98] mt-1.5">{subtitle}</p>}
     </div>
     {children && <div className="flex items-center gap-3 mt-1">{children}</div>}
   </div>
@@ -34,21 +34,21 @@ export const Card = ({ children, className = "", noPad = false, onClick }) => (
 );
 
 export const CardHeader = ({ icon: Icon, title, children }) => (
-  <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.03] bg-[#161618]">
-    <div className="flex items-center gap-3">
+  <div className="flex items-center justify-between px-7 py-5 border-b border-white/[0.03]">
+    <div className="flex items-center gap-3.5">
       {Icon && (
-        <div className="w-7 h-7 rounded-lg bg-[#0d0d0f] border border-white/[0.04] flex items-center justify-center shrink-0">
-          <Icon size={14} className="text-[#52525b]" />
+        <div className="w-8 h-8 rounded-full bg-white/[0.03] flex items-center justify-center shrink-0">
+          <Icon size={15} className="text-[#a1a1aa]" />
         </div>
       )}
-      <p className="text-[11px] font-black tracking-[0.1em] text-[#a1a1aa] uppercase">{title}</p>
+      <p className="text-[14px] font-medium tracking-wide text-[#e4e4e7]">{title}</p>
     </div>
     {children && <div className="flex items-center gap-2.5">{children}</div>}
   </div>
 );
 
 export const CardBody = ({ children, className = "" }) => (
-  <div className={`px-6 py-5 ${className}`}>{children}</div>
+  <div className={`px-7 py-6 ${className}`}>{children}</div>
 );
 
 export const SectionLabel = ({ children }) => (
@@ -59,9 +59,9 @@ export const SectionLabel = ({ children }) => (
 
 export const TableHead = ({ cols }) => (
   <thead>
-    <tr className="border-b border-white/[0.03] bg-[#161618]">
+    <tr className="border-b border-white/[0.03] bg-white/[0.01]">
       {cols.map((c) => (
-        <th key={c} className="px-6 py-3 text-left text-[10px] font-black text-[#52525b] uppercase tracking-[0.2em]">
+        <th key={c} className="px-7 py-4 text-left text-[11.5px] font-medium text-[#8a8f98] uppercase tracking-wider">
           {c}
         </th>
       ))}

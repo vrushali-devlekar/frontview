@@ -1,14 +1,20 @@
+import { useSidebarStyle } from "../../hooks/useSidebarAttr";
+
+/**
+ * PageWrapper — wraps every page's main content area.
+ * Applies the correct margin-left inline to push content beside the sidebar.
+ * No CSS / index.css dependency.
+ */
 export default function PageWrapper({ navMode, isCollapsed, children }) {
-  const sidebarClass =
-    navMode === "dock"
-      ? "md:ml-0 pb-20 md:pb-24"
-      : isCollapsed
-        ? "md:ml-[92px] pb-20 md:pb-0"
-        : "md:ml-[260px] pb-20 md:pb-0";
+  const sidebarStyle = useSidebarStyle(navMode, isCollapsed);
 
   return (
     <div
-      className={`flex flex-col flex-1 min-w-0 overflow-hidden relative z-10 transition-[margin] duration-200 ${sidebarClass}`}
+      style={{
+        ...sidebarStyle,
+        transition: "margin-left 0.25s cubic-bezier(0.4,0,0.2,1)",
+      }}
+      className="flex flex-col flex-1 min-w-0 overflow-hidden relative z-10"
     >
       {children}
     </div>

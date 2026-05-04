@@ -1,79 +1,48 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
-import { getCurrentUser } from '../api/api';
+import { createContext, useState, useEffect, useContext } from 'react';
+import api from '../api/api';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(() => {
-        const saved = sessionStorage.getItem('cached_user');
-        return saved ? JSON.parse(saved) : null;
-    });
-    const [loading, setLoading] = useState(!sessionStorage.getItem('cached_user'));
-
-    const refreshUser = useCallback(async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            setUser(null);
-            setLoading(false);
-            sessionStorage.removeItem('cached_user');
-            return null;
-        }
-
-        try {
-            if (!user) setLoading(true);
-            const res = await getCurrentUser();
-            const userData = res.data.user;
-            
-            if (userData) {
-                if (userData.username && !userData.name) userData.name = userData.username;
-                if (userData.avatarUrl && !userData.avatar) userData.avatar = userData.avatarUrl;
-            }
-            
-            setUser(userData);
-            if (userData) sessionStorage.setItem('cached_user', JSON.stringify(userData));
-            return userData;
-        } catch (error) {
-            console.error("Auth Refresh Failed:", error);
-            if (error.response?.status === 401) {
-                setUser(null);
-                sessionStorage.removeItem('cached_user');
-            }
-            return null;
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [avatar, setAvatar] = useState(() => localStorage.getItem('user_avatar') || 'pf5.jpeg');
 
     useEffect(() => {
-        refreshUser();
-        
-        const handleUnauthorized = () => {
-            setUser(null);
+        // App start hote hi check karo token hai ya nahi
+        const checkUser = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    // Tere backend ka route jo current user lata hai (e.g., /auth/me ya token verify)
+                    // Abhi ke liye hum bas token hone pe dummy user set kar rahe hain hackathon speed ke liye
+                    setUser({ name: "SHERYIAN_DEV", email: "sysadmin@valora.io", token });
+                } catch (error) {
+                    localStorage.removeItem('token');
+                }
+            }
             setLoading(false);
         };
-
-        window.addEventListener('auth-unauthorized', handleUnauthorized);
-        return () => window.removeEventListener('auth-unauthorized', handleUnauthorized);
-    }, [refreshUser]);
+        checkUser();
+    }, []);
 
     const login = (userData, token) => {
         localStorage.setItem('token', token);
-        sessionStorage.setItem('cached_user', JSON.stringify(userData));
         setUser(userData);
-        setLoading(false);
     };
 
     const logout = () => {
         localStorage.removeItem('token');
-        sessionStorage.removeItem('cached_user');
         setUser(null);
-        setLoading(false);
     };
 
-    const value = { user, login, logout, loading, refreshUser };
+    const updateAvatar = (newAvatar) => {
+        setAvatar(newAvatar);
+        localStorage.setItem('user_avatar', newAvatar);
+    };
 
     return (
-        <AuthContext.Provider value={value}>
+        <AuthContext.Provider value={{ user, login, logout, loading, avatar, updateAvatar }}>
             {children}
         </AuthContext.Provider>
     );

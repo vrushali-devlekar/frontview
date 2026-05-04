@@ -33,12 +33,9 @@ export default function ReadyToDeploy() {
 
             {/* Shshifted Button Section - Now aligned left under text */}
             <div className='flex flex-wrap gap-4 justify-center md:justify-start'>
-              <Link 
-                to="/register"
-                className="bg-[#a3e635] text-black font-bold text-xs px-10 py-4 rounded-xl hover:bg-[#bef264] transition-all font-mono uppercase shadow-[0_0_15px_rgba(163,230,53,0.3)]"
-              >
+              <button className="bg-[#a3e635] text-black font-bold text-xs px-10 py-4 rounded-xl hover:bg-[#bef264] transition-all font-mono uppercase shadow-[0_0_15px_rgba(163,230,53,0.3)]">
                 Deploy free →
-              </Link>
+              </button>
             </div>
           </div>
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Zap } from "lucide-react";
 import api, { githubAuthUrl, googleAuthUrl } from "../../api/api";
-import { useAuth } from "../../context/AuthContext";
+import logoClose from "../../assets/logo-close.png";
 import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
 
@@ -14,7 +14,6 @@ const Register = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   useEffect(() => {
     const urlError = searchParams.get("error");
@@ -31,9 +30,7 @@ const Register = () => {
     try {
       const response = await api.post("/auth/register", { username, email, password });
       if (response.data && response.data.token) {
-        const userData = response.data.user;
-        if (userData && userData.username) userData.name = userData.username;
-        login(userData, response.data.token);
+        localStorage.setItem("token", response.data.token);
         navigate("/dashboard");
       }
     } catch (err) {
@@ -57,9 +54,7 @@ const Register = () => {
       
       {/* Logo */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0">
-          <Zap size={18} className="text-black" strokeWidth={2.5} fill="currentColor" />
-        </div>
+        <img src={logoClose} alt="Velora Logo" className="w-8 h-8 object-contain" />
         <span className="text-xl font-semibold text-white tracking-tight">Velora</span>
       </div>
 
