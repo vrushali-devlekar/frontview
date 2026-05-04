@@ -1,11 +1,18 @@
 // server.js
-require("dotenv").config();
-const app = require("./src/app");
+const path = require("path");
+const dotenv = require("dotenv");
+const nodeEnv = process.env.NODE_ENV || "development";
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+dotenv.config({
+  path: path.resolve(__dirname, `.env.${nodeEnv}`),
+  override: true,
+});
+const app = require("./src/app.js");
 const connectDB = require("./src/config/db");
 const http = require("http"); // Node ka in-built HTTP module
 const socketIo = require("socket.io"); // Socket.io
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
 
 // Connect to the database
 connectDB();

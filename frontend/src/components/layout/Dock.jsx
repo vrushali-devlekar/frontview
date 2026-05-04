@@ -29,22 +29,22 @@ const Dock = ({ navMode, toggleNavMode }) => {
   ];
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-6">
+    <div className="fixed bottom-3 md:bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-1rem)] md:w-auto px-0 md:px-6">
       <motion.div
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex items-end gap-1.5 p-2 bg-white/[0.03] backdrop-blur-2xl border border-white/[0.05] rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
+        className="flex items-end gap-1.5 p-1.5 md:p-2 bg-white/[0.03] backdrop-blur-2xl border border-white/[0.05] rounded-[24px] md:rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.3)] overflow-x-auto scrollbar-hide max-w-full"
       >
         {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) => `
-              group relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300
+              group relative flex shrink-0 flex-col items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl transition-all duration-300
               ${isActive ? "bg-white/[0.08] text-white" : "text-[#71717a] hover:bg-white/[0.05] hover:text-white hover:-translate-y-1.5"}
             `}
           >
-            <item.icon size={20} strokeWidth={1.5} />
+            <item.icon size={17} strokeWidth={1.5} />
             
             {/* Tooltip — Dot Matrix Vibe */}
             <span className="absolute bottom-full mb-6 px-3 py-1.5 rounded-full bg-white text-black text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap shadow-xl translate-y-2 group-hover:translate-y-0">
@@ -56,14 +56,14 @@ const Dock = ({ navMode, toggleNavMode }) => {
           </NavLink>
         ))}
 
-        <div className="w-[1px] h-6 bg-white/[0.1] mx-2 self-center" />
+        <div className="w-[1px] h-5 md:h-6 bg-white/[0.1] mx-1.5 md:mx-2 self-center shrink-0" />
 
         <button
           onClick={toggleNavMode}
-          className="flex items-center justify-center w-12 h-12 rounded-2xl text-[#52525b] hover:bg-white/[0.05] hover:text-white transition-all duration-300 hover:-translate-y-1.5"
+          className="flex shrink-0 items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl text-[#52525b] hover:bg-white/[0.05] hover:text-white transition-all duration-300 hover:-translate-y-1.5"
           title="Switch to Sidebar"
         >
-          <Monitor size={20} strokeWidth={1.5} />
+          <Monitor size={17} strokeWidth={1.5} />
         </button>
       </motion.div>
     </div>

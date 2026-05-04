@@ -13,7 +13,7 @@ export default function HeroSection () {
 
   return (
     // Changed to items-start to pull content upwards
-    <section className='relative min-h-screen bg-[#060606] text-white overflow-hidden flex items-start'>
+    <section id='hero' className='relative min-h-screen bg-[#060606] text-white overflow-hidden flex items-start'>
       {/* Background Image - Set to cover the entire viewport including navbar area */}
       <div
         className='absolute inset-0 z-0 h-full w-full'
@@ -63,9 +63,9 @@ export default function HeroSection () {
               >
                 Get Started Free →
               </Link>
-              <button className='px-5 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold text-xs rounded font-mono'>
+              <Link to="/documentation" className='px-5 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold text-xs rounded font-mono inline-flex items-center'>
                 View Docs
-              </button>
+              </Link>
             </div>
           </div>
 

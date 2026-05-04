@@ -3,6 +3,30 @@ const { protect } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
+const normalizeModelText = (content) => {
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+        return content
+            .map((part) => {
+                if (typeof part === 'string') return part;
+                if (typeof part?.text === 'string') return part.text;
+                if (typeof part?.content === 'string') return part.content;
+                return '';
+            })
+            .join('\n');
+    }
+    return String(content || '');
+};
+
+const toReadableStructuredText = (text) =>
+    String(text || '')
+        .replace(/\r/g, '')
+        .replace(/^#{1,6}\s*/gm, '')
+        .replace(/\*\*/g, '')
+        .replace(/```/g, '')
+        .replace(/`/g, '')
+        .trim();
+
 router.post('/diagnose', protect, async (req, res) => {
     const { errorLogs } = req.body;
 
@@ -93,7 +117,24 @@ router.post('/chat', protect, async (req, res) => {
             1. Be CONCISE but don't be robotic. 
             2. Do NOT repeat the user's question.
             3. If the user says 'hlw', 'hi', or 'hello', just respond with a friendly greeting and ask how you can help.
-            4. Use Markdown for structure only where it makes things easier to read.
+            4. ALWAYS respond in plain text using EXACTLY this structure:
+
+            Issue
+            - <short issue summary>
+
+            Root Cause
+            - <root cause in simple language>
+
+            Fix Steps
+            1. <step 1>
+            2. <step 2>
+            3. <step 3>
+
+            Validation
+            - <how to verify fix>
+
+            5. DO NOT use markdown symbols like #, *, **, or code fences.
+            6. Keep each bullet clear and actionable.
             
             Context Logs: {context}
             User Question: {question}
@@ -102,16 +143,12 @@ router.post('/chat', protect, async (req, res) => {
         const logsText = Array.isArray(context) ? context.join('\n') : context;
         const chain = promptTemplate.pipe(model);
         
-        const stream = await chain.stream({
+        const response = await chain.invoke({
             context: logsText || "No logs available",
             question: message
         });
-
-        for await (const chunk of stream) {
-            if (chunk?.content) {
-                res.write(`data: ${JSON.stringify({ text: chunk.content })}\n\n`);
-            }
-        }
+        const structured = toReadableStructuredText(normalizeModelText(response?.content));
+        res.write(`data: ${JSON.stringify({ text: structured })}\n\n`);
         
         res.write('data: [DONE]\n\n');
         res.end();

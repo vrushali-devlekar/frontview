@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { getFrameworkIcon } from "../../utils/frameworkIcons";
+import BrandLogo from "../ui/BrandLogo";
 
 const routeLabels = {
   "/dashboard":    "Overview",
@@ -62,26 +63,31 @@ const TopNav = () => {
   }, []);
 
   return (
-    <header className="h-16 flex items-center justify-between px-8 shrink-0 relative z-50 w-full border-b border-white/[0.05] bg-[#050505]/40 backdrop-blur-2xl">
+    <header className="h-16 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 shrink-0 relative z-50 w-full border-b border-white/[0.05] bg-[#050505]/40 backdrop-blur-2xl gap-2">
 
       {/* Left — breadcrumb */}
       <div className="flex items-center gap-2 min-w-0">
-        <Link to="/dashboard" className="text-[12.5px] text-[#3f3f46] font-black hover:text-white transition-colors select-none tracking-tight">VELORA</Link>
+        <BrandLogo
+          to="/dashboard"
+          className="shrink-0 gap-2"
+          iconClassName="rounded-md"
+          textClassName="text-[12px] md:text-[12.5px] text-[#3f3f46] hover:text-white transition-colors tracking-tight normal-case"
+        />
         
         {projectId && project && (
           <>
             <span className="text-[#1a1a1a] text-[12px] select-none mx-1">/</span>
             <div className="relative" ref={projectDropdownRef}>
-              <button 
+              <button
                 onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition-all group"
+                className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition-all group min-w-0"
               >
                 {project.framework && (
                   <div style={{ color: getFrameworkIcon(project.framework).color }}>
                     {React.createElement(getFrameworkIcon(project.framework).Icon, { size: 14, strokeWidth: 2 })}
                   </div>
                 )}
-                <span className="text-[13px] font-bold text-white/90 select-none tracking-tight">{project.name}</span>
+                <span className="text-[13px] font-bold text-white/90 select-none tracking-tight truncate max-w-[180px]">{project.name}</span>
                 <ChevronDown size={12} className={`text-[#3f3f46] transition-transform duration-300 ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
@@ -113,21 +119,21 @@ const TopNav = () => {
 
         {pageLabel && (
           <>
-            <span className="text-[#1a1a1a] text-[12px] select-none mx-1">/</span>
-            <span className="text-[13px] font-bold text-[#52525b] select-none tracking-tight">{pageLabel}</span>
+            <span className="text-[#1a1a1a] text-[12px] select-none mx-1 hidden sm:inline">/</span>
+            <span className="text-[12px] md:text-[13px] font-bold text-[#52525b] select-none tracking-tight truncate">{pageLabel}</span>
           </>
         )}
       </div>
 
       {/* Right — actions */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
 
         {/* Expandable search */}
         <div
           ref={searchRef}
           className={`relative flex items-center rounded-lg overflow-hidden transition-all duration-200 ${
             isSearchOpen
-              ? "w-52 bg-[#111113] border border-white/[0.08] ring-1 ring-[#22c55e]/20"
+              ? "w-40 sm:w-44 md:w-52 bg-[#111113] border border-white/[0.08] ring-1 ring-[#22c55e]/20"
               : "w-8 h-8"
           }`}
         >
@@ -150,7 +156,7 @@ const TopNav = () => {
         </div>
 
         {/* Divider */}
-        <div className="w-px h-4 bg-white/[0.08] mx-1.5" />
+        <div className="w-px h-4 bg-white/[0.08] mx-1 hidden sm:block" />
 
         {/* Avatar + dropdown */}
         <div className="relative" ref={dropdownRef}>
@@ -180,13 +186,13 @@ const TopNav = () => {
                 {user?.name?.charAt(0).toUpperCase() || "U"}
               </div>
             )}
-            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none ml-1">{user?.name || "User"}</span>
+            <span className="hidden md:block text-[13px] font-bold text-white/70 leading-none ml-1 max-w-[120px] truncate">{user?.name || "User"}</span>
             <ChevronDown size={12} className={`hidden md:block text-[#3f3f46] transition-transform duration-300 ${isDropdownOpen ? "rotate-180" : ""}`} />
           </button>
 
           {/* Dropdown menu */}
           <div
-            className={`absolute right-0 top-[calc(100%+8px)] w-48 bg-[#111113] border border-white/[0.10] rounded-xl shadow-elevation-3 overflow-hidden origin-top-right transition-all duration-150 ${
+            className={`absolute right-0 top-[calc(100%+8px)] w-44 sm:w-48 bg-[#111113] border border-white/[0.10] rounded-xl shadow-elevation-3 overflow-hidden origin-top-right transition-all duration-150 ${
               isDropdownOpen ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
             }`}
           >

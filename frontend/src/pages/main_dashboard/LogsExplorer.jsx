@@ -476,10 +476,10 @@ export default function LogsExplorer() {
               <div className="flex-1 overflow-y-auto p-5 space-y-5 scrollbar-hide bg-[#0d0d0f]/20">
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[88%] px-4 py-3 rounded-[16px] text-[11px] leading-relaxed relative font-medium shadow-elevation-1 ${
+                    <div className={`max-w-[88%] px-4 py-3 rounded-[16px] text-[11px] leading-relaxed whitespace-pre-wrap break-words relative font-medium shadow-elevation-1 ${
                       msg.role === 'user' 
                         ? 'bg-white text-black font-black uppercase tracking-tight' 
-                        : 'bg-[#161618] border border-white/[0.04] text-[#a1a1aa] shadow-inner'
+                        : 'bg-[#161618] border border-white/[0.04] text-[#d4d4d8] shadow-inner'
                     }`}>
                       {msg.text}
                       {msg.isStreaming && <span className="inline-block w-1 h-3.5 bg-[#22c55e] ml-1 animate-pulse align-middle" />}

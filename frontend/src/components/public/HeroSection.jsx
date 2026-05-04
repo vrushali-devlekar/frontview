@@ -2,6 +2,7 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import { Zap, ChevronRight } from "lucide-react";
 import GlassButton from "../ui/GlassButton";
+import BrandLogo from "../ui/BrandLogo";
 
 const HeroSection = () => {
   return (
@@ -13,12 +14,7 @@ const HeroSection = () => {
       <div className="relative z-10 flex flex-col h-full grow">
         {/* Navigation */}
         <nav className="flex items-center justify-between px-6 py-6 md:px-12 border-b border-white/[0.06] bg-[#09090b]/80 backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#22c55e] flex items-center justify-center">
-              <Zap size={16} className="text-black" strokeWidth={3} />
-            </div>
-            <span className="text-lg font-semibold text-white tracking-tight">Velora</span>
-          </div>
+          <BrandLogo to="/" textClassName="text-lg font-semibold tracking-tight normal-case" iconClassName="rounded-md" />
 
           <div className="hidden md:flex gap-8 text-[13px] font-medium text-[#71717a]">
             {["Products", "Solutions", "Resources", "Pricing"].map((item) => (

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import logoClose from '../../assets/logo-close.png';
 
 const footerLinks = {
   Product: ["Features", "Pricing", "Changelog", "Status"],
@@ -9,11 +10,8 @@ const footerLinks = {
 
 const Logo = () => (
   <Link to="/" className="flex items-center gap-2 group cursor-pointer">
-    <div className="w-6 h-6 flex items-center justify-center">
-      {/* Updated Logo SVG to match the reference "V" shape */}
-      <svg viewBox="0 0 40 40" className="w-full h-full fill-[#a3e635] group-hover:scale-110 transition-transform">
-        <path d="M20 5L5 15V25L20 35L35 25V15L20 5ZM18 28L10 20L12 18L18 24L28 14L30 16L18 28Z" />
-      </svg>
+    <div className="w-6 h-6 rounded-md overflow-hidden flex items-center justify-center">
+      <img src={logoClose} alt="Velora Logo" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
     </div>
     <span
       className="text-white font-bold tracking-widest uppercase group-hover:text-[#a3e635] transition-colors"
@@ -68,10 +66,8 @@ export default function Footer() {
 
           {/* Decorative Assets Section - Matches right side of reference image */}
           <div className="flex flex-col items-center lg:items-end justify-center gap-4">
-            <div className="w-16 h-16 flex items-center justify-center opacity-20">
-              <svg viewBox="0 0 40 40" className="w-full h-full fill-[#a3e635]">
-                <path d="M20 5L5 15V25L20 35L35 25V15L20 5ZM18 28L10 20L12 18L18 24L28 14L30 16L18 28Z" />
-              </svg>
+            <div className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center opacity-20">
+              <img src={logoClose} alt="Velora Mark" className="w-full h-full object-cover" />
             </div>
             <div className="flex items-center gap-2 text-gray-400 text-[11px] font-mono whitespace-nowrap">
               <span>Made with</span>

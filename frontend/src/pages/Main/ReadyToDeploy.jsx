@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 export default function ReadyToDeploy() {
   return (
-    <section className="bg-transparent py-24 px-4 overflow-hidden relative">
+    <section id="ready-to-deploy" className="bg-transparent py-24 px-4 overflow-hidden relative">
       <div className="max-w-5xl mx-auto relative group">
         
         {/* Left Side Decorative */}

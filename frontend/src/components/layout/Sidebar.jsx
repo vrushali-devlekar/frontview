@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import BrandLogo from "../ui/BrandLogo";
 
 const MenuItem = ({ icon: Icon, label, to, isCollapsed }) => {
   return (
@@ -81,16 +82,17 @@ const Sidebar = ({ isCollapsed, toggleSidebar, navMode, toggleNavMode }) => {
       initial={false}
       animate={{ width: isCollapsed ? 92 : 260 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed left-0 top-0 h-screen z-50 bg-[#161618] border-r border-white/[0.04] flex flex-col"
+      className="fixed left-0 top-0 h-screen z-50 bg-[#161618] border-r border-white/[0.04] hidden md:flex flex-col"
     >
       {/* Brand Header */}
       <div className={`h-20 flex items-center px-6 ${isCollapsed ? "justify-center" : ""}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white text-black rounded-full flex items-center justify-center font-bold text-[15px] shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-            V
-          </div>
-          {!isCollapsed && <span className="text-[16px] font-bold tracking-tight text-white/90">Velora</span>}
-        </div>
+        <BrandLogo
+          to="/dashboard"
+          compact={isCollapsed}
+          className={isCollapsed ? "" : "gap-2.5"}
+          iconClassName="rounded-xl"
+          textClassName="text-[16px] tracking-tight font-bold normal-case"
+        />
       </div>
 
       {/* Navigation */}

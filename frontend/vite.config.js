@@ -2,18 +2,21 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [tailwindcss(), react()],
   build: {
     target: 'esnext',
-    minify: 'esbuild',
+    minify: 'oxc',
     cssMinify: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['framer-motion', 'lucide-react', 'lucide-react'],
+        manualChunks: (id) => {
+          if (id.includes('react-dom') || id.includes('react-router-dom') || id.includes('node_modules/react/')) {
+            return 'vendor-react'
+          }
+          if (id.includes('framer-motion') || id.includes('lucide-react')) {
+            return 'vendor-ui'
+          }
         }
       }
     },

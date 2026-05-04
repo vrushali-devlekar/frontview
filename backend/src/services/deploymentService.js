@@ -1,667 +1,308 @@
-// services/deploymentService.js
 const { spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs').promises;
 const Project = require('../models/Project');
 const Deployment = require('../models/Deployment');
 const User = require('../models/User');
+const Integration = require('../models/Integration');
 const { cloneRepo } = require('./fsManager');
 const { getAvailablePort, releasePort } = require('../utils/portManager');
 const { detectFramework } = require('../utils/frameworkDetector');
 const { streamLogs } = require('../utils/logStreamer');
-const fs = require('fs').promises;
-const path = require('path');
 const { decrypt } = require('../utils/crypto');
-const Integration = require('../models/Integration');
 const { notifyIntegrations } = require('./notificationService');
-<<<<<<< HEAD
-const { backendUrl, isProduction, publicBackendUrl } = require('../config/runtime');
-=======
->>>>>>> 54150022b6e54a1c5eb0de35a4e09ba1751d7dd1
 
-// Ye Map track karega ki kaunsa deployment kis process me chal raha hai (Stop karne ke kaam aayega)
 const activeProcesses = new Map();
 
-<<<<<<< HEAD
-const getLiveDeploymentUrl = (deploymentId) => {
-    if (isProduction) {
-        if (!publicBackendUrl) {
-            throw new Error('Production live URL is not configured. Set BACKEND_URL to your public HTTPS domain.');
-        }
-        return `${publicBackendUrl}/live/${deploymentId}`;
+const appendLog = async (deploymentId, level, message, io, logType = 'build') => {
+  const entry = `[${new Date().toISOString()}] [${level.toUpperCase()}] ${message}`;
+  const targetField = logType === 'runtime' ? 'runtimeLogs' : 'buildLogs';
+
+  await Deployment.updateOne(
+    { _id: deploymentId },
+    {
+      $push: {
+        logs: { $each: [entry], $slice: -5000 },
+        [targetField]: { $each: [entry], $slice: -5000 }
+      }
     }
-    return `${backendUrl}/live/${deploymentId}`;
+  );
+
+  if (io) {
+    io.to(`dep:${deploymentId}`).emit('log:line', {
+      timestamp: new Date(),
+      level,
+      message,
+      logType
+    });
+  }
 };
 
-const runCommandAndWaitForExit = (command, args) =>
-    new Promise((resolve, reject) => {
-        const child = spawn(command, args, {
-            stdio: 'ignore',
-            windowsHide: true
-        });
+const runShellCommand = (command, cwd, deploymentId, io, logType = 'build') =>
+  new Promise((resolve, reject) => {
+    const child = spawn(command, { cwd, shell: true, env: process.env });
+    activeProcesses.set(String(deploymentId), child);
+    streamLogs(String(deploymentId), child, io, logType);
 
-        child.once('error', reject);
-        child.once('close', (code) => {
-            if (code === 0) {
-                resolve();
-                return;
-            }
-
-            reject(new Error(`${command} exited with code ${code}`));
-        });
+    child.on('close', (code) => {
+      activeProcesses.delete(String(deploymentId));
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      reject(new Error(`${command} failed with exit code ${code}`));
     });
 
-const appendDeploymentLog = async (deploymentRecord, level, message) => {
-=======
-const appendDeploymentLog = async (deploymentRecord, level, message, logType = 'build', io = null) => {
->>>>>>> 54150022b6e54a1c5eb0de35a4e09ba1751d7dd1
-    if (!deploymentRecord) return;
-
-    const entry = `[${new Date().toISOString()}] [${level.toUpperCase()}] ${message}`;
-    const targetField = logType === 'runtime' ? 'runtimeLogs' : 'buildLogs';
-    
-    // Emit via Socket.io if available
-    if (io) {
-        const roomName = `dep:${deploymentRecord._id}`;
-        io.to(roomName).emit('log:line', {
-            timestamp: new Date(),
-            level,
-            message,
-            logType
-        });
-    }
-
-    deploymentRecord.logs = deploymentRecord.logs || [];
-    deploymentRecord.logs.push(entry);
-    
-    if (logType === 'runtime') {
-        deploymentRecord.runtimeLogs = deploymentRecord.runtimeLogs || [];
-        deploymentRecord.runtimeLogs.push(entry);
-    } else {
-        deploymentRecord.buildLogs = deploymentRecord.buildLogs || [];
-        deploymentRecord.buildLogs.push(entry);
-    }
-
-    if (deploymentRecord.logs.length > 5000) deploymentRecord.logs = deploymentRecord.logs.slice(-5000);
-    if (deploymentRecord.buildLogs && deploymentRecord.buildLogs.length > 5000) deploymentRecord.buildLogs = deploymentRecord.buildLogs.slice(-5000);
-    if (deploymentRecord.runtimeLogs && deploymentRecord.runtimeLogs.length > 5000) deploymentRecord.runtimeLogs = deploymentRecord.runtimeLogs.slice(-5000);
-
-    await deploymentRecord.save();
-};
-
-<<<<<<< HEAD
-const setActiveProcess = (deploymentId, childProcess) => {
-    activeProcesses.set(deploymentId.toString(), childProcess);
-};
-
-const clearActiveProcess = (deploymentId, childProcess) => {
-    const key = deploymentId.toString();
-    const current = activeProcesses.get(key);
-
-    if (!current) {
-        return;
-    }
-
-    if (!childProcess || current === childProcess) {
-        activeProcesses.delete(key);
-    }
-};
-
-const spawnShellCommand = (command, options = {}) =>
-    spawn(command, {
-        ...options,
-        shell: true
+    child.on('error', (err) => {
+      activeProcesses.delete(String(deploymentId));
+      reject(err);
     });
+  });
 
-const terminateProcessTree = async (childProcess) => {
-    if (!childProcess?.pid) {
-        return;
-    }
+const waitForHttpReady = async (port, timeoutMs = 25000, intervalMs = 800) => {
+  const started = Date.now();
+  const target = `http://127.0.0.1:${port}/`;
 
-    if (process.platform === 'win32') {
-        await runCommandAndWaitForExit('taskkill', ['/PID', String(childProcess.pid), '/T', '/F']);
-        return;
-    }
-
+  while (Date.now() - started < timeoutMs) {
     try {
-        process.kill(-childProcess.pid, 'SIGTERM');
-    } catch (error) {
-        if (error.code !== 'ESRCH') {
-            throw error;
-        }
-    }
-};
-
-const buildStoppedDeploymentError = () => {
-    const error = new Error(STOPPED_DEPLOYMENT_MESSAGE);
-    error.code = 'DEPLOYMENT_STOPPED';
-    return error;
-};
-
-const ensureDeploymentNotStopped = async (deploymentId) => {
-    const latest = await Deployment.findById(deploymentId).select('status');
-    if (latest?.status === 'stopped') {
-        throw buildStoppedDeploymentError();
-    }
-};
-
-const waitForProcessStartup = async (childProcess, timeoutMs = 1500) => {
-    await new Promise((resolve, reject) => {
-        let settled = false;
-        const timer = setTimeout(() => {
-            settled = true;
-            resolve();
-        }, timeoutMs);
-
-        childProcess.once('exit', (code, signal) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            reject(new Error(`Application exited during startup (code ${code}${signal ? `, signal ${signal}` : ''})`));
-        });
-
-        childProcess.once('error', (error) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            reject(error);
-        });
-    });
-};
-
-const waitForHttpReady = async (port, timeoutMs = 20000, intervalMs = 800) => {
-    const startTime = Date.now();
-    const probeUrl = `http://127.0.0.1:${port}/`;
-
-    while (Date.now() - startTime < timeoutMs) {
-        try {
-            const response = await fetch(probeUrl, {
-                method: 'GET',
-                redirect: 'manual'
-            });
-
-            // Consider the app ready once it responds (even with auth redirect / 404).
-            if (response.status < 500) {
-                return;
-            }
-        } catch (error) {
-            // Ignore connection errors during startup retries.
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    }
-
-    throw new Error(`Application started but did not become HTTP-ready on port ${port} within ${Math.ceil(timeoutMs / 1000)}s`);
-};
-
-const attachProcessCloseHandler = (deploymentId, port, processRef) => {
-    const key = deploymentId.toString();
-    processRef.on('close', async (code, signal) => {
-        try {
-            const latest = await Deployment.findById(deploymentId);
-            clearActiveProcess(key, processRef);
-
-            if (!latest) return;
-            if (latest.port) {
-                releasePort(latest.port);
-            }
-
-            if (['stopped', 'failed'].includes(latest.status)) {
-                return;
-            }
-
-            latest.completedAt = new Date();
-            if (code === 0) {
-                latest.status = 'stopped';
-                await appendDeploymentLog(latest, 'info', `Process exited normally (code 0${signal ? `, signal ${signal}` : ''})`);
-            } else {
-                latest.status = 'failed';
-                latest.errorMessage = `Process exited unexpectedly (code ${code}${signal ? `, signal ${signal}` : ''})`;
-                await appendDeploymentLog(latest, 'error', latest.errorMessage);
-            }
-
-            await latest.save();
-        } catch (closeError) {
-            console.error(`Failed to persist process close state for ${deploymentId}: ${closeError.message}`);
-            if (port) {
-                releasePort(port);
-            }
-        }
-    });
-};
-
-const buildEnvContent = async (project, integrations) => {
-    let envContent = '';
-
-    if (project.envVars && project.envVars.length > 0) {
-        for (const env of project.envVars) {
-            const decryptedValue = decrypt(env.encryptedValue, env.iv);
-            envContent += `${env.key}="${decryptedValue}"\n`;
-        }
-    }
-
-    integrations.forEach((integration) => {
-        const config = Object.fromEntries(integration.config);
-        if (integration.provider === 'mongodb' && config.uri) {
-            envContent += `MONGODB_URI="${config.uri}"\n`;
-            envContent += `MONGO_URL="${config.uri}"\n`;
-        } else if (integration.provider === 'redis' && config.uri) {
-            envContent += `REDIS_URL="${config.uri}"\n`;
-        }
-    });
-
-    return envContent;
-};
-
-const executeInstall = async (deploymentRecord, appPath, frameworkInfo, io) => {
-    if (!frameworkInfo.installCmd) {
-        await appendDeploymentLog(deploymentRecord, 'info', 'Skipping install phase');
+      const response = await fetch(target, { method: 'GET', redirect: 'manual' });
+      if (response.status < 500) {
         return;
+      }
+    } catch (_) {
+      // Retry
     }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
 
-    await appendDeploymentLog(deploymentRecord, 'info', `Running install command: ${frameworkInfo.installCmd}`);
-
-    await new Promise((resolve, reject) => {
-        const installProcess = spawnShellCommand(frameworkInfo.installCmd, { cwd: appPath });
-        setActiveProcess(deploymentRecord._id, installProcess);
-        streamLogs(deploymentRecord._id.toString(), installProcess, io);
-
-        installProcess.on('close', (code) => {
-            clearActiveProcess(deploymentRecord._id, installProcess);
-            if (code === 0) resolve();
-            else reject(new Error(`Install failed with exit code ${code}`));
-        });
-
-        installProcess.on('error', (error) => {
-            clearActiveProcess(deploymentRecord._id, installProcess);
-            reject(error);
-        });
-    });
-
-    await appendDeploymentLog(deploymentRecord, 'info', 'Install completed');
+  throw new Error(`Application did not become ready on port ${port}`);
 };
 
-const executeBuild = async (deploymentRecord, appPath, frameworkInfo, io) => {
-    if (!frameworkInfo.buildCmd) return;
+const writeDeploymentEnv = async (project, targetPath) => {
+  const integrations = await Integration.find({ projectId: project._id, isActive: true });
+  let envContent = '';
 
-    await appendDeploymentLog(deploymentRecord, 'info', `Running build command: ${frameworkInfo.buildCmd}`);
+  if (Array.isArray(project.envVars)) {
+    for (const env of project.envVars) {
+      try {
+        const decrypted = decrypt(env.encryptedValue, env.iv);
+        envContent += `${env.key}="${decrypted}"\n`;
+      } catch (_) {
+        // Skip invalid encrypted entry
+      }
+    }
+  }
 
-    await new Promise((resolve, reject) => {
-        const buildProcess = spawnShellCommand(frameworkInfo.buildCmd, { cwd: appPath });
-        setActiveProcess(deploymentRecord._id, buildProcess);
-        streamLogs(deploymentRecord._id.toString(), buildProcess, io);
+  for (const integration of integrations) {
+    const config = Object.fromEntries(integration.config || []);
+    if (integration.provider === 'mongodb' && config.uri) {
+      envContent += `MONGODB_URI="${config.uri}"\n`;
+      envContent += `MONGO_URL="${config.uri}"\n`;
+    }
+    if (integration.provider === 'redis' && config.uri) {
+      envContent += `REDIS_URL="${config.uri}"\n`;
+    }
+  }
 
-        buildProcess.on('close', (code) => {
-            clearActiveProcess(deploymentRecord._id, buildProcess);
-            if (code === 0) resolve();
-            else reject(new Error(`Build failed with exit code ${code}`));
-        });
-
-        buildProcess.on('error', (error) => {
-            clearActiveProcess(deploymentRecord._id, buildProcess);
-            reject(error);
-        });
-    });
-
-    await appendDeploymentLog(deploymentRecord, 'info', 'Build completed');
+  if (!envContent.trim()) return false;
+  await fs.writeFile(path.join(targetPath, '.env'), envContent, 'utf8');
+  return true;
 };
 
-const startApplicationProcess = async (deploymentRecord, appPath, frameworkInfo, port, io) => {
-    const startCmdString = frameworkInfo.startCmd.replace('$PORT', String(port));
-    await appendDeploymentLog(deploymentRecord, 'info', `Start command launched: ${startCmdString}`);
-
-    const startProcess = spawnShellCommand(startCmdString, {
-        cwd: appPath,
-        env: { ...process.env, PORT: String(port) }
-    });
-
-    setActiveProcess(deploymentRecord._id, startProcess);
-    attachProcessCloseHandler(deploymentRecord._id, port, startProcess);
-    streamLogs(deploymentRecord._id.toString(), startProcess, io);
-    startProcess.stdout.on('data', (data) => console.log(`[APP ${port}]: ${data}`));
-    startProcess.stderr.on('data', (data) => console.error(`[APP ERR]: ${data}`));
-
-    await waitForProcessStartup(startProcess);
-
-    return startProcess;
-};
-
-=======
->>>>>>> 54150022b6e54a1c5eb0de35a4e09ba1751d7dd1
 const executeDeployment = async (deploymentId, io) => {
-    let deploymentRecord = null;
-    let assignedPort = null;
+  let deployment = null;
+  let assignedPort = null;
 
-    try {
-        // 1. Jo deployment controller ne banaya, use DB se nikalo
-        deploymentRecord = await Deployment.findById(deploymentId);
-        if (!deploymentRecord) throw new Error('Deployment record not found');
+  try {
+    deployment = await Deployment.findById(deploymentId);
+    if (!deployment) throw new Error('Deployment record not found');
 
-        // 2. Project details nikalo
-        const project = await Project.findById(deploymentRecord.projectId);
+    const project = await Project.findById(deployment.projectId);
+    if (!project) throw new Error('Project not found');
 
-        // Status update kar do ki build shuru ho gaya
-        deploymentRecord.status = 'building';
-        await deploymentRecord.save();
-        io.to(`dep:${deploymentId}`).emit('deployment:status', { status: 'building' });
-        await appendDeploymentLog(deploymentRecord, 'info', 'Deployment started', 'build', io);
+    deployment.status = 'building';
+    deployment.startedAt = deployment.startedAt || new Date();
+    await deployment.save();
+    io?.to(`dep:${deploymentId}`).emit('deployment:status', { status: 'building' });
+    await appendLog(deploymentId, 'info', 'Deployment started', io);
 
-        // 3. GitHub se Repo Clone karo (Sirf tab jab GitHub se ho)
-        let targetPath;
-        if (project.deploymentSource === 'upload') {
-            targetPath = path.join(__dirname, '../../deployments_temp', deploymentRecord._id.toString());
-            await appendDeploymentLog(deploymentRecord, 'info', 'Using uploaded files for deployment', 'build', io);
-        } else {
-            const user = await User.findById(deploymentRecord.userId).select('+githubAccessToken');
-            targetPath = await cloneRepo(
-                project.repoUrl,
-                deploymentRecord._id.toString(),
-                project.branch || 'main',
-                user?.githubAccessToken || null
-            );
-            await appendDeploymentLog(deploymentRecord, 'info', `Repository cloned to ${targetPath}`, 'build', io);
-        }
-
-        // 🌟 INTEGRATIONS INJECTION (Category A)
-        const integrations = await Integration.find({ projectId: project._id, isActive: true });
-        
-        let envContent = '';
-        
-        // 1. Regular project env vars
-        if (project.envVars && project.envVars.length > 0) {
-            for (const env of project.envVars) {
-                const decryptedValue = decrypt(env.encryptedValue, env.iv);
-                envContent += `${env.key}="${decryptedValue}"\n`;
-            }
-        }
-
-        // 2. Integration-based env vars (Automatic Injection)
-        integrations.forEach(integration => {
-            const config = Object.fromEntries(integration.config);
-            if (integration.provider === 'mongodb' && config.uri) {
-                envContent += `MONGODB_URI="${config.uri}"\n`;
-                envContent += `MONGO_URL="${config.uri}"\n`;
-            } else if (integration.provider === 'redis' && config.uri) {
-                envContent += `REDIS_URL="${config.uri}"\n`;
-            }
-        });
-
-        if (envContent) {
-            const envFilePath = path.join(targetPath, '.env');
-            await fs.writeFile(envFilePath, envContent);
-            await appendDeploymentLog(deploymentRecord, 'info', 'Environment variables (including integrations) successfully injected');
-        } else {
-            await appendDeploymentLog(deploymentRecord, 'info', 'No environment variables to inject');
-        }
-
-        // 🌟 NEW: Auto-Detect Framework & Commands
-        console.log(`🔍 Analyzing repository structure...`);
-        await appendDeploymentLog(deploymentRecord, 'info', 'Analyzing repository structure', 'build', io);
-        const frameworkInfo = await detectFramework(targetPath);
-
-        if (frameworkInfo.error) {
-            throw new Error(frameworkInfo.error);
-        }
-
-        const appPath = frameworkInfo.projectPath || targetPath;
-        console.log(`🎯 Detected Type: ${frameworkInfo.type}`);
-        await appendDeploymentLog(deploymentRecord, 'info', `Detected framework type: ${frameworkInfo.type}`, 'build', io);
-        await appendDeploymentLog(deploymentRecord, 'info', `Using project path: ${appPath}`, 'build', io);
-
-        // 4. NPM Install chalao (Sirf tab jab frameworkInfo me installCmd ho)
-        if (frameworkInfo.installCmd) {
-            await appendDeploymentLog(deploymentRecord, 'info', `Running install command: ${frameworkInfo.installCmd}`, 'build', io);
-            await new Promise((resolve, reject) => {
-                console.log(`📦 Running ${frameworkInfo.installCmd} for ${deploymentRecord._id}...`);
-                const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-
-                const installProcess = spawn(npmCmd, ['install', '--legacy-peer-deps'], {
-                    cwd: appPath,
-                    shell: true
-                });
-
-                // 🌟 JADOO YAHAN HAI: Socket.io ko Install logs bhej do
-                streamLogs(deploymentRecord._id.toString(), installProcess, io, 'build');
-
-                installProcess.on('close', (code) => {
-                    if (code === 0) resolve();
-                    else reject(new Error('npm install failed'));
-                });
-            });
-            await appendDeploymentLog(deploymentRecord, 'info', 'Install completed', 'build', io);
-        } else {
-            console.log(`⚡ Skipping install phase (Vanilla Frontend detected)`);
-            await appendDeploymentLog(deploymentRecord, 'info', 'Skipping install phase', 'build', io);
-        }
-
-        // 🌟 NEW: Agar Frontend hai, toh NPM Build chalao
-        if (frameworkInfo.buildCmd) {
-            await appendDeploymentLog(deploymentRecord, 'info', `Running build command: ${frameworkInfo.buildCmd}`);
-            await new Promise((resolve, reject) => {
-                console.log(`🔨 Building project: ${frameworkInfo.buildCmd}`);
-                const buildCmdString = frameworkInfo.buildCmd;
-
-                // Cross-platform support for build command
-                const [bCmd, ...bArgs] = buildCmdString.split(' ');
-                const finalBuildCmd = (bCmd === 'npm' && process.platform === 'win32') ? 'npm.cmd' : bCmd;
-
-                const buildProcess = spawn(finalBuildCmd, bArgs, { cwd: appPath, shell: true });
-
-                // 🌟 BUILD COMMAND KE LOGS BHI STREAM KARO
-                streamLogs(deploymentRecord._id.toString(), buildProcess, io, 'build');
-
-                buildProcess.on('close', (code) => {
-                    if (code === 0) resolve();
-                    else reject(new Error('Build failed'));
-                });
-            });
-            await appendDeploymentLog(deploymentRecord, 'info', 'Build completed');
-        }
-
-        // 5. Port assign karo aur Start chalao
-        assignedPort = getAvailablePort();
-        console.log(`🚀 Starting app on port ${assignedPort}...`);
-        await appendDeploymentLog(deploymentRecord, 'info', `Starting application on port ${assignedPort}`);
-<<<<<<< HEAD
-        await startApplicationProcess(deploymentRecord, appPath, frameworkInfo, assignedPort, io);
-        await appendDeploymentLog(deploymentRecord, 'info', `Waiting for app readiness on port ${assignedPort}`);
-        await waitForHttpReady(assignedPort);
-=======
->>>>>>> 54150022b6e54a1c5eb0de35a4e09ba1751d7dd1
-
-        // Custom start command use karo jo detector ne nikali hai
-        const startCmdString = frameworkInfo.startCmd.replace('$PORT', assignedPort);
-        const [cmd, ...args] = startCmdString.split(' ');
-
-        const startProcess = spawn(cmd, args, {
-            cwd: appPath,
-            env: { ...process.env, PORT: assignedPort },
-            shell: true
-        });
-        await appendDeploymentLog(deploymentRecord, 'info', `Start command launched: ${startCmdString}`, 'runtime');
-
-        // 🌟 START COMMAND KE LOGS BHI STREAM KARO
-        streamLogs(deploymentRecord._id.toString(), startProcess, io, 'runtime');
-
-        // Is process ko Map mein save kar lo taaki baad me Kill kar sakein
-        activeProcesses.set(deploymentRecord._id.toString(), startProcess);
-
-        // Terminal ke liye local logs taaki VS Code me bhi dikhe
-        startProcess.stdout.on('data', (data) => console.log(`[APP ${assignedPort}]: ${data}`));
-        startProcess.stderr.on('data', (data) => console.error(`[APP ERR]: ${data}`));
-
-        // If app process exits by itself, mark final status clearly.
-        startProcess.on('close', async (code, signal) => {
-            try {
-                const latest = await Deployment.findById(deploymentRecord._id);
-                if (!latest) return;
-
-                // Already handled manually/earlier
-                if (['stopped', 'failed'].includes(latest.status)) {
-                    activeProcesses.delete(deploymentRecord._id.toString());
-                    return;
-                }
-
-                activeProcesses.delete(deploymentRecord._id.toString());
-                if (latest.port) {
-                    releasePort(latest.port);
-                }
-
-                if (code === 0) {
-                    latest.status = 'stopped';
-                    latest.completedAt = new Date();
-                    io.to(`dep:${deploymentRecord._id}`).emit('deployment:status', { status: 'stopped' });
-                    await appendDeploymentLog(latest, 'info', `Process exited normally (code 0${signal ? `, signal ${signal}` : ''})`, 'runtime', io);
-                } else {
-                    latest.status = 'failed';
-                    latest.errorMessage = `Process exited unexpectedly (code ${code}${signal ? `, signal ${signal}` : ''})`;
-                    latest.completedAt = new Date();
-                    io.to(`dep:${deploymentRecord._id}`).emit('deployment:status', { status: 'failed' });
-                    await appendDeploymentLog(latest, 'error', latest.errorMessage, 'runtime', io);
-
-                    // 🔥 Send Failure Notification
-                    notifyIntegrations(latest.projectId, { 
-                        projectName: project.name, 
-                        errorMessage: latest.errorMessage 
-                    }, 'failed').catch(e => console.log("Notification error:", e.message));
-                }
-                await latest.save();
-            } catch (closeErr) {
-                console.error(`Failed to persist process close state: ${closeErr.message}`);
-            }
-        });
-
-        // 6. Agar process bina kisi error ke start ho gaya, toh DB update kar do
-        deploymentRecord.status = 'running';
-        deploymentRecord.port = assignedPort;
-        await deploymentRecord.save();
-        
-        // 🔥 Send Success Notification
-        const { notifyIntegrations } = require('./notificationService');
-        notifyIntegrations(deploymentRecord.projectId, { 
-            projectName: project.name, 
-            version: deploymentRecord.version || '1.0.0' 
-        }, 'success').catch(e => console.log("Notification error:", e.message));
-
-        io.to(`dep:${deploymentId}`).emit('deployment:status', { status: 'running', url: deploymentRecord.url });
-
-        // Project ka active deployment update kar do
-        project.activeDeploymentId = deploymentRecord._id;
-        await project.save();
-
-        console.log(`✅ Deployment ${deploymentRecord._id} is now LIVE at http://localhost:${assignedPort}`);
-        await appendDeploymentLog(deploymentRecord, 'info', `Deployment live at http://localhost:${assignedPort}`, 'runtime', io);
-
-        // 🌟 NOTIFY SUCCESS (Category B)
-        notifyIntegrations(project._id, { ...deploymentRecord.toObject(), projectName: project.name }, 'success');
-
-    } catch (error) {
-        console.error(`❌ Deployment failed: ${error.message}`);
-
-        // Error aane par clean up karna zaroori hai
-        if (assignedPort) releasePort(assignedPort);
-
-        if (deploymentRecord) {
-            deploymentRecord.logs = deploymentRecord.logs || [];
-            deploymentRecord.logs.push(
-                `[${new Date().toISOString()}] [ERROR] Deployment failed: ${error.message}`
-            );
-
-            if (deploymentRecord.logs.length > 5000) {
-                deploymentRecord.logs = deploymentRecord.logs.slice(-5000);
-            }
-
-            deploymentRecord.status = 'failed';
-            deploymentRecord.errorMessage = error.message;
-            deploymentRecord.completedAt = new Date();
-            await deploymentRecord.save();
-
-            // 🌟 NOTIFY FAILURE (Category B)
-            const project = await Project.findById(deploymentRecord.projectId);
-            notifyIntegrations(project._id, { ...deploymentRecord.toObject(), projectName: project.name }, 'failed');
-        }
+    let targetPath;
+    if (project.deploymentSource === 'upload') {
+      targetPath = path.join(__dirname, '../../deployments_temp', String(deployment._id));
+      await appendLog(deploymentId, 'info', 'Using uploaded source files', io);
+    } else {
+      const user = await User.findById(deployment.userId).select('+githubAccessToken');
+      targetPath = await cloneRepo(
+        project.repoUrl,
+        String(deployment._id),
+        project.branch || 'main',
+        user?.githubAccessToken || null
+      );
+      await appendLog(deploymentId, 'info', `Repository cloned to ${targetPath}`, io);
     }
+
+    const envWritten = await writeDeploymentEnv(project, targetPath);
+    await appendLog(deploymentId, 'info', envWritten ? 'Environment variables injected' : 'No environment variables found', io);
+
+    await appendLog(deploymentId, 'info', 'Analyzing repository structure', io);
+    const frameworkInfo = await detectFramework(targetPath);
+    if (frameworkInfo.error) throw new Error(frameworkInfo.error);
+
+    const appPath = frameworkInfo.projectPath || targetPath;
+    await appendLog(deploymentId, 'info', `Detected framework: ${frameworkInfo.type}`, io);
+
+    if (frameworkInfo.installCmd) {
+      await appendLog(deploymentId, 'info', `Running install command: ${frameworkInfo.installCmd}`, io);
+      await runShellCommand(frameworkInfo.installCmd, appPath, deploymentId, io, 'build');
+      await appendLog(deploymentId, 'info', 'Install completed', io);
+    } else {
+      await appendLog(deploymentId, 'info', 'Install step skipped', io);
+    }
+
+    if (frameworkInfo.buildCmd) {
+      await appendLog(deploymentId, 'info', `Running build command: ${frameworkInfo.buildCmd}`, io);
+      await runShellCommand(frameworkInfo.buildCmd, appPath, deploymentId, io, 'build');
+      await appendLog(deploymentId, 'info', 'Build completed', io);
+    }
+
+    assignedPort = getAvailablePort();
+    const startCmd = frameworkInfo.startCmd.replace('$PORT', String(assignedPort));
+    await appendLog(deploymentId, 'info', `Starting application on port ${assignedPort}`, io);
+    await appendLog(deploymentId, 'info', `Start command launched: ${startCmd}`, io, 'runtime');
+
+    const appProcess = spawn(startCmd, {
+      cwd: appPath,
+      shell: true,
+      env: { ...process.env, PORT: String(assignedPort) }
+    });
+
+    activeProcesses.set(String(deploymentId), appProcess);
+    streamLogs(String(deploymentId), appProcess, io, 'runtime');
+
+    appProcess.on('close', async (code, signal) => {
+      const latest = await Deployment.findById(deploymentId);
+      activeProcesses.delete(String(deploymentId));
+      if (!latest) return;
+
+      if (latest.port) releasePort(latest.port);
+
+      if (latest.status === 'stopped') return;
+
+      latest.completedAt = new Date();
+      if (code === 0) {
+        latest.status = 'stopped';
+        await appendLog(deploymentId, 'info', `Process exited normally (code 0${signal ? `, signal ${signal}` : ''})`, io, 'runtime');
+      } else {
+        latest.status = 'failed';
+        latest.errorMessage = `Process exited unexpectedly (code ${code}${signal ? `, signal ${signal}` : ''})`;
+        await appendLog(deploymentId, 'error', latest.errorMessage, io, 'runtime');
+      }
+      await latest.save();
+      io?.to(`dep:${deploymentId}`).emit('deployment:status', { status: latest.status });
+    });
+
+    await waitForHttpReady(assignedPort);
+
+    deployment = await Deployment.findById(deploymentId);
+    deployment.status = 'running';
+    deployment.port = assignedPort;
+    await deployment.save();
+    io?.to(`dep:${deploymentId}`).emit('deployment:status', { status: 'running', url: deployment.url });
+    await appendLog(deploymentId, 'info', `Deployment live at ${deployment.url || `http://localhost:${assignedPort}`}`, io, 'runtime');
+
+    project.activeDeploymentId = deployment._id;
+    await project.save();
+
+    notifyIntegrations(project._id, { ...deployment.toObject(), projectName: project.name }, 'success')
+      .catch(() => {});
+  } catch (error) {
+    if (assignedPort) releasePort(assignedPort);
+    activeProcesses.delete(String(deploymentId));
+
+    if (deployment) {
+      deployment.status = 'failed';
+      deployment.errorMessage = error.message;
+      deployment.completedAt = new Date();
+      await deployment.save();
+      await appendLog(deploymentId, 'error', `Deployment failed: ${error.message}`, io);
+      io?.to(`dep:${deploymentId}`).emit('deployment:status', { status: 'failed' });
+    }
+  }
 };
 
-// Stop Deployment Function
 const stopDeployment = async (deploymentId) => {
-    const processToKill = activeProcesses.get(deploymentId.toString());
+  const key = String(deploymentId);
+  const running = activeProcesses.get(key);
 
-    if (processToKill) {
-        processToKill.kill(); // Node.js ka command process rokne ke liye
-        activeProcesses.delete(deploymentId.toString());
-        console.log(`🛑 Process killed for deployment ${deploymentId}`);
+  if (running && running.pid) {
+    if (process.platform === 'win32') {
+      spawn('taskkill', ['/PID', String(running.pid), '/T', '/F'], { windowsHide: true });
+    } else {
+      running.kill('SIGTERM');
     }
+    activeProcesses.delete(key);
+  }
 
-    const deployment = await Deployment.findById(deploymentId);
-    if (deployment && deployment.status === 'running') {
-        releasePort(deployment.port);
-        deployment.status = 'stopped';
-        deployment.completedAt = new Date();
-        await deployment.save();
-    }
+  const deployment = await Deployment.findById(deploymentId);
+  if (!deployment) return;
+
+  if (deployment.port) {
+    releasePort(deployment.port);
+  }
+
+  deployment.status = 'stopped';
+  deployment.completedAt = new Date();
+  await deployment.save();
 };
 
 const executeRollback = async (newDeploymentId, oldDeploymentId, io) => {
-    let rollbackDeploymentRecord = null;
-    let assignedPort = null;
+  let rollback = null;
+  let assignedPort = null;
 
-    try {
-        rollbackDeploymentRecord = await Deployment.findById(newDeploymentId);
-        const oldDeploymentRecord = await Deployment.findById(oldDeploymentId);
-        const project = await Project.findById(rollbackDeploymentRecord.projectId);
+  try {
+    rollback = await Deployment.findById(newDeploymentId);
+    const oldDeployment = await Deployment.findById(oldDeploymentId);
+    if (!rollback || !oldDeployment) throw new Error('Rollback deployment not found');
 
-        await appendDeploymentLog(rollbackDeploymentRecord, 'info', `Rollback started. Target: Old Deployment ID ${oldDeploymentId}`);
+    const project = await Project.findById(rollback.projectId);
+    if (!project) throw new Error('Project not found');
 
-        // 🌟 HACKATHON MVP MAGIC: Build/Install skip karo!
-        // Seedha purane deployment ka path nikalo
-        // DHYAN DE: Yahan '/tmp/deploypilot' ko apne actual base path se replace kar lena jo cloneRepo use karta hai
-        const basePath = path.join(__dirname, '../../deployments_temp');
-        const oldAppPath = path.join(basePath, oldDeploymentRecord._id.toString());
+    await appendLog(newDeploymentId, 'info', `Rollback started. Target deployment: ${oldDeploymentId}`, io);
 
-        await appendDeploymentLog(rollbackDeploymentRecord, 'info', `Located old build directory: ${oldAppPath}`);
+    const oldPath = path.join(__dirname, '../../deployments_temp', String(oldDeployment._id));
+    const frameworkInfo = await detectFramework(oldPath);
+    if (frameworkInfo.error) throw new Error(frameworkInfo.error);
 
-        // Naya port assign karo
-        assignedPort = getAvailablePort();
-        await appendDeploymentLog(rollbackDeploymentRecord, 'info', `Assigning new port ${assignedPort} for rollback app`);
+    assignedPort = getAvailablePort();
+    const startCmd = frameworkInfo.startCmd.replace('$PORT', String(assignedPort));
+    const processRef = spawn(startCmd, {
+      cwd: frameworkInfo.projectPath || oldPath,
+      shell: true,
+      env: { ...process.env, PORT: String(assignedPort) }
+    });
 
-        // Framework detect karke wapas start command nikalo
-        const frameworkInfo = await detectFramework(oldAppPath);
-        if (frameworkInfo.error) throw new Error(frameworkInfo.error);
+    activeProcesses.set(String(newDeploymentId), processRef);
+    streamLogs(String(newDeploymentId), processRef, io, 'runtime');
+    await waitForHttpReady(assignedPort);
 
-        const startCmdString = frameworkInfo.startCmd.replace('$PORT', assignedPort);
-        const [cmd, ...args] = startCmdString.split(' ');
+    rollback.status = 'running';
+    rollback.port = assignedPort;
+    await rollback.save();
 
-        // Start command chala do (Purane folder me!)
-        const startProcess = spawn(cmd, args, {
-            cwd: frameworkInfo.projectPath || oldAppPath,
-            env: { ...process.env, PORT: assignedPort },
-            shell: true
-        });
+    project.activeDeploymentId = rollback._id;
+    await project.save();
 
-        // Logs stream karo UI ke liye
-        streamLogs(rollbackDeploymentRecord._id.toString(), startProcess, io);
-        activeProcesses.set(rollbackDeploymentRecord._id.toString(), startProcess);
-
-        // Success update
-        rollbackDeploymentRecord.status = 'running';
-        rollbackDeploymentRecord.port = assignedPort;
-        await rollbackDeploymentRecord.save();
-
-        project.activeDeploymentId = rollbackDeploymentRecord._id;
-        await project.save();
-
-        await appendDeploymentLog(rollbackDeploymentRecord, 'info', `✅ Rollback Successful! Live at http://localhost:${assignedPort}`);
-
-    } catch (error) {
-        console.error(`❌ Rollback failed: ${error.message}`);
-        if (assignedPort) releasePort(assignedPort);
-
-        if (rollbackDeploymentRecord) {
-            rollbackDeploymentRecord.status = 'failed';
-            rollbackDeploymentRecord.errorMessage = error.message;
-            await appendDeploymentLog(rollbackDeploymentRecord, 'error', `Rollback failed: ${error.message}`);
-            await rollbackDeploymentRecord.save();
-        }
+    await appendLog(newDeploymentId, 'info', `Rollback successful. Live at ${rollback.url || `http://localhost:${assignedPort}`}`, io, 'runtime');
+  } catch (error) {
+    if (assignedPort) releasePort(assignedPort);
+    if (rollback) {
+      rollback.status = 'failed';
+      rollback.errorMessage = error.message;
+      rollback.completedAt = new Date();
+      await rollback.save();
+      await appendLog(newDeploymentId, 'error', `Rollback failed: ${error.message}`, io);
     }
+  }
 };
 
 module.exports = { executeDeployment, stopDeployment, executeRollback };

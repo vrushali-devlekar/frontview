@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap } from "lucide-react";
+import BrandLogo from "../ui/BrandLogo";
 
 const Github = ({ size = 18, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -47,12 +47,7 @@ const Footer = () => {
           
           {/* 1. LOGO AND BRANDING */}
           <div className="lg:w-1/3 flex flex-col items-start gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#22c55e] flex items-center justify-center">
-                <Zap size={16} className="text-black" strokeWidth={3} />
-              </div>
-              <span className="text-lg font-semibold text-white tracking-tight">Velora</span>
-            </div>
+            <BrandLogo to="/" textClassName="text-lg font-semibold tracking-tight normal-case" iconClassName="rounded-md" />
 
             <p className="text-[14px] leading-relaxed text-[#a1a1aa] max-w-sm">
               The modern deployment platform for developers. Scale infrastructure, ship faster, and stay in control.

@@ -1,4 +1,6 @@
 const { Readable } = require('stream');
+const path = require('path');
+const fs = require('fs').promises;
 const asyncHandler = require('../middlewares/asyncHandler');
 const Deployment = require('../models/Deployment');
 
@@ -11,9 +13,7 @@ function buildTargetUrl(port, restPath = '', queryString = '') {
 function rewriteHtmlDocument(html, deploymentId) {
     const prefix = `/live/${deploymentId}`;
     const normalizedPrefix = `${prefix}/`;
-
-    return String(html)
-        .replace(/<head([^>]*)>/i, `<head$1><base href="${normalizedPrefix}">`)
+    const rewrittenAttrs = String(html)
         // Rewrite only URL-bearing HTML attributes that start from root.
         .replace(
             /(\b(?:href|src|action|poster)=["'])\/(?!\/)/gi,
@@ -27,6 +27,15 @@ function rewriteHtmlDocument(html, deploymentId) {
                 return `${start}${rewritten}${end}`;
             }
         );
+
+    if (/<base\s+href=/i.test(rewrittenAttrs)) {
+        return rewrittenAttrs;
+    }
+
+    return rewrittenAttrs.replace(
+        /<head([^>]*)>/i,
+        `<head$1><base href="${normalizedPrefix}">`
+    );
 }
 
 function rewriteUpstreamLocation(locationHeader, deploymentId) {
@@ -49,6 +58,84 @@ function rewriteUpstreamLocation(locationHeader, deploymentId) {
     return `${prefix}/${locationHeader}`;
 }
 
+async function pathExists(targetPath) {
+    try {
+        await fs.access(targetPath);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function getDeploymentRoot(deploymentId) {
+    return path.resolve(__dirname, '../../deployments_temp', String(deploymentId));
+}
+
+function normalizeRestPath(restPath = '') {
+    const cleaned = String(restPath || '/');
+    const withoutQuery = cleaned.split('?')[0];
+    return withoutQuery.startsWith('/') ? withoutQuery : `/${withoutQuery}`;
+}
+
+async function resolveStaticAssetPath(deploymentId, restPath) {
+    const deploymentRoot = getDeploymentRoot(deploymentId);
+    const normalizedPath = normalizeRestPath(restPath);
+    let relativePath = normalizedPath.replace(/^\/+/, '');
+    const staticRoots = ['dist', 'build', 'public', '.next/static', ''];
+
+    // Prevent traversal outside deployment directory
+    if (relativePath.includes('..')) {
+        return null;
+    }
+
+    // Recover from duplicated prefixes in cached HTML/base-href scenarios:
+    // /live/<id>/assets/... should still map to /assets/...
+    const duplicatePrefix = `live/${String(deploymentId)}/`;
+    if (relativePath.startsWith(duplicatePrefix)) {
+        relativePath = relativePath.slice(duplicatePrefix.length);
+    }
+
+    if (!relativePath || relativePath === '') {
+        for (const root of ['dist', 'build', 'public', '']) {
+            const indexPath = path.join(deploymentRoot, root, 'index.html');
+            if (await pathExists(indexPath)) return indexPath;
+        }
+        return null;
+    }
+
+    for (const root of staticRoots) {
+        const absolute = path.resolve(deploymentRoot, root, relativePath);
+        if (!absolute.startsWith(deploymentRoot)) continue;
+        if (await pathExists(absolute)) return absolute;
+    }
+
+    // SPA fallback for deep routes: return dist/build/public index.html when present
+    if (!path.extname(relativePath)) {
+        for (const root of ['dist', 'build', 'public', '']) {
+            const indexPath = path.join(deploymentRoot, root, 'index.html');
+            if (await pathExists(indexPath)) return indexPath;
+        }
+    }
+
+    return null;
+}
+
+async function tryServeStaticArtifact(req, res, deploymentId, restPath) {
+    const resolved = await resolveStaticAssetPath(deploymentId, restPath);
+    if (!resolved) return false;
+
+    if (resolved.endsWith('.html')) {
+        const html = await fs.readFile(resolved, 'utf8');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(rewriteHtmlDocument(html, deploymentId));
+        return true;
+    }
+
+    res.setHeader('X-Velora-Live-Static', '1');
+    res.sendFile(resolved);
+    return true;
+}
+
 exports.proxyLiveDeployment = asyncHandler(async (req, res) => {
     const deployment = await Deployment.findById(req.params.id).select('status port');
 
@@ -57,16 +144,23 @@ exports.proxyLiveDeployment = asyncHandler(async (req, res) => {
         throw new Error('Deployment not found');
     }
 
-    if (deployment.status !== 'running' || !deployment.port) {
-        res.status(409);
-        throw new Error(`Deployment is not live. Current status: ${deployment.status || 'unknown'}`);
-    }
-
     const originalPath = req.originalUrl.split('?')[0];
     const mountPrefix = `/live/${req.params.id}`;
     const restPath = originalPath.startsWith(mountPrefix)
         ? originalPath.slice(mountPrefix.length)
         : req.path;
+
+    // Prefer serving static build assets directly from deployment folder.
+    // This avoids CSS/JS MIME errors when runtime process is not available.
+    if (await tryServeStaticArtifact(req, res, deployment._id, restPath || '/')) {
+        return;
+    }
+
+    if (deployment.status !== 'running' || !deployment.port) {
+        res.status(409);
+        throw new Error(`Deployment is not live. Current status: ${deployment.status || 'unknown'}`);
+    }
+
     const targetUrl = buildTargetUrl(
         deployment.port,
         restPath,
@@ -77,12 +171,21 @@ exports.proxyLiveDeployment = asyncHandler(async (req, res) => {
     delete requestHeaders.host;
     delete requestHeaders['content-length'];
 
-    const upstreamResponse = await fetch(targetUrl, {
-        method: req.method,
-        headers: requestHeaders,
-        body: ['GET', 'HEAD'].includes(req.method) ? undefined : req,
-        duplex: ['GET', 'HEAD'].includes(req.method) ? undefined : 'half'
-    });
+    let upstreamResponse;
+    try {
+        upstreamResponse = await fetch(targetUrl, {
+            method: req.method,
+            headers: requestHeaders,
+            body: ['GET', 'HEAD'].includes(req.method) ? undefined : req,
+            duplex: ['GET', 'HEAD'].includes(req.method) ? undefined : 'half'
+        });
+    } catch (proxyError) {
+        // Runtime may crash after first paint; serve static fallback if available.
+        if (await tryServeStaticArtifact(req, res, deployment._id, restPath || '/')) {
+            return;
+        }
+        throw proxyError;
+    }
 
     res.status(upstreamResponse.status);
 

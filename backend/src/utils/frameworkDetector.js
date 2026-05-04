@@ -136,7 +136,18 @@ const detectFramework = async (targetPath) => {
         const scripts = packageData.scripts || {};
         const hasIndexHtml = await isStaticSite(projectPath);
 
-        // 3. Detect Vite (Modern React/Vue) - FRONTEND
+        // 3. Detect Next.js - always build before production start
+        if (deps['next']) {
+            return {
+                type: 'frontend-next',
+                projectPath,
+                installCmd: 'npm install',
+                buildCmd: scripts['build'] ? 'npm run build' : 'npx next build',
+                startCmd: scripts['start'] ? 'npm run start' : 'npx next start -p $PORT'
+            };
+        }
+
+        // 4. Detect Vite (Modern React/Vue) - FRONTEND
         if (deps['vite']) {
             return {
                 type: 'frontend-vite',
@@ -148,7 +159,7 @@ const detectFramework = async (targetPath) => {
             };
         }
 
-        // 4. Detect Create React App (Older React) - FRONTEND
+        // 5. Detect Create React App (Older React) - FRONTEND
         if (deps['react-scripts']) {
             return {
                 type: 'frontend-cra',

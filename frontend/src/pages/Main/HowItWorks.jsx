@@ -91,7 +91,7 @@ const steps = [
 
 export default function HowItWorks () {
   return (
-    <section className='relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden bg-transparent border-y border-white/5'>
+    <section id='how-it-works' className='relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden bg-transparent border-y border-white/5'>
       {/* BACKGROUND IMAGE LAYER - Active and refined */}
       <div
         className='absolute inset-0 z-0 opacity-60 bg-black/40 bg-cover bg-center bg-no-repeat pointer-events-none'

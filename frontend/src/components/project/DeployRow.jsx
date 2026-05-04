@@ -11,9 +11,10 @@ export default function DeployRow({ deployment, projectId, onRollback }) {
   const [isRollingBack, setIsRollingBack] = useState(false);
   const [rollbackError, setRollbackError] = useState("");
 
+  const deploymentUrl = deployment.liveUrl || deployment.url || "";
   const isSuccess = deployment.status === "SUCCESS";
   const isRunning = deployment.status === "BUILDING" || deployment.status === "RUNNING" || deployment.status === "SUCCESS";
-  const publicUrlMissing = isRunning && !deployment.liveUrl;
+  const publicUrlMissing = isRunning && !deploymentUrl;
 
   const handleRollbackClick = () => {
     if (!isSuccess) return;
@@ -73,15 +74,15 @@ export default function DeployRow({ deployment, projectId, onRollback }) {
               </span>
             </div>
             
-            {deployment.liveUrl ? (
+            {deploymentUrl ? (
               <a
-                href={deployment.liveUrl}
+                href={deploymentUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex max-w-full items-center gap-2 mt-3 rounded-xl border border-[#22c55e]/25 bg-[#22c55e]/10 px-3 py-2 text-[12px] font-semibold text-[#86efac] shadow-[0_0_0_1px_rgba(34,197,94,0.08)] transition-colors hover:border-[#22c55e]/40 hover:bg-[#22c55e]/14 hover:text-[#dcfce7]"
               >
                 <ExternalLink size={12} className="shrink-0" />
-                <span className="truncate">{deployment.liveUrl}</span>
+                <span className="truncate">{deploymentUrl}</span>
               </a>
             ) : null}
             {publicUrlMissing ? (

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Zap } from "lucide-react";
 import api, { githubAuthUrl, googleAuthUrl } from "../../api/api";
 import { useAuth } from "../../context/AuthContext";
 import GlassButton from "../../components/ui/GlassButton";
 import InputField from "../../components/ui/InputField";
+import BrandLogo from "../../components/ui/BrandLogo";
 
 const Register = () => {
   const [searchParams] = useSearchParams();
@@ -56,12 +56,7 @@ const Register = () => {
     <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-4 font-sans select-none">
       
       {/* Logo */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0">
-          <Zap size={18} className="text-black" strokeWidth={2.5} fill="currentColor" />
-        </div>
-        <span className="text-xl font-semibold text-white tracking-tight">Velora</span>
-      </div>
+      <BrandLogo to="/" className="mb-8" textClassName="text-xl font-semibold tracking-tight normal-case" />
 
       <div className="w-full max-w-[380px] bg-[#111113] border border-white/[0.06] rounded-2xl p-8 shadow-elevation-2">
         <div className="mb-6 text-center">

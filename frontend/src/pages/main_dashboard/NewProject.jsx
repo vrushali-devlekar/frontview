@@ -27,7 +27,7 @@ import {
   AlertCircle,
   Link2
 } from "lucide-react";
-import { addEnvVar, createProject, getGithubRepos } from "../../api/api";
+import { addEnvVar, createProject, getGithubRepos, githubAuthUrl } from "../../api/api";
 import { parseGithubRepoInput } from "../../utils/githubRepo";
 import { useAuth } from "../../context/AuthContext";
 import { detectFrameworkFromFiles } from "../../utils/frameworkDetector";
@@ -133,14 +133,21 @@ export default function NewProjectPage() {
   };
 
   useEffect(() => {
-    fetchRepos();
-  }, []);
+    if (user?.githubConnected) {
+      void fetchRepos();
+    }
+  }, [user?.githubConnected]);
 
   const fetchRepos = async () => {
     setReposLoading(true);
     try {
       const { data } = await getGithubRepos(repoSearch || undefined);
-      setRepos(Array.isArray(data?.repos) ? data.repos : []);
+      const rows = Array.isArray(data?.repos)
+        ? data.repos
+        : Array.isArray(data?.data)
+          ? data.data
+          : [];
+      setRepos(rows);
     } catch (e) {
       setRepos([]);
     } finally {
@@ -149,11 +156,23 @@ export default function NewProjectPage() {
   };
 
   const handleImport = (repo) => {
-    const cloneUrl = `https://github.com/${repo.owner}/${repo.name}.git`;
+    const ownerFromFullName = String(repo?.fullName || "").split("/")[0];
+    const owner = repo?.owner?.login || repo?.owner || ownerFromFullName;
+    const name = repo?.name || String(repo?.fullName || "").split("/")[1];
+    const cloneUrl = repo?.url
+      ? `${String(repo.url).replace(/\/+$/, "")}.git`
+      : `https://github.com/${owner}/${name}.git`;
+
+    if (!owner || !name) {
+      setError("Invalid repository payload. Please refresh and try again.");
+      return;
+    }
+
     setRepoInput(cloneUrl);
-    setRepoName(repo.name);
+    setRepoName(name);
     setBranch((repo.defaultBranch || "main").trim());
-    setName(repo.name.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase());
+    setName(name.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase());
+    setError("");
     setStep(2);
   };
 
@@ -306,7 +325,7 @@ export default function NewProjectPage() {
                             </p>
                             <div className="flex flex-col items-center gap-8">
                               <a
-                                href={`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/auth/github`}
+                                href={githubAuthUrl}
                                 className="h-16 px-12 rounded-[32px] bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-5 hover:bg-white/90 transition-all shadow-elevation-2"
                               >
                                 <GitHubIcon size={20} /> Authorize_Registry

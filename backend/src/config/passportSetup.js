@@ -1,21 +1,17 @@
-// config/passportSetup.js
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
+const {
+  githubCallbackUrl,
+  googleCallbackUrl,
+} = require('./runtime');
 
-console.log('--- Passport Strategy Config ---');
-console.log('GitHub Callback:', `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/github/callback`);
-console.log('Google Callback:', `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/google/callback`);
-console.log('-------------------------------');
-
-// User ki ID ko session mein pack karna
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
-// Session se ID nikal kar poora User fetch karna
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
@@ -25,58 +21,33 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-// 1. LOCAL STRATEGY (Email & Password)
-
 passport.use(
-  new LocalStrategy(
-    { usernameField: "email" },
-    async (email, password, done) => {
-      try{
-        try {
-            // Email se user dhundo
-            const user = await User.findOne({ email });
-            if (!user) {
-                return done(null, false, { message: 'That email is not registered' });
-            }
-            
-            // Agar user Google/GitHub wala hai aur password daal raha hai
-            if (!user.password) {
-                return done(null, false, { message: 'Please login using your OAuth provider (Google/GitHub)' });
-            }
-
-            // Password match karo (User model ka method use karke)
-            const isMatch = await user.matchPassword(password);
-            if (isMatch) {
-                return done(null, user);
-            } else {
-                return done(null, false, { message: 'Password incorrect' });
-            }
-        } catch (err) {
-            return done(err);
-        }
-
-        // Agar user Google/GitHub wala hai aur password daal raha hai
-        if (!user.password) {
-          return done(null, false, {
-            message: "Please login using your OAuth provider (Google/GitHub)",
-          });
-        }
-
-        // Password match karo (User model ka method use karke)
-        const isMatch = await user.matchPassword(password);
-        if (isMatch) {
-          return done(null, user);
-        } else {
-          return done(null, false, { message: "Password incorrect" });
-        }
-      } catch (err) {
-        return done(err);
+  new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
+    try {
+      const normalizedEmail = String(email || '').trim().toLowerCase();
+      const user = await User.findOne({ email: normalizedEmail });
+      if (!user) {
+        return done(null, false, { message: 'That email is not registered' });
       }
+
+      if (!user.password) {
+        return done(null, false, {
+          message: 'Please login using your OAuth provider (Google/GitHub)',
+        });
+      }
+
+      const isMatch = await user.matchPassword(password);
+      if (isMatch) {
+        return done(null, user);
+      }
+
+      return done(null, false, { message: 'Password incorrect' });
+    } catch (err) {
+      return done(err);
     }
-  ),
+  })
 );
 
-// GitHub often omits `profile.emails` (private email / API shape). Never index [0] blindly.
 function resolveGithubEmail(profile) {
   const primary = profile.emails?.find((e) => e.primary)?.value;
   const first = profile.emails?.[0]?.value;
@@ -96,20 +67,20 @@ function resolveGithubAvatar(profile) {
   return profile.photos?.[0]?.value || profile._json?.avatar_url || undefined;
 }
 
-// ==========================================
-// 2. GITHUB STRATEGY
-// ==========================================
-passport.use(new GitHubStrategy({
-    clientID: process.env.GITHUB_CLIENT_ID,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/github/callback`
-}, async (accessToken, refreshToken, profile, done) => {
-    try {
-        const email = resolveGithubEmail(profile);
+passport.use(
+  new GitHubStrategy(
+    {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL: githubCallbackUrl,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const email = resolveGithubEmail(profile)?.trim().toLowerCase();
         if (!email) {
           return done(null, false, {
             message:
-              "GitHub did not provide an email. Allow email access or set a public email on GitHub.",
+              'GitHub did not provide an email. Allow email access or set a public email on GitHub.',
           });
         }
 
@@ -124,11 +95,6 @@ passport.use(new GitHubStrategy({
           if (!user.githubId) {
             user.githubId = githubId;
           }
-          // Update username to GitHub username if it's different
-          if (profile.username && user.username !== profile.username) {
-            user.username = profile.username;
-          }
-          // Update avatar if available
           const avatarUrl = resolveGithubAvatar(profile);
           if (avatarUrl && user.avatarUrl !== avatarUrl) {
             user.avatarUrl = avatarUrl;
@@ -138,47 +104,63 @@ passport.use(new GitHubStrategy({
         }
 
         const avatarUrl = resolveGithubAvatar(profile);
-
         user = await User.create({
-          username:
-            profile.username || profile.displayName || `github-${profile.id}`,
+          username: profile.username || profile.displayName || `github-${profile.id}`,
           email,
           githubId,
-          avatarUrl:
-            avatarUrl ||
-            "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-          authProvider: "github",
+          ...(avatarUrl ? { avatarUrl } : {}),
+          authProvider: 'github',
           githubAccessToken: accessToken,
         });
         return done(null, user);
       } catch (err) {
         return done(err, null);
       }
-    },
-  ),
+    }
+  )
 );
 
-// ==========================================
-// 3. GOOGLE STRATEGY
-// ==========================================
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/auth/google/callback`
-}, async (accessToken, refreshToken, profile, done) => {
-    try {
-        let user = await User.findOne({ email: profile.emails[0].value });
-        if (user) return done(null, user);
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: googleCallbackUrl,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const email = profile.emails?.[0]?.value?.trim().toLowerCase();
+        if (!email) {
+          return done(null, false, { message: 'Google did not provide an email address.' });
+        }
+
+        let user = await User.findOne({ googleId: profile.id });
+        if (!user) {
+          user = await User.findOne({ email });
+        }
+
+        if (user) {
+          if (!user.googleId) {
+            user.googleId = profile.id;
+          }
+          if (!user.avatarUrl && profile.photos?.[0]?.value) {
+            user.avatarUrl = profile.photos[0].value;
+          }
+          await user.save();
+          return done(null, user);
+        }
 
         user = await User.create({
-            username: profile.displayName,
-            email: profile.emails[0].value,
-            googleId: profile.id,
-            avatarUrl: profile.photos[0].value,
-            authProvider: 'google'
+          username: profile.displayName,
+          email,
+          googleId: profile.id,
+          avatarUrl: profile.photos?.[0]?.value,
+          authProvider: 'google',
         });
         return done(null, user);
       } catch (err) {
         return done(err, null);
+      }
     }
-}));
+  )
+);

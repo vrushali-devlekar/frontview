@@ -8,7 +8,7 @@ export default function PageWrapper({ navMode, isCollapsed, children }) {
 
   return (
     <div
-      className={`flex flex-col flex-1 min-w-0 overflow-hidden relative z-10 transition-[margin] duration-200 ${sidebarClass}`}
+      className={`flex flex-col flex-1 min-w-0 overflow-hidden relative z-10 transition-[margin] duration-200 ${sidebarClass} pt-[env(safe-area-inset-top)]`}
     >
       {children}
     </div>

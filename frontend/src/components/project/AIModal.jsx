@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { X, Cpu, MessageSquare, Expand, Send, BrainCircuit, Loader2 } from "lucide-react";
 import GlassButton from "../ui/GlassButton";
+import { buildApiUrl } from "../../api/runtime";
 
 export default function AIModal({ deploymentId, isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [provider, setProvider] = useState("cohere");
+  const [provider, setProvider] = useState("mistral");
 
   const [streamedAnalysis, setStreamedAnalysis] = useState("");
   const [isChatExpanded, setIsChatExpanded] = useState(false);
@@ -39,7 +40,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
       }
 
       try {
-        const response = await fetch(`http://localhost:4000/api/deployments/${deploymentId}/analyze/stream`, {
+        const response = await fetch(buildApiUrl(`/deployments/${deploymentId}/analyze/stream`), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -117,7 +118,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
     setChatMessages((prev) => [...prev, { id: astMsgId, role: "assistant", text: "" }]);
 
     try {
-      const response = await fetch(`http://localhost:4000/api/deployments/${deploymentId}/analyze/stream`, {
+      const response = await fetch(buildApiUrl(`/deployments/${deploymentId}/analyze/stream`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,10 +164,10 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
 
-      <div className={`relative w-full bg-[#1e1e20] border border-white/[0.06] rounded-xl flex flex-col max-h-[85vh] shadow-elevation-2 overflow-hidden transition-all duration-300 ${isChatExpanded ? "max-w-4xl" : "max-w-2xl"}`}>
+      <div className={`relative w-full bg-[#1e1e20] border border-white/[0.06] rounded-xl flex flex-col h-[92vh] max-h-[92vh] sm:h-[85vh] sm:max-h-[85vh] shadow-elevation-2 overflow-hidden transition-all duration-300 ${isChatExpanded ? "max-w-[96vw] lg:max-w-4xl" : "max-w-[96vw] lg:max-w-2xl"}`}>
 
         {/* Header - Clean & Professional */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0 bg-[#161618]">
@@ -202,7 +203,7 @@ export default function AIModal({ deploymentId, isOpen, onClose }) {
         </div>
 
         {/* Content */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 font-mono text-[13px]" style={{ scrollbarWidth: 'thin' }}>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 font-mono text-[13px]" style={{ scrollbarWidth: 'thin' }}>
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-52 gap-4">
               <Loader2 size={24} className="text-[#a1a1aa] animate-spin" />

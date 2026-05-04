@@ -72,7 +72,7 @@ const features = [
 
 export default function WhyChoose () {
   return (
-    <section className='relative bg-[#060606e2] py-32 px-4 overflow-hidden'>
+    <section id='features' className='relative bg-[#060606e2] py-32 px-4 overflow-hidden'>
       {/* Left decorative glow */}
       <div className='absolute left-0 top-[30%] -translate-y-1/2 w-56 h-56 pointer-events-none hidden lg:block z-0 opacity-5 bg-[#a3e635] rounded-full blur-3xl' />
 

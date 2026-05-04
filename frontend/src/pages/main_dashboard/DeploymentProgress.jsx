@@ -44,6 +44,7 @@ export default function DeploymentProgress() {
   const [isDeploying, setIsDeploying] = useState(false);
   const [currentStage, setCurrentStage] = useState(0); // 0 to 4
   const [status, setStatus] = useState('building'); // building, success, failed
+  const [failureReason, setFailureReason] = useState("");
   const [showAIChat, setShowAIChat] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     { role: 'bot', text: 'Hello! I am Velora AI. I can help you analyze these logs if something goes wrong.' }
@@ -76,6 +77,7 @@ export default function DeploymentProgress() {
         setDeployment(latest);
         setStatus(latest.status);
         setLogs(latest.buildLogs || []);
+        setFailureReason(latest.errorMessage || "");
         
         // Map status to stage
         if (latest.status === 'successful') setCurrentStage(4);
@@ -117,6 +119,13 @@ export default function DeploymentProgress() {
         setStatus('successful');
       } else if (s === 'failed') {
         setStatus('failed');
+        if (id) {
+          getDeployment(id)
+            .then((res) => {
+              setFailureReason(res?.data?.data?.errorMessage || "");
+            })
+            .catch(() => {});
+        }
       } else if (s === 'building') {
         setCurrentStage(2);
         setStatus('building');
@@ -261,7 +270,7 @@ export default function DeploymentProgress() {
                   <GlassButton 
                     variant="primary" 
                     className="h-11 px-8 gap-3 text-[9px] font-black uppercase tracking-[0.25em] shadow-elevation-2"
-                    onClick={() => window.open(project?.liveUrl || '#', '_blank')}
+                    onClick={() => window.open(deployment?.url || '#', '_blank')}
                   >
                     <Globe size={14} /> ACCESS_INSTANCE
                   </GlassButton>
@@ -361,9 +370,11 @@ export default function DeploymentProgress() {
                   >
                     <div className="flex items-center gap-5 mb-6 text-[#ef4444]">
                       <AlertCircle size={22} />
-                      <span className="font-black text-[14px] uppercase tracking-widest">Sequence_Fault</span>
+                      <span className="font-black text-[14px] uppercase tracking-widest">Deployment Failed</span>
                     </div>
-                    <p className="text-[11px] text-[#ef4444]/60 mb-10 leading-relaxed font-black uppercase tracking-[0.2em]">Initialization logic failure detected. Deploy the Neural Engine for isolation and recovery.</p>
+                    <p className="text-[11px] text-[#ef4444]/75 mb-10 leading-relaxed font-mono break-words">
+                      {failureReason || "Build or startup failed. Open logs or AI analysis for exact steps to fix."}
+                    </p>
                     <button 
                       onClick={() => setShowAIChat(true)}
                       className="w-full h-14 rounded-2xl bg-[#ef4444] text-white font-black text-[10px] uppercase tracking-[0.3em] hover:bg-[#ef4444]/90 transition-all flex items-center justify-center gap-4 shadow-elevation-2"
@@ -429,37 +440,37 @@ export default function DeploymentProgress() {
       </PageWrapper>
 
       {/* AI Chat Widget */}
-      <div className="fixed bottom-16 right-16 z-[100]">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[90]">
         <AnimatePresence>
           {showAIChat && (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="absolute bottom-28 right-0 w-[480px] h-[640px] bg-[#1e1e20] border border-white/[0.04] rounded-[56px] shadow-elevation-2 overflow-hidden flex flex-col"
+              className="absolute bottom-20 right-0 w-[calc(100vw-2rem)] sm:w-[420px] max-w-[420px] h-[70vh] max-h-[620px] bg-[#1e1e20] border border-white/[0.08] rounded-[24px] shadow-elevation-2 overflow-hidden flex flex-col"
             >
-              <div className="px-10 py-8 border-b border-white/[0.04] bg-[#161618] flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <div className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center shadow-elevation-2">
-                    <Sparkles size={22} />
+              <div className="px-5 py-4 border-b border-white/[0.04] bg-[#161618] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center shadow-elevation-2">
+                    <Sparkles size={18} />
                   </div>
                   <div>
-                    <h4 className="text-[16px] font-black text-white uppercase tracking-tighter">Velora_Analyst</h4>
-                    <p className="text-[9px] text-[#22c55e] font-black uppercase tracking-[0.3em] mt-1">NEURAL_LOG_PROCESSOR</p>
+                    <h4 className="text-[14px] font-black text-white uppercase tracking-tight">Velora Analyst</h4>
+                    <p className="text-[9px] text-[#22c55e] font-black uppercase tracking-[0.2em] mt-1">Log AI</p>
                   </div>
                 </div>
-                <button onClick={() => setShowAIChat(false)} className="w-12 h-12 rounded-2xl bg-[#0d0d0f] border border-white/5 flex items-center justify-center text-[#3f3f46] hover:text-white transition-all">
-                  <ChevronRight size={24} />
+                <button onClick={() => setShowAIChat(false)} className="w-10 h-10 rounded-xl bg-[#0d0d0f] border border-white/5 flex items-center justify-center text-[#3f3f46] hover:text-white transition-all">
+                  <ChevronRight size={18} />
                 </button>
               </div>
               
-              <div className="flex-1 overflow-y-auto p-10 space-y-10 scrollbar-hide bg-[#0d0d0f]/20">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide bg-[#0d0d0f]/20">
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] p-6 rounded-[32px] text-[13px] leading-relaxed relative font-black uppercase tracking-tight shadow-elevation-1 ${
+                    <div className={`max-w-[88%] p-4 rounded-2xl text-[12px] leading-relaxed whitespace-pre-wrap break-words relative font-semibold tracking-tight shadow-elevation-1 ${
                       msg.role === 'user' 
                         ? 'bg-white text-black' 
-                        : 'bg-[#161618] border border-white/[0.04] text-[#52525b] shadow-inner'
+                        : 'bg-[#161618] border border-white/[0.04] text-[#d4d4d8] shadow-inner'
                     }`}>
                       {msg.text}
                       {msg.isStreaming && <span className="inline-block w-1 h-4 bg-[#22c55e] ml-1 animate-pulse align-middle" />}
@@ -468,34 +479,34 @@ export default function DeploymentProgress() {
                 ))}
                 {isTyping && (
                   <div className="flex justify-start">
-                    <div className="bg-[#161618] border border-white/[0.04] p-6 rounded-[32px] flex items-center gap-5 shadow-inner">
+                    <div className="bg-[#161618] border border-white/[0.04] p-4 rounded-2xl flex items-center gap-3 shadow-inner">
                       <div className="flex gap-2">
                         <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className="w-2 h-2 bg-[#22c55e] rounded-full" />
                         <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-2 h-2 bg-[#22c55e] rounded-full" />
                         <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-2 h-2 bg-[#22c55e] rounded-full" />
                       </div>
-                      <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.3em]">PROCESSING_NEURAL_LINK...</span>
+                      <span className="text-[10px] text-[#3f3f46] font-black uppercase tracking-[0.2em]">Thinking...</span>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="p-10 border-t border-white/[0.04] bg-[#161618]">
+              <div className="p-4 border-t border-white/[0.04] bg-[#161618]">
                 <div className="relative">
                   <input 
                     type="text"
                     value={userInput}
                     onChange={(e) => setUserInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="QUERY_NEURAL_ENGINE..."
-                    className="w-full h-16 bg-[#0d0d0f] border border-white/[0.04] rounded-[24px] pl-8 pr-20 text-[11px] font-black uppercase tracking-[0.4em] text-white focus:outline-none focus:border-white/10 transition-all shadow-inner placeholder:text-[#2d2d33]"
+                    placeholder="Ask AI about this failure..."
+                    className="w-full h-12 bg-[#0d0d0f] border border-white/[0.04] rounded-xl pl-4 pr-14 text-[12px] text-white focus:outline-none focus:border-white/10 transition-all shadow-inner placeholder:text-[#52525b]"
                   />
                   <button 
                     onClick={handleSendMessage}
                     disabled={isTyping || !userInput.trim()}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 rounded-[18px] bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-20 shadow-elevation-1"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-20 shadow-elevation-1"
                   >
-                    <Send size={18} />
+                    <Send size={15} />
                   </button>
                 </div>
               </div>
@@ -505,11 +516,11 @@ export default function DeploymentProgress() {
 
         <button 
           onClick={() => setShowAIChat(!showAIChat)}
-          className={`w-20 h-20 rounded-full flex items-center justify-center shadow-elevation-2 transition-all hover:scale-105 active:scale-95 z-[101] ${
+          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-elevation-2 transition-all hover:scale-105 active:scale-95 z-[101] ${
             showAIChat ? 'bg-white text-black' : 'bg-[#1e1e20] border border-white/[0.08] text-white'
           }`}
         >
-          {showAIChat ? <ArrowLeft size={32} /> : <Sparkles size={32} />}
+          {showAIChat ? <ArrowLeft size={22} /> : <Sparkles size={22} />}
         </button>
       </div>
     </div>
