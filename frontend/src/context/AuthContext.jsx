@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import { getCurrentUser } from '../api/api';
+import { getCurrentUser, updateCurrentUser } from '../api/api';
 
 export const AuthContext = createContext();
 
@@ -54,6 +54,9 @@ export const AuthProvider = ({ children }) => {
     const updateAvatar = (newAvatar) => {
         setAvatar(newAvatar);
         localStorage.setItem('user_avatar', newAvatar);
+        setUser((prev) => prev ? { ...prev, avatar: newAvatar, avatarUrl: newAvatar } : prev);
+
+        updateCurrentUser({ avatarUrl: newAvatar }).catch(() => null);
     };
 
     return (
